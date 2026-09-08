@@ -49,6 +49,7 @@ Progress is logged in `PROGRESS.md`. Decisions below are numbered (D1…) and re
 - **D21 Investor type.** Only `investorType == 1` (professional) can be verified; `2` (retail) reverts `RetailNotAllowed()`. Field kept for later.
 - **D22 Number consistency.** Engine emits `nav_usdc_6dec` (integer) next to the display value; chain stores the same integer; UI formats from the integer. Tests compare integers, not floats.
 - **D23 Country list.** Full ISO 3166-1 numeric list generated once into `web/lib/countries.json` (`pnpm gen:countries` from `i18n-iso-countries`), blocked codes disabled with an explanation.
+- **D25 Phase 1/2 split.** `IHBToken` couples coupon settlement into `_update`, so `HBToken` is implemented in full (including coupons) with unit tests in Phase 1; Phase 2 adds the proof layer: 70/30 and no-double-count tests, fuzz, invariants, gas snapshot, Slither. No untested coupon code lands in the Phase 1 commit.
 - **D24 Coupons while paused / distribution ID.** `distributionId` is a monotonically increasing counter; distributions blocked while paused (D3).
 
 ## 4. Phases
