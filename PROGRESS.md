@@ -19,5 +19,12 @@ Founders: read the latest entry first. "Needs from founders" items block only re
 3. Vercel project linked to `web/`, WalletConnect project id.
 4. Confirm D19 (reference-unit NAV) and D4 (de-verified holders may still redeem).
 
+**Phase 0 shipped (same day)**
+- Foundry project (solc 0.8.26, OpenZeppelin v5.7.0 + forge-std v1.11 as submodules), `IIdentityRegistry` / `IHBToken` interfaces written up-front as the contract for Phase 1.
+- Python 3.11 engine skeleton (`uv`, pandas 2.3, web3 7.16, pydantic 2.13; ruff + mypy + pytest).
+- Next.js 15.5 web skeleton (TypeScript strict, Tailwind 4, vitest 4, Playwright 1.63 on a dedicated port 3457).
+- Root: `Makefile` (`make lint`, `make test`, `make setup`), `.env.example` (every variable documented), `scripts/check-secrets.sh` + `.gitleaks.toml`, `ci.yml` (contracts / engine / web / secrets jobs), `nav-daily.yml` skeleton, MIT licence, CHANGELOG, CONTRIBUTING.
+- Local checkpoint: `make lint` and `make test` green (forge 1 test, pytest 2, vitest 6, next build, Playwright 1). CI result recorded below once the branch is pushed.
+
 **Next**
-- Phase 0: scaffolding, Makefile, CI, `.env.example`, secret scan. Checkpoint: CI green on an empty build.
+- Phase 1: `IdentityRegistry`, `HBToken` core (restrictions, roles, NAV rail, subscribe/redeem), `MockUSDC`, unit tests covering every revert path.
