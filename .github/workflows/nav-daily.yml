@@ -1,0 +1,26 @@
+name: nav-daily
+
+# Runs the NAV engine on a schedule and opens a PR with refreshed JSON.
+# It never touches keys: the oracle push lives in oracle-push.yml (manual, protected environment).
+# Phase 0 skeleton — the engine step is enabled in Phase 5.
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  compute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+      - run: cd engine && uv sync --frozen
+      - name: Engine not wired yet (Phase 5)
+        run: echo "nav-engine compute is enabled in Phase 5; skeleton run only."
