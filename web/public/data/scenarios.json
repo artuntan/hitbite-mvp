@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-14T20:07:45Z",
+  "generated_at": "2026-09-14T06:00:00Z",
   "as_of": "2026-09-14",
   "simulated": true,
   "source_note": "Simulated reference book. Coupons and maturities are illustrative placeholders chosen to match the yield levels observed on 31 Aug 2026 (Türkiye USD curve ~6.0% 2029 to ~7.8% 2047, 5y CDS ~217 bp). Replace with official reference data and cite the source when available. ISINs are TBD until taken from an official source. Computed by nav-engine 0.1.0: reference-unit NAV (PLAN.md D19), 30/360 US accrual, ACT/365F daily fee accrual, Decimal money rounded HALF_UP only at output; all figures simulated (testnet).",
