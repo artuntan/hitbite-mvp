@@ -2,36 +2,58 @@
 
 Founders: read the latest entry first. "Needs from founders" items block only real-testnet checkpoints; everything else runs locally on Anvil.
 
-## 2026-09-14 — Session 3: Phase 1 and 4 committed; Phases 2, 3 and 5 in build
+## 2026-09-14/15 — Session 3: Phases 1–5 complete, engine reviewed and repaired
 
 **Did**
-- Verified the work Session 2 left uncommitted, by running it rather than trusting the report:
-  `forge build`, `forge test` (149 pass), `forge coverage` (100 % lines, statements, branches and
-  functions on every file in `src/`), `forge fmt --check`, `ruff`, `ruff format`, `mypy`, `pytest`
-  (99 pass), and `nav-engine compute`, which wrote all four JSON documents. All green.
-- Committed Phase 1 (`IdentityRegistry`, `HBToken`, `MockUSDC` + 149 unit tests) and Phase 4 (the
-  whole NAV engine) as two feature commits, plus the D26–D29 plan update. Added `make nav`.
-- Wrote the three root documents that depend only on the frozen contracts: `COMPLIANCE_RULES.md`
-  (every on-chain rule, in plain language, as the `/rules` page will render it), `RISKS.md`
-  (simulated-first, then bond, structural and regulatory risk), and `ARCHITECTURE.md` (system
-  diagram, trust-boundary table, sequence diagrams for subscribe / coupon / redeem, and a table
-  mapping each displayed number to the layer that owns it).
-- Launched a three-track build: Phase 2 (fuzz, invariants, gas snapshot, Slither, `SECURITY.md`),
-  Phase 3 (deploy and seed scripts, Anvil deployment JSON, Makefile targets) and Phase 5 (oracle
-  push, attestation, the two scheduled workflows), with an independent acceptance pass that
-  re-runs everything rather than trusting the builders.
+- Verified the tree Session 2 left uncommitted by running it, not by trusting the report: 149 forge
+  tests, 100 % line/statement/branch/function coverage on `src/`, 99 pytest tests, lint clean, and a
+  full `nav-engine compute`. All green, so nothing was lost when that session died.
+- Committed Phase 1 (contracts) and Phase 4 (NAV engine), then built the three remaining backend
+  phases and landed them:
+  - **Phase 2** — 7 fuzz properties, 9 stateful invariants over a 32 768-call campaign with
+    `fail_on_revert = true` and zero reverts, a committed gas snapshot, Slither with no detector
+    disabled (15 findings, 0 high, all triaged), and `SECURITY.md` with an 18-row threat model that
+    says plainly what is *not* mitigated. Contract tests went 149 → 161 with coverage still 100 %.
+    The suite was itself validated by mutation: three deliberate bugs were injected into `HBToken`
+    and each was caught.
+  - **Phase 3** — `Deploy`/`Seed`/`Config` scripts, `deployments/anvil.json`, Makefile targets, and a
+    founder runbook. Verified on a real fresh Anvil: deploy, then seed twice, with `cast` assertions
+    on every role, both demo wallets and the blocklist.
+  - **Phase 5** — oracle push with a contract-read rail pre-check, EIP-191 attestation over canonical
+    JSON, key handling that cannot leak through `repr` or an exception, and the two scheduled
+    workflows. Engine tests 99 → 185, six against a real Anvil.
+- Ran an adversarial review of the Phase 4 engine maths, which had 99 tests but had never been
+  reviewed. Six lenses raised 36 findings; each went to a refuter that had to reproduce it by running
+  code, and 21 survived. All 21 are now fixed, engine tests 185 → 385.
+- Wrote `ARCHITECTURE.md`, `COMPLIANCE_RULES.md`, `RISKS.md`, and the README's real-vs-simulated
+  table. Recorded D30–D48 in `PLAN.md`.
 
 **Broke / surprised**
-- Nothing broke. Worth recording that Session 2's uncommitted tree was in fact green: the session
-  died during verification, not during the build, so no work was lost.
+- The yield solver was quietly wrong. It stopped on an absolute 1e-14 step in yield units, which is
+  smaller than the smallest representable step near maturity, so it reported failure *after*
+  converging. On the shipped book it returned a silent −3.46 % yield on 2029-02-28 and then aborted
+  the whole run on 2029-02-27. Re-running the old solver on 254 adversarial cases failed 44 of them
+  with `ZeroDivisionError`, `OverflowError` and complex exponentiation. It is now a bracketed Newton
+  with a bisection safeguard, stopping on the price residual: 8 421 cases, no round-trip failure.
+- 30/360 was missing both February end-of-month rules, and accrued interest divided by a constant
+  180 rather than the live coupon period. On an end-of-month schedule that let accrued exceed a full
+  coupon and made NAV *fall* on a coupon date. Neither shows on the shipped book, because every
+  coupon date in it is the 1st of a month — which is exactly why no test caught it.
+- The engine had no notion of a bond maturing inside the valuation window: it raised on the maturity
+  date and produced no NAV for that day or any later one, and face was never redeemed into cash.
+  Dated 2029 on the current book, but unhandled rather than scoped out.
+- `forge script --broadcast` without `--slow` writes `transactions[].hash` mis-associated — the hash
+  recorded against the `HBToken` creation was actually a later `grantRole` call, confirmed against
+  the node with `cast tx` and `cast receipt`. `make deploy` now passes `--slow` and re-checks every
+  recorded hash against its receipt (D45).
+- No published number moved through any of this. `nav_per_token` is still 1.003061 and the hand-built
+  fixture still ties to the cent.
 
-**Needs from founders** (unchanged from Session 2; items 1-5 below and in `PLAN.md` Section 5)
+**Needs from founders** (unchanged; see `PLAN.md` Section 5)
 
 **Next**
-- Commit Phases 2, 3 and 5 once the acceptance pass confirms them, then an adversarial review of
-  all three before moving on. Then Phase 6 (web scaffold, design system, `/`, `/transparency`,
-  API routes, contract sync), which is the first phase that needs the deployment JSON Phase 3
-  produces.
+- Phase 6: web scaffold, design system, `/` and `/transparency`, the public API routes, and contract
+  sync from `deployments/anvil.json`. This is the first phase that consumes Phase 3's output.
 
 ## 2026-09-14 — Session 2: Phase 1 review triage, fixes in flight, engine build started
 

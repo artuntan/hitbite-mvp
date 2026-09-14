@@ -36,6 +36,25 @@ jobs:
         if: hashFiles('contracts/.gas-snapshot') != ''
         run: forge snapshot --check --tolerance 10 --no-match-test "invariant|testFuzz"
 
+  slither:
+    name: contracts (slither static analysis)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.1
+      # Findings are triaged in SECURITY.md section 5. The config sets fail_on: high, so this job
+      # fails on a new high-severity finding and prints every finding regardless of severity.
+      # It is NOT a clean run and is not claimed to be: 15 findings are accepted and argued there.
+      - uses: crytic/slither-action@v0.4.1
+        with:
+          target: contracts/
+          slither-config: contracts/slither.config.json
+          fail-on: high
+
   engine:
     name: engine (ruff, mypy, pytest)
     runs-on: ubuntu-latest
