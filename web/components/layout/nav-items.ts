@@ -14,7 +14,10 @@ export interface NavItem {
   matchPrefix?: boolean;
 }
 
-export const NAV_ITEMS: readonly NavItem[] = [{ href: "/", label: "Overview" }];
+export const NAV_ITEMS: readonly NavItem[] = [
+  { href: "/", label: "Overview" },
+  { href: "/transparency", label: "Transparency", matchPrefix: true },
+];
 
 /**
  * Routes specified in BUILD_PROMPT 7.2 that are not built yet, with the phase
@@ -22,7 +25,6 @@ export const NAV_ITEMS: readonly NavItem[] = [{ href: "/", label: "Overview" }];
  * place to look.
  */
 export const PLANNED_ROUTES: readonly (NavItem & { phase: string })[] = [
-  { href: "/transparency", label: "Transparency", phase: "Phase 6" },
   { href: "/verify", label: "Verify", phase: "Phase 7" },
   { href: "/subscribe", label: "Subscribe", phase: "Phase 7" },
   { href: "/portfolio", label: "Portfolio", phase: "Phase 8" },
