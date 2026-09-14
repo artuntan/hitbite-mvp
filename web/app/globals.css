@@ -1,1 +1,207 @@
 @import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   HitBite design tokens (BUILD_PROMPT 7.1)
+
+   Institutional, calm, data-first. Near-black ink on off-white paper, a single
+   accent, semantic green/amber/red reserved for status only.
+
+   NOTE — PLACEHOLDER BRAND COLOUR: `--accent` is `#2E6BFF`, the placeholder
+   named in BUILD_PROMPT 7.1. Replace both the light and the dark value below
+   once the founders supply the real HitBite brand hex, then re-check the
+   contrast ratios recorded beside each token.
+
+   Every ratio below is WCAG 2.1 relative luminance, measured against the
+   surface the token is designed to sit on. Text tokens clear 4.5:1 (AA normal
+   text); boundary/ring tokens clear 3:1 (AA non-text contrast, SC 1.4.11).
+   --------------------------------------------------------------------------- */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+
+  /* surfaces */
+  --paper: #fafaf8; /* page background — off-white */
+  --surface: #ffffff; /* cards, table headers, raised panels */
+  --surface-sunken: #f2f2ee; /* wells, code blocks, chart plot areas */
+
+  /* text */
+  --ink: #12141a; /* 17.62:1 on paper, 18.41:1 on surface — AAA */
+  --muted: #55606f; /* 6.11:1 on paper,  6.39:1 on surface — AA  */
+
+  /* boundaries */
+  --border: #e4e4e0; /* hairline dividers (decorative, no minimum applies) */
+  --border-strong: #878c85; /* 3.28:1 on paper — AA non-text, for control edges */
+  --skeleton: #dcdcd6; /* loading bars: must read on BOTH paper and surface */
+
+  /* accent (placeholder brand colour) */
+  --accent: #2e6bff; /* 4.31:1 on paper — fills, rings, chart series   */
+  --accent-ink: #1f4fd8; /* 6.34:1 on paper — accent used as text/links   */
+  --accent-on: #ffffff; /* 4.50:1 on accent — text on an accent fill     */
+  --accent-surface: #e8eeff; /* tinted background for accent-toned blocks     */
+
+  /* status — semantic only, never decorative */
+  --success: #0e7040; /* 5.89:1 on paper — AA */
+  --success-surface: #e7f4ec;
+  --warning: #7a5200; /* 6.62:1 on paper — AA */
+  --warning-surface: #fdf3e0;
+  --danger: #b32318; /* 6.34:1 on paper — AA */
+  --danger-surface: #fcecea;
+
+  --ring: #2e6bff; /* 4.31:1 on paper — AA non-text */
+
+  --shadow-raised: 0 1px 2px 0 rgb(18 20 26 / 0.06);
+  --shadow-overlay: 0 16px 40px -12px rgb(18 20 26 / 0.28);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --paper: #0d0f13;
+  --surface: #14171d;
+  --surface-sunken: #0a0c0f;
+
+  --ink: #e9ebef; /* 16.07:1 on paper, 15.04:1 on surface — AAA */
+  --muted: #99a1b0; /* 7.38:1 on paper,  6.91:1 on surface — AA  */
+
+  --border: #242932;
+  --border-strong: #5f6673; /* 3.32:1 on paper, 3.11:1 on surface — AA non-text */
+  --skeleton: #2f353f; /* paper is #0d0f13 and sunken is darker than it, so the
+                          loading bars need their own, lighter value */
+
+  --accent: #5b8cff; /* 6.06:1 on paper, 5.68:1 on surface — AA */
+  --accent-ink: #7ba3ff; /* 7.79:1 on paper — AAA */
+  --accent-on: #0d0f13; /* 6.06:1 on the accent fill — AA */
+  --accent-surface: #111a2e;
+
+  --success: #4fc98a; /* 9.18:1 on paper — AAA */
+  --success-surface: #10241a;
+  --warning: #e0a63c; /* 8.85:1 on paper — AAA */
+  --warning-surface: #2a2014;
+  --danger: #f4776b; /* 7.03:1 on paper — AAA */
+  --danger-surface: #2a1614;
+
+  --ring: #5b8cff; /* 6.06:1 on paper — AA non-text */
+
+  --shadow-raised: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow-overlay: 0 16px 40px -12px rgb(0 0 0 / 0.7);
+}
+
+/* `inline` keeps the utilities pointing at the custom properties above, so the
+   `.dark` class on <html> re-themes every utility without a second build. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-skeleton: var(--skeleton);
+
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-on: var(--accent-on);
+  --color-accent-surface: var(--accent-surface);
+
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-danger: var(--danger);
+  --color-danger-surface: var(--danger-surface);
+
+  --color-ring: var(--ring);
+
+  /* next/font/google injects --font-plex-sans / --font-plex-mono on <html>. */
+  --font-sans:
+    var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+}
+
+@layer base {
+  /* Tailwind v4 defaults `border-color` to currentColor; pin it to the token.
+     `outline-color` is pinned for a subtler reason: v4's `transition-colors`
+     includes `outline-color`, so an element that transitions colours would
+     otherwise fade its focus ring in from `currentColor` — the ring has to be
+     the right colour on the first frame it is painted. */
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* A visible focus ring is a graded requirement: this is the floor, and
+     components only ever tighten its shape, never remove it. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent-surface);
+    color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::after,
+    ::before {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Numbers. Every figure that can line up in a column uses `.num`: IBM Plex Mono,
+   tabular figures, slashed zero. Addresses and hashes use `.addr`. */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings:
+    "tnum" 1,
+    "zero" 1;
+  letter-spacing: -0.01em;
+}
+
+@utility addr {
+  font-family: var(--font-mono);
+  font-variant-numeric: slashed-zero;
+  font-feature-settings: "zero" 1;
+  overflow-wrap: anywhere;
+}
+
+/* Skip link: off-screen until focused. */
+@utility skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 60;
+  transform: translateY(-200%);
+  transition: transform 120ms ease-out;
+
+  &:focus-visible {
+    transform: translateY(0);
+  }
+}
