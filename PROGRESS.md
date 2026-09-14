@@ -28,6 +28,19 @@ Founders: read the latest entry first. "Needs from founders" items block only re
 - Wrote `ARCHITECTURE.md`, `COMPLIANCE_RULES.md`, `RISKS.md`, and the README's real-vs-simulated
   table. Recorded D30–D48 in `PLAN.md`.
 
+**Verified end to end on a local chain (the Phase 5 checkpoint, run by hand)**
+- Fresh Anvil → `make deploy-local` → `make seed` → `make push`. Every contract address and every
+  creation tx hash came out byte-identical to the committed `deployments/anvil.json`; only the
+  timestamp moved, so D15's determinism claim holds.
+- On-chain `nav()` returned `1003061` and `nav.json`'s `nav.usdc_6dec` is `1003061`. They match, so
+  the Phase 5 checkpoint passes.
+- Pushing a second time did nothing, as D30 requires: *"on-chain nav already equals 1003061 and was
+  set on 2026-09-14 (UTC), on or after as_of 2026-09-14."*
+- The attestation was signed with a throwaway key and then verified **with Foundry's
+  `cast wallet verify`**, not with the `eth_account` library that produced it, so the signature is
+  confirmed by an independent implementation of the same EIP-191 scheme viem uses in the browser.
+  Flipping a single digit in the signed message made verification fail, as it must.
+
 **Broke / surprised**
 - The yield solver was quietly wrong. It stopped on an absolute 1e-14 step in yield units, which is
   smaller than the smallest representable step near maturity, so it reported failure *after*
