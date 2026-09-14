@@ -24,18 +24,24 @@ quote_style = "double"
 number_underscore = "thousands"
 wrap_comments = true
 
+# Property tests (test/HBToken.fuzz.t.sol). The seed is pinned so a CI failure is reproducible locally with the
+# same command; `--fuzz-seed` overrides it when a wider search is wanted.
 [fuzz]
 runs = 512
 seed = "0x4869744269746531"
 
+# Stateful invariants (test/invariant/). `fail_on_revert = true` is deliberate: HBTokenHandler bounds every input
+# and returns early when a precondition cannot be met, so no call it makes may revert. A revert here is therefore a
+# finding, not fuzzer noise. The default profile (128 x 256 = 32,768 handler calls) finishes in a few seconds; the
+# `ci` profile doubles the campaign.
 [invariant]
 runs = 128
-depth = 64
-fail_on_revert = false
+depth = 256
+fail_on_revert = true
 
 [profile.ci]
 fuzz = { runs = 2048 }
-invariant = { runs = 256, depth = 96 }
+invariant = { runs = 256, depth = 256, fail_on_revert = true }
 
 [rpc_endpoints]
 anvil = "${ANVIL_RPC_URL}"

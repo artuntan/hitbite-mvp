@@ -633,4 +633,111 @@ contract HBTokenCouponTest is BaseTest {
         assertEq(token.vaultBalance(), 1);
         assertEq(token.availableLiquidity(), 0);
     }
+
+    // ------------------------------------------------------------------ index bookkeeping across a full exit
+    /// @dev A holder who exits completely and comes back later must not be credited for the distributions that
+    ///      happened while away. The mint on the way back in settles the account first (with a zero balance), which
+    ///      is what moves `userIndex` forward without paying anything. Phase 2 addition: the fuzz and invariant
+    ///      suites lean on this, so it gets a worked example of its own.
+    function test_exitAndReSubscribe_doesNotInheritIndexGrowthWhileAway() public {
+        _subscribe(alice, 1000e6); // 1000e18
+        _subscribe(bob, 1000e6); // 1000e18, supply 2000e18
+
+        // #1: perToken = 100e6 * 1e18 / 2000e18 = 50_000 ; nav 1_000_000 -> 950_000
+        _distribute(100e6);
+        assertEq(token.couponIndex(), 50_000);
+        vm.prank(alice);
+        assertEq(token.claimCoupon(), 50e6); // 1000e18 * 50_000 / 1e18
+
+        // alice exits completely: 1000e18 * 950_000 / 1e18 = 950e6
+        vm.prank(alice);
+        assertEq(token.redeem(1000e18), 950e6);
+        assertEq(token.balanceOf(alice), 0);
+        assertEq(token.userIndex(alice), 50_000);
+
+        // #2 lands while alice is out: perToken = 60e6 * 1e18 / 1000e18 = 60_000 ; nav 950_000 -> 890_000
+        _distribute(60e6);
+        assertEq(token.couponIndex(), 110_000);
+        assertEq(token.nav(), 890_000);
+
+        // Back in at the new NAV: 890e6 * 1e18 / 890_000 = 1000e18 again.
+        _subscribe(alice, 890e6);
+        assertEq(token.balanceOf(alice), 1000e18);
+        assertEq(token.userIndex(alice), 110_000, "re-entry did not re-anchor the user index");
+        assertEq(token.pendingCoupon(alice), 0, "re-subscriber inherited a distribution it was not present for");
+
+        // #3 with both holders back at 1000e18 each: perToken = 50_000.
+        _distribute(100e6);
+        assertEq(token.pendingCoupon(alice), 50e6, "alice was paid for more than the distribution she held through");
+        assertEq(token.pendingCoupon(bob), 160e6, "bob was not paid for all three distributions");
+
+        vm.prank(alice);
+        token.claimCoupon();
+        vm.prank(bob);
+        token.claimCoupon();
+        assertEq(token.totalClaimed(), 260e6);
+        assertEq(token.totalDistributed(), 260e6);
+        assertEq(token.couponReserve(), 0, "nothing should be left reserved when every share divides evenly");
+    }
+
+    // ------------------------------------------------------------------ reserve covers every holder (D6 invariant)
+    /// @dev The deterministic companion to `invariant_couponReserveCoversEveryPendingCoupon`: with fractional
+    ///      balances every holder's settlement truncates, so the reserve ends up strictly above the sum of what
+    ///      holders can claim, never below it. Every number below is worked by hand.
+    function test_couponReserveCoversEveryPendingCoupon_withFractionalBalances() public {
+        _verify(carol, COUNTRY_GB);
+        vm.startPrank(issuer);
+        token.mint(alice, 1.5e18);
+        token.mint(bob, 2.5e18);
+        token.mint(carol, 3e18);
+        vm.stopPrank();
+        assertEq(token.totalSupply(), 7e18);
+
+        // #1: 21 units over 7e18 tokens -> perToken = 3 ; allocated = ceil(3 * 7e18 / 1e18) = 21 (no remainder).
+        _distribute(21);
+        assertEq(token.couponIndex(), 3);
+        assertEq(token.totalAllocated(), 21);
+        assertEq(token.pendingCoupon(alice), 4); // floor(1.5 * 3) = 4 (0.5 truncated)
+        assertEq(token.pendingCoupon(bob), 7); // floor(2.5 * 3) = 7 (0.5 truncated)
+        assertEq(token.pendingCoupon(carol), 9); // 3 * 3 exactly
+        assertEq(token.couponReserve(), 21);
+        assertGe(token.couponReserve(), _totalPending(), "reserve below what holders can claim");
+        assertEq(token.couponReserve() - _totalPending(), 1, "settlement dust is not the expected single unit");
+
+        // A transfer settles both sides, so the dust already taken cannot be taken twice.
+        vm.prank(alice);
+        token.transfer(carol, 0.5e18);
+        assertEq(token.accrued(alice), 4);
+        assertEq(token.accrued(carol), 9);
+
+        // #2: 14 units over the same 7e18 supply -> perToken = 2 ; allocated = 14.
+        _distribute(14);
+        assertEq(token.couponIndex(), 5);
+        assertEq(token.pendingCoupon(alice), 6); // 4 + floor(1.0 * 2)
+        assertEq(token.pendingCoupon(bob), 12); // floor(2.5 * 5) = 12 (never settled in between)
+        assertEq(token.pendingCoupon(carol), 16); // 9 + floor(3.5 * 2)
+        assertEq(token.totalAllocated(), 35);
+        assertGe(token.couponReserve(), _totalPending(), "reserve below what holders can claim");
+
+        vm.prank(alice);
+        assertEq(token.claimCoupon(), 6);
+        vm.prank(bob);
+        assertEq(token.claimCoupon(), 12);
+        vm.prank(carol);
+        assertEq(token.claimCoupon(), 16);
+
+        // Everyone has claimed: what is left is settlement dust, bounded by the holder count (D29), and it is not
+        // redeemable liquidity.
+        assertEq(token.totalClaimed(), 34);
+        assertEq(token.couponReserve(), 1);
+        assertLe(token.couponReserve(), 3, "dust above one unit per holder");
+        assertEq(token.vaultBalance(), 1);
+        assertEq(token.availableLiquidity(), 0);
+        assertEq(_totalPending(), 0);
+    }
+
+    /// @dev Sum of what every holder in this file can still claim.
+    function _totalPending() internal view returns (uint256) {
+        return token.pendingCoupon(alice) + token.pendingCoupon(bob) + token.pendingCoupon(carol);
+    }
 }
