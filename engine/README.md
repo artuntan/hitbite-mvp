@@ -17,6 +17,10 @@ uv run nav-engine compute --as-of 2026-09-15 --no-chain \
     --distributions tests/fixtures/distributions_fixture.csv --out /tmp/hitbite-nav-out
 uv run nav-engine compute --no-chain                                     # today (UTC) -> web/public/data
 uv run nav-engine schemas --out ../web/public/schemas                    # JSON schemas of the outputs
+
+ATTESTOR_PRIVATE_KEY=0x... uv run nav-engine attest                      # sign attestation.json
+uv run nav-engine attest --verify ../web/public/data/attestation.json    # check a published one
+ORACLE_PRIVATE_KEY=0x... uv run nav-engine push --rpc "$RPC" --token "$HBTOKEN" --dry-run
 ```
 
 ## Purpose
@@ -28,8 +32,9 @@ uv run nav-engine schemas --out ../web/public/schemas                    # JSON 
   is configured; otherwise fall back to a cached supply with a visible warning (never crash).
 - Produce yield-shift and CDS-shock scenarios, a trailing distribution yield, and portfolio risk
   (market-value weighted YTM, modified duration, convexity).
-
-Phase 5 adds `push_nav` (oracle) and `attest` (signed attestation) on top of these outputs.
+- Sign the computed state as an attestation (`attest`) and publish the NAV integer on chain
+  (`push`, `HBToken.setNAV`) - the two steps that turn the computed number into something a
+  reviewer, a partner and the contract all see identically.
 
 ## Data model (`data/`)
 
@@ -69,6 +74,9 @@ The binding conventions, with the hand-built numbers the tests tie out to, are i
 | `distributions.py` | Load/merge/write `distributions.csv` (idempotent upsert by `distribution_id`). |
 | `outputs.py` | Build and write the four documents; `nav_history.json` is upserted by date. |
 | `pipeline.py` | `run_compute(ComputeOptions)` - the one call the CLI and the tests use. |
+| `keys.py` | `ORACLE_PRIVATE_KEY` / `ATTESTOR_PRIVATE_KEY` loaded from the environment only; the key never appears in `repr`, `str`, a log line or an exception. |
+| `attest.py` | Canonical JSON of the computed state, EIP-191 `personal_sign`, verification, `attestation.json` (D9). |
+| `push_nav.py` | Rail, role and idempotency checks against the deployed contract, then `setNAV` (D5, D27). |
 
 Money is `decimal.Decimal` throughout (40-digit context) and is rounded HALF_UP only when written
 (cents for USD, 6 decimals for the unit NAV). Yields and risk measures are floats.
@@ -79,6 +87,9 @@ Money is `decimal.Decimal` throughout (40-digit context) and is rounded HALF_UP 
 nav-engine compute [--as-of YYYY-MM-DD] [--data-dir DIR] [--out DIR]
                    [--rpc URL] [--token ADDRESS | --deployment PATH] [--chain-id N] [--no-chain]
                    [--distributions PATH] [--from-block N] [--generated-at ISO8601] [--no-write]
+nav-engine attest  [--in DIR] [--out DIR] [--generated-at ISO8601] [--verify PATH]
+nav-engine push    [--nav PATH] [--rpc URL] [--token ADDRESS | --deployment PATH]
+                   [--force --reason TEXT] [--dry-run]
 nav-engine schemas --out DIR
 nav-engine --version
 ```
@@ -87,13 +98,19 @@ nav-engine --version
 - `--deployment` reads `addresses.HBToken` (and `chainId`) from `contracts/deployments/<chain>.json`.
   Environment fallbacks: `NAV_ENGINE_RPC_URL`, `NAV_ENGINE_TOKEN_ADDRESS`, `NAV_ENGINE_CHAIN_ID`,
   `NAV_ENGINE_DEPLOYMENT` (a `.env` file is loaded if present; never commit one).
-- `--generated-at` pins the timestamp for reproducible runs (tests and CI diffs).
+- `--generated-at` pins the timestamp for reproducible runs (tests and CI diffs). For `attest` it
+  also pins the signed `generated_at`/`timestamp`; by default the attestation carries the
+  `generated_at` of the run it attests to.
+- `attest --in` is the directory holding `nav.json` and `holdings.json` (default `web/public/data`);
+  `--out` defaults to `--in`. `--verify PATH` checks a published attestation and needs no key.
+- `push --nav` defaults to `web/public/data/nav.json`; `--dry-run` reads the chain, prints the
+  decision and sends nothing; `--force` requires `--reason` and `DEFAULT_ADMIN_ROLE`.
 - Bad input exits with status 2 and a one-line `error: ...` on stderr; warnings (chain fallback,
   ignored distributions) go to stderr and are also written into `nav.json`.
 
 ## Outputs (`web/public/data/`)
 
-All four documents carry `generated_at` (UTC, `Z`), `simulated: true` and `source_note`
+Every document carries `generated_at` (UTC, `Z`), `simulated: true` and `source_note`
 (the portfolio note plus a one-line engine note). Decimals are strings with a fixed scale.
 
 - `nav.json` - `chain` (`chain_id`, `token_address`, `total_supply_tokens`, `total_supply_wei`,
@@ -107,9 +124,137 @@ All four documents carry `generated_at` (UTC, `Z`), `simulated: true` and `sourc
   Regenerated from inception on every run and merged with existing entries by date.
 - `scenarios.json` - `assumptions`, `base`, `parallel[]` (`shift_bp`, NAV, delta), `cds[]`
   (`shock_bp`, `beta`, `shift_bp`, NAV, delta).
+- `attestation.json` - written by `nav-engine attest`, not by `compute`: the signed payload plus the
+  signature block (see [Attestation](#attestation-nav-engine-attest-planmd-d9)).
 
 `nav-engine schemas --out DIR` writes `nav.schema.json`, `holdings.schema.json`,
-`nav_history.schema.json` and `scenarios.schema.json` for the web app.
+`nav_history.schema.json` and `scenarios.schema.json` for the web app. The attestation document is
+typed by `nav_engine.schemas.AttestationDocument` (pydantic) rather than a published JSON schema.
+
+## Keys
+
+`nav_engine/keys.py` is the only place a private key is read, and it reads `os.environ` - never a
+file, never a keystore, never a default:
+
+| Variable | Used by | Role needed on HBToken |
+|---|---|---|
+| `ORACLE_PRIVATE_KEY` | `nav-engine push` | `ORACLE_ROLE`, or `DEFAULT_ADMIN_ROLE` for `--force` |
+| `ATTESTOR_PRIVATE_KEY` | `nav-engine attest` | none (off-chain signature) |
+
+A loaded key is a `SigningKey` that exposes the address and the public key and nothing else: the
+secret is absent from `repr`, `str` and every exception the module raises, including the ones the
+underlying library would have raised with the key quoted in the text. A missing or malformed value
+gives an actionable message naming the variable and the expected shape, and the value is never echoed.
+`nav-engine` loads a local, git-ignored `.env` for convenience exactly as `compute` does; in CI the
+key comes from the protected `oracle` GitHub environment and no file exists on the runner.
+
+## Attestation (`nav-engine attest`, PLAN.md D9)
+
+> **Simulated attestor - an independent firm signs in production.** The label is in the code, in the
+> signed payload, in the signature block and on the transparency page.
+
+`attest` reads `nav.json` and `holdings.json` from one engine run and writes `attestation.json`:
+
+- **Payload** (`attestation`): `version`, `generated_at` + `timestamp` (Unix seconds), `as_of`,
+  `simulated: true`, `attestor_note`, `source_note`, `chain` (token address, chain id, supply and
+  on-chain NAV with the `supply_source` that produced them), `nav` (per-token string, `usdc_6dec`
+  integer, total, reference units, reported AUM), `cash_usd`, `fees_payable_usd`,
+  `sum_market_value_usd`, `positions_count`, `holdings[]` (name, ISIN, coupon, maturity, face,
+  supply-scaled face, clean/accrued/dirty, market value) and `supply_backed_ratio`.
+- **Signature block** (`signature`): `scheme`, `message` (the exact canonical JSON string that was
+  signed), `message_sha256`, `signature`, `attestor_address`, `attestor_public_key` (SEC1
+  uncompressed, `0x04…`), `attestor_note`, `verify_with`.
+
+Canonical form: `json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`
+encoded UTF-8. Every value is a string, an integer or a boolean - floats are rejected outright - so
+the same state always produces the same bytes and therefore the same signature (ECDSA here is
+deterministic, RFC 6979). Money strings are the ones `nav.json` and `holdings.json` already publish,
+so an attestation cannot disagree with the documents it attests to.
+
+`supply_backed_ratio` divides the book value of the tokens outstanding (engine NAV x `totalSupply`)
+by their on-chain NAV liability (on-chain `nav()` x `totalSupply`), scaled `1e18` like
+`HBToken.supplyBackedRatio()`. It deliberately excludes the vault's USDC balance, which the engine
+does not read, so the on-chain ratio is this figure plus available liquidity. With no chain data it
+is exactly `1.000000` and `basis` says why.
+
+### Verifying in the browser (Phase 6, `viem`)
+
+The signature is EIP-191 `personal_sign` over the UTF-8 bytes of `signature.message`, which is
+byte-for-byte the format `viem` produces and consumes:
+
+```ts
+import { verifyMessage } from "viem";
+
+const doc = await fetch("/data/attestation.json").then((r) => r.json());
+const valid = await verifyMessage({
+  address: doc.signature.attestor_address,
+  message: doc.signature.message, // the exact string that was signed - do not re-serialise
+  signature: doc.signature.signature,
+});
+// and the payload on screen is the payload that was signed:
+const sameDocument =
+  JSON.stringify(JSON.parse(doc.signature.message)) === JSON.stringify(doc.attestation);
+```
+
+Verify against `signature.message`, not against a re-serialisation of `doc.attestation`: the payload
+contains non-ASCII text (`Türkiye`, the em dash in the attestor note), and EIP-191 hashes the *byte*
+length of the message. `tests/test_attest.py` pins that digest by rebuilding
+`keccak256("\x19Ethereum Signed Message:\n" + byteLength + bytes)` by hand.
+
+Python verification, used by the tests and by `nav-engine attest --verify PATH`, re-canonicalises the
+payload, recomputes the SHA-256 and recovers the address with `eth_account`. Any single-byte change
+to the payload, the message, the hash or the signature fails it.
+
+## Oracle push (`nav-engine push`, BUILD_PROMPT 6.3)
+
+`push` sends `nav.json`'s `nav.usdc_6dec` integer to `HBToken.setNAV(newNav, newReportedAUM, force)`
+with `ORACLE_PRIVATE_KEY`, and computes `newReportedAUM = nav x totalSupply / 1e18` from the supply
+it reads at push time (PLAN.md D19/D22: one integer in the JSON, on chain and in the UI).
+
+Three checks run before a transaction is built, because each of them is a revert nobody should pay
+gas to discover:
+
+1. **Chain.** A known mainnet chain id is refused outright; an unrecognised one warns.
+2. **Role.** `hasRole(ORACLE_ROLE, signer)` - or `DEFAULT_ADMIN_ROLE` with `--force` - is read from
+   the contract, and a missing role is reported by name.
+3. **Rail (D5, D27).** `maxNavMoveBps` and `railAnchorNav` are read from the deployed contract, so
+   this check cannot drift from the deployed rail. The contract measures the move against the NAV at
+   the *start of the 24 h window*, not against the previous update. When the window is within two
+   minutes of rolling, the move must clear both the current anchor and the post-roll anchor, since
+   the operator cannot know which block will include the transaction. A breach prints the anchor, the
+   move in basis points, the rail, the time the window rolls, and the `--force` alternative.
+
+**Idempotency rule.** A NAV counts as already pushed when the on-chain `nav()` is already exactly
+`nav.json`'s integer **and** `navUpdatedAt` falls on or after the document's `as_of` (UTC date). The
+command then prints what it found and exits 0 without sending. A *different* value is a revision, not
+a repeat, and is pushed even on the same day - the rail still applies.
+
+**`--force` is admin-only.** It maps to the contract's `force = true`, which `HBToken` restricts to
+`DEFAULT_ADMIN_ROLE`; it bypasses the rail *and* the idempotency skip, restarts the rail window at the
+new NAV and emits `NAVForced`. It requires `--reason "<why>"`, which is printed with the push and
+echoed in the workflow log. Use it for a genuine correction, not to make a wide move fit.
+
+```sh
+# Anvil runbook (deploy and grant ORACLE_ROLE first; see contracts/README.md)
+uv run nav-engine compute --rpc http://127.0.0.1:8545 --deployment ../contracts/deployments/anvil.json
+ORACLE_PRIVATE_KEY=0x... uv run nav-engine push \
+    --rpc http://127.0.0.1:8545 --deployment ../contracts/deployments/anvil.json --dry-run
+ORACLE_PRIVATE_KEY=0x... uv run nav-engine push \
+    --rpc http://127.0.0.1:8545 --deployment ../contracts/deployments/anvil.json
+```
+
+Exit codes: `0` sent, or nothing to do; `2` refused (bad configuration, missing key or role, rail
+breach, revert) with a one-line `error: ...` on stderr. Nothing is sent on a refusal.
+
+## Scheduling (BUILD_PROMPT 6.4)
+
+| Workflow | Trigger | Keys | What it does |
+|---|---|---|---|
+| `.github/workflows/nav-daily.yml` | cron 06:00 UTC + manual | none | Runs `compute` (chain read-only, optional) and opens a PR with the refreshed JSON via `peter-evans/create-pull-request`. `generated_at` is pinned to 06:00 UTC of the valuation date, so a second run on the same day produces identical bytes and no empty PR. |
+| `.github/workflows/oracle-push.yml` | `workflow_dispatch` only, environment `oracle` | `ORACLE_PRIVATE_KEY` from the environment's secrets | Recomputes the NAV for the chosen date and runs `push`. Manual and protected on purpose: this is the only workflow that signs, `dry_run` defaults to true, and the environment's required reviewers put a second person in front of every push. |
+
+Signing the attestation is not automated either: run `nav-engine attest` locally with the attestor
+key, or add the step to a protected environment. The daily workflow never touches a key.
 
 ## Chain fallback behaviour
 
@@ -132,7 +277,21 @@ engine stops with `no clean price for ... on or before ...`. Then run `uv run na
 
 ## Tests
 
-`uv run pytest` runs ~100 tests: hand cases for the day count and accrued interest, YTM round
+`uv run pytest` runs ~185 tests: hand cases for the day count and accrued interest, YTM round
 trips, per-position and per-day tie-out to `tests/fixtures/*.csv` (built independently by
 `tests/fixtures/build_fixture.py`, which does not import `nav_engine`), scenarios, distribution
-yield, chain conversion and fallback, output schemas/idempotency and the CLI end to end.
+yield, chain conversion and fallback, output schemas/idempotency and the CLI end to end; then
+`test_keys.py` (no key may leak through `str`, `repr` or a raised error), `test_attest.py`
+(sign -> verify, single-byte tamper detection, canonical stability across dict ordering, a JSON
+round trip and a write/read cycle, and the EIP-191 digest `viem` computes) and `test_push_nav.py`.
+
+`test_push_nav.py` runs the rail, idempotency, force and guard logic with no chain at all, and then
+spawns a real **Anvil on port 8546**, deploys `MockUSDC`, `IdentityRegistry` and `HBToken` with
+`forge create`, grants `ORACLE_ROLE`, mints 1000 hbTRS and pushes a real `nav.json`, asserting that
+on-chain `nav()` equals `nav.usdc_6dec` exactly, that a second push sends nothing, that a move beyond
+the rail is refused without mining a block, and that `--force` needs `DEFAULT_ADMIN_ROLE`. Those six
+tests skip with a reason - they never fail - when Foundry is absent or the port is busy:
+
+```
+SKIPPED [6] anvil/forge not on PATH: install Foundry (foundryup) to run the chain tests
+```

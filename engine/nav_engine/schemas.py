@@ -4,6 +4,8 @@ Input models validate ``portfolio.json``, ``prices.csv`` rows, ``config.yaml`` a
 Output models are the contract with the web app: Decimals serialise as fixed-scale strings
 (USD to 2 dp, per-unit NAV to 6 dp) next to integer ``usdc_6dec`` fields (PLAN.md D22).
 ``export_json_schemas`` writes the serialisation-mode JSON schema of each output document.
+The attestation models at the end of this module type ``attestation.json`` (PLAN.md D9): the payload is
+signed as canonical JSON, so every value in it is a string, an integer or a boolean - never a float.
 """
 
 from __future__ import annotations
@@ -359,6 +361,112 @@ class ScenariosDocument(OutputModel):
     base: ScenarioBase
     parallel: list[ParallelScenario]
     cds: list[CdsScenario]
+
+
+# --------------------------------------------------------------------------- attestation (D9)
+ATTESTATION_VERSION = "hitbite.attestation.v1"
+"""Schema tag written into every attestation payload; bump it when the payload shape changes."""
+
+ATTESTOR_NOTE = "Simulated attestor — an independent firm signs in production."
+"""Said in the code, in the payload, next to the signature and in the UI. Never drop it."""
+
+SIGNATURE_SCHEME = "EIP-191 personal_sign (secp256k1)"
+
+VERIFY_HINT = (
+    "Browser: viem verifyMessage({ address: attestor_address, message, signature }). "
+    "Python: eth_account.Account.recover_message(encode_defunct(text=message), signature=signature)."
+)
+
+
+class AttestationHolding(OutputModel):
+    """One attested position: identity and value only (risk analytics stay in holdings.json)."""
+
+    name: str
+    isin: str
+    illustrative: Literal[True] = True
+    coupon_pct: Fixed4
+    maturity: date
+    face_usd: Usd2
+    scaled_face_usd: Usd2 | None
+    clean_price: Fixed4
+    accrued_usd: Usd2
+    dirty_price: Fixed8
+    market_value_usd: Usd2
+
+
+class AttestationChain(OutputModel):
+    """Token supply the attestation is anchored to, and where it came from."""
+
+    chain_id: int | None
+    token_address: str | None
+    total_supply_wei: str | None
+    total_supply_tokens: Tokens18 | None
+    onchain_nav_usdc_6dec: int | None
+    supply_source: SupplySource
+
+
+class AttestationNav(OutputModel):
+    per_token_usd: Unit6
+    usdc_6dec: int
+    total_usd: Usd2
+    reference_units: Fixed10
+    reported_aum_usd: Usd2 | None
+    reported_aum_usdc_6dec: int | None
+
+
+class SupplyBackedRatio(OutputModel):
+    """Computed book value of the tokens outstanding over their on-chain NAV liability (D20)."""
+
+    ratio: Unit6
+    ratio_1e18: str
+    assets_usdc_6dec: int | None
+    liabilities_usdc_6dec: int | None
+    basis: str
+
+
+class AttestationPayload(OutputModel):
+    """The signed document: exactly these bytes (canonical JSON) are what the signature covers."""
+
+    version: Literal["hitbite.attestation.v1"] = "hitbite.attestation.v1"
+    generated_at: str
+    timestamp: int
+    """``generated_at`` as Unix seconds (UTC), so verifiers need not parse the string."""
+    as_of: date
+    simulated: Literal[True] = True
+    attestor_note: str = ATTESTOR_NOTE
+    source_note: str
+    chain: AttestationChain
+    nav: AttestationNav
+    cash_usd: Usd2
+    fees_payable_usd: Usd2
+    sum_market_value_usd: Usd2
+    positions_count: int
+    holdings: list[AttestationHolding]
+    supply_backed_ratio: SupplyBackedRatio
+
+
+class AttestationSignature(OutputModel):
+    """The signature block published next to the payload."""
+
+    scheme: Literal["EIP-191 personal_sign (secp256k1)"] = "EIP-191 personal_sign (secp256k1)"
+    message: str
+    """The exact canonical JSON string that was signed (UTF-8); verify against this, not a re-serialisation."""
+    message_sha256: str
+    signature: str
+    attestor_address: str
+    attestor_public_key: str
+    attestor_note: str = ATTESTOR_NOTE
+    verify_with: str = VERIFY_HINT
+
+
+class AttestationDocument(OutputModel):
+    """``attestation.json``: payload plus signature block."""
+
+    generated_at: str
+    simulated: Literal[True] = True
+    source_note: str
+    attestation: AttestationPayload
+    signature: AttestationSignature
 
 
 OUTPUT_DOCUMENTS: dict[str, type[BaseModel]] = {

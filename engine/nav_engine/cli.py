@@ -1,4 +1,4 @@
-"""Command-line entry point for the NAV engine: ``nav-engine compute`` and ``nav-engine schemas``."""
+"""Command-line entry point: ``nav-engine compute | push | attest | schemas``."""
 
 from __future__ import annotations
 
@@ -13,11 +13,21 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from nav_engine import __version__
+from nav_engine.attest import (
+    attestation_summary,
+    build_attestation,
+    load_attestation,
+    load_run_documents,
+    verify_attestation,
+    write_attestation,
+)
 from nav_engine.chain import ChainReader, Web3ChainReader
 from nav_engine.errors import DataError, EngineError
+from nav_engine.keys import load_attestor_key, load_oracle_key
 from nav_engine.money import fmt_fixed
 from nav_engine.outputs import parse_generated_at
 from nav_engine.pipeline import ComputeOptions, run_compute
+from nav_engine.push_nav import OracleClient, OracleError, load_nav_document, push_nav
 from nav_engine.schemas import export_json_schemas
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -92,6 +102,74 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compute.add_argument(
         "--no-write", action="store_true", help="compute and print, do not write files"
+    )
+
+    attest = sub.add_parser(
+        "attest",
+        help="sign attestation.json over the computed state (simulated attestor)",
+        description=(
+            "Build attestation.json from the nav.json and holdings.json of one engine run, sign "
+            "the canonical JSON with ATTESTOR_PRIVATE_KEY (EIP-191 personal_sign) and publish the "
+            "signature, address and public key beside it. Simulated attestor - an independent firm "
+            "signs in production."
+        ),
+    )
+    attest.add_argument(
+        "--in",
+        dest="in_dir",
+        type=Path,
+        default=DEFAULT_OUT_DIR,
+        help=f"directory holding nav.json and holdings.json (default: {DEFAULT_OUT_DIR})",
+    )
+    attest.add_argument(
+        "--out", type=Path, default=None, help="directory for attestation.json (default: --in)"
+    )
+    attest.add_argument(
+        "--generated-at",
+        default=None,
+        help="override the timestamp stamped and signed (default: the run's generated_at)",
+    )
+    attest.add_argument(
+        "--verify",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="verify an existing attestation.json and exit; needs no key",
+    )
+
+    push = sub.add_parser(
+        "push",
+        help="send the computed NAV on chain (HBToken.setNAV, ORACLE_PRIVATE_KEY)",
+        description=(
+            "Read nav.json and send its nav.usdc_6dec integer to HBToken.setNAV. The contract's own "
+            "maxNavMoveBps and railAnchorNav are checked first, the signer's role is checked first, "
+            "and a NAV already on chain for this as_of date is not pushed twice. Testnet only."
+        ),
+    )
+    push.add_argument(
+        "--nav",
+        type=Path,
+        default=DEFAULT_OUT_DIR / "nav.json",
+        help=f"nav.json to push (default: {DEFAULT_OUT_DIR / 'nav.json'})",
+    )
+    push.add_argument("--rpc", default=None, help=f"JSON-RPC URL (or ${ENV_RPC})")
+    push.add_argument("--token", default=None, help=f"HBToken address (or ${ENV_TOKEN})")
+    push.add_argument(
+        "--deployment",
+        type=Path,
+        default=None,
+        help=f"contracts/deployments/<chain>.json with addresses.HBToken (or ${ENV_DEPLOYMENT})",
+    )
+    push.add_argument(
+        "--force",
+        action="store_true",
+        help="admin override (DEFAULT_ADMIN_ROLE): bypass the rail and the once-per-day rule; requires --reason",
+    )
+    push.add_argument(
+        "--reason", default=None, help="why the override is justified; logged with the push"
+    )
+    push.add_argument(
+        "--dry-run", action="store_true", help="read the chain and print the decision, send nothing"
     )
 
     schemas = sub.add_parser("schemas", help="write JSON schemas of the output documents")
@@ -179,6 +257,80 @@ def _cmd_compute(args: argparse.Namespace) -> int:
     return 0
 
 
+def _resolve_push_target(args: argparse.Namespace) -> tuple[str, str]:
+    """RPC URL and HBToken address for ``push``.
+
+    Explicit flags beat the environment, and ``--deployment`` beats ``--token``: a command that
+    sends a transaction should never leave any doubt about which contract it addressed.
+    """
+    load_dotenv()
+    rpc = args.rpc or os.environ.get(ENV_RPC)
+    env_deployment = Path(os.environ[ENV_DEPLOYMENT]) if os.environ.get(ENV_DEPLOYMENT) else None
+    token: str | None
+    if args.deployment is not None:
+        token, _ = _read_deployment(args.deployment)
+    elif args.token:
+        token = args.token
+    elif env_deployment is not None:
+        token, _ = _read_deployment(env_deployment)
+    else:
+        token = os.environ.get(ENV_TOKEN)
+    if not rpc:
+        raise DataError(f"no RPC endpoint: pass --rpc or set ${ENV_RPC}")
+    if not token:
+        raise DataError(
+            f"no HBToken address: pass --token, --deployment, ${ENV_TOKEN} or ${ENV_DEPLOYMENT}"
+        )
+    return rpc, token
+
+
+def _cmd_push(args: argparse.Namespace) -> int:
+    if args.force and not (args.reason or "").strip():
+        raise OracleError(
+            "--force requires --reason: the override is admin-only (DEFAULT_ADMIN_ROLE) and the "
+            "reason is logged with the push"
+        )
+    rpc, token = _resolve_push_target(args)
+    document = load_nav_document(args.nav)
+    key = load_oracle_key()
+    print(f"oracle {key.address} -> HBToken {token} via {rpc}")
+    result = push_nav(
+        OracleClient(rpc, token),
+        document,
+        key,
+        force=args.force,
+        reason=args.reason,
+        dry_run=args.dry_run,
+    )
+    for warning in result.warnings:
+        print(f"warning: {warning}", file=sys.stderr)
+    for line in result.lines():
+        print(line)
+    return 0
+
+
+def _cmd_attest(args: argparse.Namespace) -> int:
+    if args.verify is not None:
+        document = load_attestation(args.verify)
+        result = verify_attestation(document)
+        if not result.ok:
+            print(f"error: {args.verify} does not verify: {result.summary()}", file=sys.stderr)
+            return 2
+        print(f"{args.verify}: {result.summary()}")
+        print(attestation_summary(document))
+        return 0
+    load_dotenv()
+    nav, holdings = load_run_documents(args.in_dir)
+    key = load_attestor_key()
+    document = build_attestation(nav, holdings, key, generated_at=args.generated_at)
+    target = write_attestation(args.out or args.in_dir, document)
+    print(attestation_summary(document))
+    print(f"signature {document.signature.signature}")
+    print(f"message sha256 {document.signature.message_sha256}")
+    print(f"wrote attestation: {target}")
+    return 0
+
+
 def _cmd_schemas(args: argparse.Namespace) -> int:
     for target in export_json_schemas(args.out):
         print(f"wrote {target}")
@@ -194,6 +346,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "compute":
             return _cmd_compute(args)
+        if args.command == "push":
+            return _cmd_push(args)
+        if args.command == "attest":
+            return _cmd_attest(args)
         if args.command == "schemas":
             return _cmd_schemas(args)
     except EngineError as exc:
