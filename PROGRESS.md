@@ -41,6 +41,29 @@ Founders: read the latest entry first. "Needs from founders" items block only re
   confirmed by an independent implementation of the same EIP-191 scheme viem uses in the browser.
   Flipping a single digit in the signed message made verification fail, as it must.
 
+**Phase 6 (web) — shipped and measured**
+- Design system, app shell, typed data layer, five public API routes, contract sync, and the
+  Overview and Transparency pages. 80 unit tests and 19 Playwright tests.
+- **Lighthouse, against a production build, as D16 requires:**
+
+  | Page | Performance | Accessibility | Best practices |
+  |---|---|---|---|
+  | `/` | 97 | 100 | 100 |
+  | `/transparency` | 97 | 100 | 100 |
+
+  The checkpoint is 90. No wallet code reaches either page: the whole wagmi and RainbowKit tree is
+  confined to `lib/wagmi.ts`, which nothing on a public page imports.
+- I ran the acceptance myself, because the acceptance agent died on a spend limit. Checked by hand:
+  every Section 15 copy block is byte-for-byte verbatim; the NAV check renders "Not checked" and
+  explicitly warns against reading it as a pass when no deployment is recorded; `/api/attestation`
+  says no attestation has been published and names the command that would publish one; and no
+  mainnet chain id or RPC appears anywhere under `web/`.
+- Two defects found and fixed during that pass. `/transparency` shipped but was linked from nowhere,
+  because its entry was still in the planned-routes list. And the hardened secret scan correctly
+  flagged deployment tx hashes in newly generated files — they are public chain data, so the
+  generator now emits the `allow-secret` marker itself rather than the marker being hand-added and
+  lost on the next regeneration.
+
 **Broke / surprised**
 - The yield solver was quietly wrong. It stopped on an absolute 1e-14 step in yield units, which is
   smaller than the smallest representable step near maturity, so it reported failure *after*
@@ -65,8 +88,9 @@ Founders: read the latest entry first. "Needs from founders" items block only re
 **Needs from founders** (unchanged; see `PLAN.md` Section 5)
 
 **Next**
-- Phase 6: web scaffold, design system, `/` and `/transparency`, the public API routes, and contract
-  sync from `deployments/anvil.json`. This is the first phase that consumes Phase 3's output.
+- Phase 7: `/verify` and `/subscribe`, the faucet, the registrar worker and the verification store
+  (D7, D8), plus the full country list (D23). This is the first phase that needs a wallet in the
+  browser, so the wallet bundle finally gets loaded — on those pages only, never on the public ones.
 
 ## 2026-09-14 — Session 2: Phase 1 review triage, fixes in flight, engine build started
 
