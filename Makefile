@@ -15,7 +15,7 @@ SPEC_SRC ?= ../../HitBite-MVP-SPEC.md
 .DEFAULT_GOAL := help
 .PHONY: help setup lint test build check-secrets sync-spec \
         lint-contracts lint-engine lint-web test-contracts test-engine test-web \
-        build-contracts build-web snapshot slither clean
+        build-contracts build-web snapshot slither nav clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -61,6 +61,12 @@ build-contracts: ## forge build
 
 build-web: ## next build
 	cd web && pnpm build
+
+# ---------------------------------------------------------------------------
+# Engine
+# ---------------------------------------------------------------------------
+nav: ## Compute NAV and write web/public/data/*.json (AS_OF=YYYY-MM-DD, NAV_ARGS=--no-chain)
+	cd engine && uv run nav-engine compute $(if $(AS_OF),--as-of $(AS_OF),) $(NAV_ARGS)
 
 snapshot: ## Refresh contracts/.gas-snapshot (unit tests only)
 	cd contracts && forge snapshot --no-match-test "invariant|testFuzz"
