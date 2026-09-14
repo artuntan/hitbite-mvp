@@ -53,3 +53,7 @@ check_untyped_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+filterwarnings = [
+    # web3 imports websockets.legacy; the warning is theirs, not ours.
+    "ignore:websockets.legacy is deprecated:DeprecationWarning",
+]

@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-09-14T20:07:45Z",
+  "as_of": "2026-09-14",
+  "simulated": true,
+  "source_note": "Simulated reference book. Coupons and maturities are illustrative placeholders chosen to match the yield levels observed on 31 Aug 2026 (Türkiye USD curve ~6.0% 2029 to ~7.8% 2047, 5y CDS ~217 bp). Replace with official reference data and cite the source when available. ISINs are TBD until taken from an official source. Computed by nav-engine 0.1.0: reference-unit NAV (PLAN.md D19), 30/360 US accrual, ACT/365F daily fee accrual, Decimal money rounded HALF_UP only at output; all figures simulated (testnet).",
+  "chain": {
+    "chain_id": null,
+    "token_address": null,
+    "total_supply_tokens": null,
+    "total_supply_wei": null,
+    "onchain_nav_usdc_6dec": null,
+    "supply_source": "none",
+    "warning": "chain not configured (no RPC/token or --no-chain); no cache file at /Users/whitelie/conductor/workspaces/hitbite-mvp/valencia/engine/data/chain_cache.json. Reported AUM and supply-scaled holdings are null; reference-book NAV is unaffected."
+  },
+  "nav": {
+    "per_token_usd": "1.003061",
+    "usdc_6dec": 1003061,
+    "total_usd": "1016860.71",
+    "reference_units": "1013757.6666666667",
+    "reported_aum_usd": null,
+    "reported_aum_usdc_6dec": null
+  },
+  "portfolio": {
+    "sum_market_value_usd": "1004535.67",
+    "cash_usd": "12500.00",
+    "fees_payable_usd": "174.96",
+    "weighted_ytm_pct": 6.421046,
+    "modified_duration": 4.587369,
+    "convexity": 30.882722,
+    "positions_count": 3
+  },
+  "distribution_yield": {
+    "trailing_per_unit_usd": "0.000000",
+    "window_days": 7,
+    "months_available": 0,
+    "average_nav_per_unit": "1.000352",
+    "raw_pct": 0.0,
+    "annualized_pct": null,
+    "note": "Only 7 day(s) since inception; the annualised yield is withheld until the window reaches 30 days. Raw trailing yield shown. Simulated distributions (testnet)."
+  },
+  "fees": {
+    "management_fee_pct_pa": 0.75,
+    "fund_expenses_pct_pa": 0.3
+  },
+  "comparison": {
+    "tokenized_tbill_reference": {
+      "label": "Tokenized US T-bill reference (illustrative)",
+      "yield_pct": 4.0,
+      "source_note": "Illustrative placeholder. Replace with a cited public yield before any external use.",
+      "illustrative": true
+    }
+  }
+}

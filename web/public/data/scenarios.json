@@ -1,0 +1,84 @@
+{
+  "generated_at": "2026-09-14T20:07:45Z",
+  "as_of": "2026-09-14",
+  "simulated": true,
+  "source_note": "Simulated reference book. Coupons and maturities are illustrative placeholders chosen to match the yield levels observed on 31 Aug 2026 (Türkiye USD curve ~6.0% 2029 to ~7.8% 2047, 5y CDS ~217 bp). Replace with official reference data and cite the source when available. ISINs are TBD until taken from an official source. Computed by nav-engine 0.1.0: reference-unit NAV (PLAN.md D19), 30/360 US accrual, ACT/365F daily fee accrual, Decimal money rounded HALF_UP only at output; all figures simulated (testnet).",
+  "assumptions": "Parallel shifts reprice every bond at its own yield to maturity plus the shift on the as-of date (street convention, semi-annual, 30/360), holding cash and fees payable unchanged. CDS shocks pass 1:1 into yields (beta = 1): a spread shock of s bp is treated as a parallel +s x beta bp yield shift. Real pass-through varies with tenor and basis; illustrative only. Simulated data (testnet).",
+  "base": {
+    "nav_total_usd": "1016860.71",
+    "nav_per_token_usd": "1.003061"
+  },
+  "parallel": [
+    {
+      "shift_bp": -200,
+      "nav_total_usd": "1115581.72",
+      "nav_per_token_usd": "1.100442",
+      "delta_usd": "98721.01",
+      "delta_pct": 9.708411
+    },
+    {
+      "shift_bp": -100,
+      "nav_total_usd": "1064536.70",
+      "nav_per_token_usd": "1.050090",
+      "delta_usd": "47675.99",
+      "delta_pct": 4.688547
+    },
+    {
+      "shift_bp": -50,
+      "nav_total_usd": "1040294.69",
+      "nav_per_token_usd": "1.026177",
+      "delta_usd": "23433.99",
+      "delta_pct": 2.304542
+    },
+    {
+      "shift_bp": 50,
+      "nav_total_usd": "994202.41",
+      "nav_per_token_usd": "0.980710",
+      "delta_usd": "-22658.30",
+      "delta_pct": -2.22826
+    },
+    {
+      "shift_bp": 100,
+      "nav_total_usd": "972288.91",
+      "nav_per_token_usd": "0.959094",
+      "delta_usd": "-44571.79",
+      "delta_pct": -4.383274
+    },
+    {
+      "shift_bp": 200,
+      "nav_total_usd": "930579.56",
+      "nav_per_token_usd": "0.917951",
+      "delta_usd": "-86281.15",
+      "delta_pct": -8.485051
+    }
+  ],
+  "cds": [
+    {
+      "shock_bp": 50.0,
+      "beta": 1.0,
+      "shift_bp": 50.0,
+      "nav_total_usd": "994202.41",
+      "nav_per_token_usd": "0.980710",
+      "delta_usd": "-22658.30",
+      "delta_pct": -2.22826
+    },
+    {
+      "shock_bp": 100.0,
+      "beta": 1.0,
+      "shift_bp": 100.0,
+      "nav_total_usd": "972288.91",
+      "nav_per_token_usd": "0.959094",
+      "delta_usd": "-44571.79",
+      "delta_pct": -4.383274
+    },
+    {
+      "shock_bp": 200.0,
+      "beta": 1.0,
+      "shift_bp": 200.0,
+      "nav_total_usd": "930579.56",
+      "nav_per_token_usd": "0.917951",
+      "delta_usd": "-86281.15",
+      "delta_pct": -8.485051
+    }
+  ]
+}
