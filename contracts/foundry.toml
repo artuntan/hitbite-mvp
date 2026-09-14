@@ -47,3 +47,7 @@ base_sepolia = { key = "${BASESCAN_API_KEY}", chain = 84532, url = "https://api-
 [lint]
 # `setNAV` / `reportedAUM` are the names mandated by SPEC.md and BUILD_PROMPT.md; partners integrate against them.
 exclude_lints = ["mixed-case-function", "mixed-case-variable"]
+# `src/` is linted in full. Test files are skipped: cheatcode idioms (`vm.expectEmit` + `emit`, `vm.expectRevert`
+# on value-returning calls, `vm.warp` loops in fixtures) trip reentrancy-events / unused-return / calls-loop by
+# construction and carry no production meaning.
+ignore = ["test/**/*.sol"]
