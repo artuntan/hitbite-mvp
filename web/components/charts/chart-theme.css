@@ -1,0 +1,75 @@
+/* ---------------------------------------------------------------------------
+   Chart palette (dataviz skill: run the validator, never eyeball the colours).
+
+   The app's design tokens (app/globals.css) carry exactly one accent and three
+   status colours. Status colours are reserved for status and must never be
+   re-used as series colours, so the charts need their own ramp. It lives here,
+   scoped to `.hb-chart`, because `app/globals.css` is owned by the design-system
+   agent; if a later change merges this into `@theme`, the hexes move unchanged.
+
+   WHAT THIS IS: a one-hue ORDINAL ramp derived from the placeholder brand accent
+   `#2E6BFF` (OKLCH hue 263.7 deg). The only categories these charts colour —
+   bond positions ordered by maturity — are an ordered scale, so the reader
+   should see the order in the colour. Step 1 is the least prominent (closest to
+   the surface), step 5 the most. The direction flips between modes by design:
+   on paper the ramp darkens, on ink it lightens, so "more" always means "louder".
+
+   NOTE — PLACEHOLDER BRAND COLOUR: these steps are generated from the `#2E6BFF`
+   placeholder named in BUILD_PROMPT 7.1. When the founders supply the real
+   HitBite hex, regenerate the ramp at that hue and re-run the validator below.
+
+   VALIDATION (dataviz `scripts/validate_palette.js`, ordinal mode), run against
+   the surface the charts actually render on — `--surface` #ffffff light,
+   #14171d dark:
+
+     node scripts/validate_palette.js \
+       "#8cb0f9,#6896f7,#447af5,#215cef,#0a42d5" --ordinal --mode light --surface "#ffffff"
+       -> PASS monotone L | PASS adjacent dL >= 0.06 | PASS light end 2.17:1 | PASS single hue (0 deg)
+
+     node scripts/validate_palette.js \
+       "#053bcc,#1b55e8,#3a72f5,#5f8ff7,#83a9f9" --ordinal --mode dark --surface "#14171d"
+       -> PASS monotone L | PASS adjacent dL >= 0.06 | PASS light end 2.14:1 | PASS single hue (1 deg)
+
+   Every sub-ramp this file's `rampScale()` can hand out (3 and 4 evenly spaced
+   steps) was validated the same way and also passes in both modes.
+
+   The two neutrals are not part of the ramp: they carry "not a bond" (cash, and
+   a folded "Other" bucket). Measured with the same script's `contrast()` export:
+   #8a93a0 -> 3.11:1 on #ffffff, 5.78:1 on #14171d; #727b88 -> 4.28:1 / 4.19:1.
+   Both clear the 3:1 non-text floor in both modes.
+
+   Series line/bar fills reuse the app's own `--accent`, which the design system
+   already records at 4.31:1 light and 6.06:1 dark on paper.
+   --------------------------------------------------------------------------- */
+
+.hb-chart {
+  /* chrome, mapped onto the app's tokens so the charts re-theme with everything else */
+  --hb-viz-surface: var(--surface);
+  --hb-viz-grid: var(--border);
+  --hb-viz-axis: var(--border-strong);
+  --hb-viz-label: var(--muted);
+  --hb-viz-series: var(--accent);
+  --hb-viz-hover: rgb(18 20 26 / 0.05);
+
+  /* ordinal ramp — step 1 recedes, step 5 leads */
+  --hb-ramp-1: #8cb0f9;
+  --hb-ramp-2: #6896f7;
+  --hb-ramp-3: #447af5;
+  --hb-ramp-4: #215cef;
+  --hb-ramp-5: #0a42d5;
+
+  /* non-bond buckets */
+  --hb-viz-neutral: #8a93a0;
+  --hb-viz-neutral-2: #727b88;
+}
+
+/* Matches the design system's own `@custom-variant dark (&:where(.dark, .dark *))`. */
+:where(.dark) .hb-chart {
+  --hb-viz-hover: rgb(233 235 239 / 0.07);
+
+  --hb-ramp-1: #053bcc;
+  --hb-ramp-2: #1b55e8;
+  --hb-ramp-3: #3a72f5;
+  --hb-ramp-4: #5f8ff7;
+  --hb-ramp-5: #83a9f9;
+}
