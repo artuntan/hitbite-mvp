@@ -2,6 +2,37 @@
 
 Founders: read the latest entry first. "Needs from founders" items block only real-testnet checkpoints; everything else runs locally on Anvil.
 
+## 2026-09-14 — Session 3: Phase 1 and 4 committed; Phases 2, 3 and 5 in build
+
+**Did**
+- Verified the work Session 2 left uncommitted, by running it rather than trusting the report:
+  `forge build`, `forge test` (149 pass), `forge coverage` (100 % lines, statements, branches and
+  functions on every file in `src/`), `forge fmt --check`, `ruff`, `ruff format`, `mypy`, `pytest`
+  (99 pass), and `nav-engine compute`, which wrote all four JSON documents. All green.
+- Committed Phase 1 (`IdentityRegistry`, `HBToken`, `MockUSDC` + 149 unit tests) and Phase 4 (the
+  whole NAV engine) as two feature commits, plus the D26–D29 plan update. Added `make nav`.
+- Wrote the three root documents that depend only on the frozen contracts: `COMPLIANCE_RULES.md`
+  (every on-chain rule, in plain language, as the `/rules` page will render it), `RISKS.md`
+  (simulated-first, then bond, structural and regulatory risk), and `ARCHITECTURE.md` (system
+  diagram, trust-boundary table, sequence diagrams for subscribe / coupon / redeem, and a table
+  mapping each displayed number to the layer that owns it).
+- Launched a three-track build: Phase 2 (fuzz, invariants, gas snapshot, Slither, `SECURITY.md`),
+  Phase 3 (deploy and seed scripts, Anvil deployment JSON, Makefile targets) and Phase 5 (oracle
+  push, attestation, the two scheduled workflows), with an independent acceptance pass that
+  re-runs everything rather than trusting the builders.
+
+**Broke / surprised**
+- Nothing broke. Worth recording that Session 2's uncommitted tree was in fact green: the session
+  died during verification, not during the build, so no work was lost.
+
+**Needs from founders** (unchanged from Session 2; items 1-5 below and in `PLAN.md` Section 5)
+
+**Next**
+- Commit Phases 2, 3 and 5 once the acceptance pass confirms them, then an adversarial review of
+  all three before moving on. Then Phase 6 (web scaffold, design system, `/`, `/transparency`,
+  API routes, contract sync), which is the first phase that needs the deployment JSON Phase 3
+  produces.
+
 ## 2026-09-14 — Session 2: Phase 1 review triage, fixes in flight, engine build started
 
 **Did**
