@@ -55,9 +55,22 @@ def load_portfolio(path: Path) -> Portfolio:
 class PriceTable:
     """Clean prices by (name, date) with carry-forward (FIXTURE.md convention 7)."""
 
-    def __init__(self, rows: Iterable[PriceRow]) -> None:
+    def __init__(self, rows: Iterable[PriceRow], *, source: Path | None = None) -> None:
         by_name: dict[str, dict[date, Decimal]] = {}
-        for row in rows:
+        seen: dict[tuple[str, date], int] = {}
+        where = f"{source} " if source is not None else ""
+        for lineno, row in enumerate(rows, start=2):
+            first = seen.get((row.name, row.date))
+            if first is not None:
+                # prices.csv is maintained by hand, so a copy-pasted row is a realistic input.
+                # Last-write-wins would make the NAV depend on line order; reject it instead, the
+                # way load_distributions rejects a duplicate distribution_id.
+                raise DataError(
+                    f"{where}line {lineno}: duplicate price row for {row.name!r} on {row.date} "
+                    f"(already given on line {first} as {by_name[row.name][row.date]}); "
+                    "one row per bond per pricing day"
+                )
+            seen[(row.name, row.date)] = lineno
             by_name.setdefault(row.name, {})[row.date] = row.clean_price
         self._dates: dict[str, list[date]] = {}
         self._prices: dict[str, list[Decimal]] = {}
@@ -80,7 +93,7 @@ class PriceTable:
                     raise DataError(
                         f"{path} line {lineno}: {_validation_message(path, exc)}"
                     ) from exc
-        return cls(rows)
+        return cls(rows, source=path)
 
     @property
     def names(self) -> set[str]:
@@ -136,13 +149,45 @@ class PositionValuation:
     """Decimal fraction (0.06 = 6%)."""
     modified_duration: float
     convexity: float
+    matured: bool = False
+    """``on >= maturity``: the line has redeemed into cash and carries no market value or risk."""
 
     @property
     def ytm_pct(self) -> float:
         return self.ytm * 100.0
 
 
+def matured_valuation(position: Position, on: date) -> PositionValuation:
+    """A position on or after its maturity date.
+
+    The face and the final coupon are paid into cash on the maturity date (``coupon_receipts`` and
+    ``redemption_receipts``), so from that day the line itself is worth nothing: no price, no
+    accrual, no market value, and no yield, duration or convexity to weight. Valuing it instead
+    would ask ``bonds.cash_flows`` for a schedule that is already empty and raise
+    ``BondMaturedError`` for every remaining day of the path.
+    """
+    bond = to_bond(position)
+    return PositionValuation(
+        position=position,
+        bond=bond,
+        date=on,
+        clean_price=ZERO,
+        accrued=ZERO,
+        dirty_price=ZERO,
+        market_value=ZERO,
+        days_accrued=0,
+        prev_coupon_date=bond.maturity,
+        next_coupon_date=bond.maturity,
+        ytm=0.0,
+        modified_duration=0.0,
+        convexity=0.0,
+        matured=True,
+    )
+
+
 def value_position(position: Position, clean_price: Decimal, on: date) -> PositionValuation:
+    if on >= position.maturity:
+        return matured_valuation(position, on)
     bond = to_bond(position)
     accrued = accrued_interest(bond, on)
     dirty = dirty_price(bond, clean_price, on)
@@ -168,7 +213,12 @@ def value_position(position: Position, clean_price: Decimal, on: date) -> Positi
 
 
 def value_positions(portfolio: Portfolio, prices: PriceTable, on: date) -> list[PositionValuation]:
-    return [value_position(p, prices.clean_price(p.name, on), on) for p in portfolio.positions]
+    return [
+        matured_valuation(p, on)
+        if on >= p.maturity
+        else value_position(p, prices.clean_price(p.name, on), on)
+        for p in portfolio.positions
+    ]
 
 
 def coupon_receipts(portfolio: Portfolio, on: date) -> Decimal:
@@ -181,6 +231,20 @@ def coupon_receipts(portfolio: Portfolio, on: date) -> Decimal:
         bond = to_bond(position)
         if is_coupon_date(bond, on):
             total += bond.coupon_per_period
+    return total
+
+
+def redemption_receipts(portfolio: Portfolio, on: date) -> Decimal:
+    """Principal repaid on ``on``: ``face_usd`` for every bond maturing that day.
+
+    The final coupon is paid by ``coupon_receipts`` (the maturity date is a coupon date); this is
+    the other half of the redemption, so the position rolls into cash instead of vanishing from the
+    book. Buy-and-hold only: there is no sale or reinvestment rule.
+    """
+    total = ZERO
+    for position in portfolio.positions:
+        if position.maturity == on:
+            total += position.face_usd
     return total
 
 
@@ -200,6 +264,11 @@ class PortfolioRisk:
 def market_value_weights(valuations: list[PositionValuation]) -> list[Decimal]:
     total = sum((v.market_value for v in valuations), ZERO)
     if total == 0:
+        # A fully redeemed book holds no bonds at all: every weight is zero and the weighted risk
+        # figures come out at zero, which is the truth. Any other way of reaching a zero market
+        # value is a broken book (clean prices and faces are validated positive), so keep failing.
+        if all(v.matured for v in valuations):
+            return [ZERO for _ in valuations]
         raise DataError("portfolio market value is zero; weights are undefined")
     return [v.market_value / total for v in valuations]
 

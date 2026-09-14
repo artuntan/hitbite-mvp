@@ -3,12 +3,24 @@
 The compute path never fails because the chain is unreachable: ``read_chain_with_fallback`` returns
 a ``ChainSnapshot`` whose ``supply_source`` is ``'rpc'``, ``'cache'`` or ``'none'`` and carries a
 warning string that the outputs surface verbatim.
+
+Two rules the fallback obeys:
+
+* a successful RPC read is never discarded. Writing ``chain_cache.json`` is a best-effort side
+  effect, so a failed write downgrades to a warning on an otherwise fresh ``'rpc'`` snapshot
+  instead of silently substituting the stale cached supply and NAV;
+* the cache is only reused when it provably describes the same deployment - same token address and
+  same chain id, where both are known - and the warning names the cache's age so a reader of
+  ``nav.json`` can tell how stale the on-chain figures are.
+
+Every timestamp here is UTC-aware: a naive ``datetime`` is read as UTC (the engine-wide convention,
+see ``outputs.format_generated_at``), never as the machine's local wall clock.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -18,8 +30,12 @@ from pydantic import BaseModel, ValidationError
 
 from nav_engine.abi import HBTOKEN_MIN_ABI
 from nav_engine.errors import ChainError
-from nav_engine.money import TOKEN_UNIT, USDC_UNIT
+from nav_engine.money import from_units
 from nav_engine.schemas import DistributionRow, SupplySource
+
+STAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+USDC_DECIMALS = 6
+TOKEN_DECIMALS = 18
 
 
 @dataclass(frozen=True)
@@ -166,9 +182,9 @@ def event_to_distribution(event: CouponDistributedEvent) -> DistributionRow:
     return DistributionRow(
         date=when,
         distribution_id=event.distribution_id,
-        usdc_per_token=Decimal(per_token) / USDC_UNIT,
-        usdc_amount=Decimal(event.usdc_amount) / USDC_UNIT,
-        total_supply_tokens=Decimal(event.total_supply) / TOKEN_UNIT,
+        usdc_per_token=from_units(per_token, USDC_DECIMALS),
+        usdc_amount=from_units(event.usdc_amount, USDC_DECIMALS),
+        total_supply_tokens=from_units(event.total_supply, TOKEN_DECIMALS),
         tx_hash=event.tx_hash,
         source="chain",
     )
@@ -198,9 +214,10 @@ class ChainSnapshot:
 
     @property
     def total_supply_tokens(self) -> Decimal | None:
+        """Exact token amount: dividing by ``10**18`` would round a uint128 supply (D28)."""
         if self.total_supply_wei is None:
             return None
-        return Decimal(self.total_supply_wei) / TOKEN_UNIT
+        return from_units(self.total_supply_wei, TOKEN_DECIMALS)
 
 
 def load_chain_cache(path: Path) -> tuple[ChainCache | None, str | None]:
@@ -213,10 +230,46 @@ def load_chain_cache(path: Path) -> tuple[ChainCache | None, str | None]:
         return None, f"cache file {path} is unreadable ({exc.__class__.__name__})"
 
 
+def as_utc(when: datetime | None = None) -> datetime:
+    """UTC-aware instant. A naive value is *UTC*, not local time (see the module docstring)."""
+    stamp = when or datetime.now(UTC)
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=UTC)
+    return stamp.astimezone(UTC)
+
+
+def format_stamp(when: datetime | None = None) -> str:
+    """UTC ISO 8601 with a ``Z`` suffix, matching ``outputs.format_generated_at`` exactly."""
+    return as_utc(when).strftime(STAMP_FORMAT)
+
+
+def parse_stamp(text: str) -> datetime | None:
+    """Read a cache stamp back as a UTC-aware instant; ``None`` if it is not ISO 8601."""
+    try:
+        return as_utc(datetime.fromisoformat(text.replace("Z", "+00:00")))
+    except ValueError:
+        return None
+
+
+def describe_age(cached_at: str, now: datetime | None = None) -> str:
+    """``'2026-09-11T00:00:00Z (3 days old)'`` so staleness is visible in the published warning."""
+    when = parse_stamp(cached_at)
+    if when is None:
+        return cached_at
+    seconds = (as_utc(now) - when).total_seconds()
+    if seconds < 0:
+        return f"{cached_at} (stamped in the future)"
+    if seconds < 3600:
+        return f"{cached_at} ({int(seconds // 60)} minutes old)"
+    if seconds < 86400:
+        return f"{cached_at} ({int(seconds // 3600)} hours old)"
+    return f"{cached_at} ({int(seconds // 86400)} days old)"
+
+
 def save_chain_cache(path: Path, snapshot: ChainSnapshot, now: datetime | None = None) -> None:
     if snapshot.total_supply_wei is None:
         return
-    stamp = (now or datetime.now(UTC)).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp = format_stamp(now)
     cache = ChainCache(
         chain_id=snapshot.chain_id,
         token_address=snapshot.token_address,
@@ -230,6 +283,11 @@ def save_chain_cache(path: Path, snapshot: ChainSnapshot, now: datetime | None =
 
 def _same_address(a: str | None, b: str | None) -> bool:
     return a is None or b is None or a.lower() == b.lower()
+
+
+def _same_chain(a: int | None, b: int | None) -> bool:
+    """An unknown chain id matches; two *known* and different ones never do."""
+    return a is None or b is None or a == b
 
 
 def read_chain_with_fallback(
@@ -249,6 +307,12 @@ def read_chain_with_fallback(
             supply = reader.read_total_supply()
             nav = reader.read_nav()
             events = reader.read_coupon_distributions(from_block)
+            distributions = [event_to_distribution(e) for e in events]
+        except Exception as exc:  # any RPC failure falls back to the cache, by design
+            reason = f"RPC read failed ({exc.__class__.__name__}: {exc})"
+        else:
+            # The read succeeded, so these figures are the best available no matter what the cache
+            # says or whether it can be rewritten. Persisting is a best-effort side effect.
             snapshot = ChainSnapshot(
                 chain_id=chain_id,
                 token_address=token_address,
@@ -256,15 +320,27 @@ def read_chain_with_fallback(
                 onchain_nav_usdc_6dec=nav,
                 supply_source="rpc",
                 warning=None,
-                distributions=[event_to_distribution(e) for e in events],
+                distributions=distributions,
             )
-            save_chain_cache(cache_path, snapshot, now)
-            return snapshot
-        except Exception as exc:  # any RPC failure falls back to the cache, by design
-            reason = f"RPC read failed ({exc.__class__.__name__}: {exc})"
+            try:
+                save_chain_cache(cache_path, snapshot, now)
+            except Exception as exc:
+                return replace(
+                    snapshot,
+                    warning=(
+                        f"chain cache {cache_path} could not be written "
+                        f"({exc.__class__.__name__}: {exc}); on-chain figures are fresh from RPC, "
+                        "but the next run cannot fall back to them."
+                    ),
+                )
+            return replace(snapshot, cached_at=format_stamp(now))
 
     cache, problem = load_chain_cache(cache_path)
-    if cache is not None and _same_address(token_address, cache.token_address):
+    if (
+        cache is not None
+        and _same_address(token_address, cache.token_address)
+        and _same_chain(chain_id, cache.chain_id)
+    ):
         return ChainSnapshot(
             chain_id=chain_id if chain_id is not None else cache.chain_id,
             token_address=token_address or cache.token_address,
@@ -272,13 +348,15 @@ def read_chain_with_fallback(
             onchain_nav_usdc_6dec=cache.onchain_nav_usdc_6dec,
             supply_source="cache",
             warning=(
-                f"{reason}; using cached totalSupply from {cache.cached_at}. "
+                f"{reason}; using cached totalSupply from {describe_age(cache.cached_at, now)}. "
                 "On-chain figures may be stale."
             ),
             cached_at=cache.cached_at,
         )
-    if cache is not None:
+    if cache is not None and not _same_address(token_address, cache.token_address):
         problem = f"cache at {cache_path} is for token {cache.token_address}, not {token_address}"
+    elif cache is not None:
+        problem = f"cache at {cache_path} is for chain {cache.chain_id}, not {chain_id}"
     return ChainSnapshot(
         chain_id=chain_id,
         token_address=token_address,

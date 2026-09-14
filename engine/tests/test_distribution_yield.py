@@ -1,12 +1,16 @@
 from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 from statistics import mean
 
 import pytest
 
+from nav_engine.distributions import load_distributions, merge_distributions
+from nav_engine.errors import DataError
 from nav_engine.money import ZERO
 from nav_engine.nav import DayValuation, NavPath, distribution_yield
 from nav_engine.pipeline import ComputeResult
+from nav_engine.schemas import DistributionRow
 from tests.conftest import FIXTURES_DIR, read_csv
 
 
@@ -90,3 +94,82 @@ def test_average_nav_uses_only_the_window() -> None:
     assert dy.average_nav_per_unit == Decimal("1.000000")
     assert dy.raw_pct == pytest.approx(2.0)
     assert dy.average_nav_per_unit != Decimal(str(mean(Decimal(n) for n in navs)))
+
+
+# --------------------------------------------------------------------------- distributions.csv
+# The loader's duplicate-id guard is the only thing standing between a repeated distribution_id and
+# a double-counted distribution: compute_nav_path keys distributions by date, not by id, and
+# merge_distributions only runs when a chain reader returned events.
+
+
+def _write(path: Path, body: str) -> Path:
+    path.write_text(body)
+    return path
+
+
+def test_load_distributions_rejects_a_duplicate_id(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path / "distributions.csv",
+        "date,distribution_id,usdc_per_token\n2026-09-11,1,0.008000\n2026-09-12,1,0.008000\n",
+    )
+    with pytest.raises(DataError, match=r"duplicate distribution_id \[1\]"):
+        load_distributions(path)
+
+
+def test_load_distributions_requires_its_key_columns(tmp_path: Path) -> None:
+    path = _write(tmp_path / "distributions.csv", "date,distribution_id\n2026-09-11,1\n")
+    with pytest.raises(DataError, match=r"missing columns \['usdc_per_token'\]"):
+        load_distributions(path)
+
+
+def test_load_distributions_skips_blank_rows_and_names_a_bad_value(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path / "distributions.csv",
+        "date,distribution_id,usdc_per_token\n2026-09-12,2,0.002000\n,,\n2026-09-11,1,0.008000\n",
+    )
+    rows = load_distributions(path)
+    assert [(r.date, r.distribution_id, r.usdc_per_token) for r in rows] == [
+        (date(2026, 9, 11), 1, Decimal("0.008000")),
+        (date(2026, 9, 12), 2, Decimal("0.002000")),
+    ]
+
+    bad = _write(
+        tmp_path / "bad.csv",
+        "date,distribution_id,usdc_per_token\n2026-09-11,1,not-a-number\n",
+    )
+    with pytest.raises(DataError, match="line 2: usdc_per_token"):
+        load_distributions(bad)
+
+
+def test_load_distributions_reports_a_missing_file_unless_allowed(tmp_path: Path) -> None:
+    missing = tmp_path / "absent.csv"
+    assert load_distributions(missing, missing_ok=True) == []
+    with pytest.raises(DataError, match="distributions file not found"):
+        load_distributions(missing)
+
+
+def test_merge_distributions_overwrites_a_manual_row_with_the_chain_row() -> None:
+    """D26: the chain's floored per-token amount is authoritative, so the upsert must overwrite."""
+    existing = [
+        DistributionRow(
+            date=date(2026, 9, 11), distribution_id=1, usdc_per_token=Decimal("0.010000")
+        ),
+        DistributionRow(
+            date=date(2026, 9, 12), distribution_id=2, usdc_per_token=Decimal("0.002000")
+        ),
+    ]
+    incoming = [
+        DistributionRow(
+            date=date(2026, 9, 11),
+            distribution_id=1,
+            usdc_per_token=Decimal("0.008000"),
+            tx_hash="0xabc",
+            source="chain",
+        )
+    ]
+    merged = merge_distributions(existing, incoming)
+    assert [r.distribution_id for r in merged] == [1, 2]
+    assert merged[0].usdc_per_token == Decimal("0.008000")
+    assert merged[0].source == "chain"
+    assert merged[0].tx_hash == "0xabc"
+    assert merged[1] == existing[1]

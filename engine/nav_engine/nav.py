@@ -3,30 +3,39 @@
 Per calendar day, in this order:
 
 1. fees accrue on the previous day's ``NAV_total`` (nothing on inception day);
-2. coupon receipts add cash on coupon dates;
-3. positions are valued at the (carried-forward) clean price plus accrued;
+2. coupon receipts add cash on coupon dates, and a bond maturing that day repays its face into cash;
+3. positions are valued at the (carried-forward) clean price plus accrued; a position on or after
+   its maturity date has redeemed into cash, so it carries no market value and no yield, duration
+   or convexity and moves from ``positions`` to ``matured_positions``;
 4. distributions dated that day reduce reference cash by ``usdc_per_token x reference_units``
    (the on-chain contract lowers ``nav`` by the same per-token amount, D26, so nothing else moves);
 5. ``NAV_total = sum(mv) + cash - fees_payable``; ``reference_units`` is fixed at inception
    ``NAV_total`` (D19); ``nav_per_unit`` is quantised HALF_UP to 6 decimals; ``nav_usdc_6dec`` is the
    matching integer (D22).
+
+Maturity is not covered by BUILD_PROMPT 6.2 or the fixture; the rule implemented here is that the
+book is held to maturity and redeems into cash (face + final coupon on the maturity date, zero
+market value from that date on), so a maturing line can never stop the daily run. A redeemed line
+is reported separately from the live book: everything that consumes ``DayValuation.positions``
+(weights, scenarios, ``holdings.json``) is asking about bonds the fund still holds.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
 
 from nav_engine.errors import DataError
 from nav_engine.fees import daily_fee_accrual
-from nav_engine.money import ZERO, money_context, quantize_unit, usdc_6dec
+from nav_engine.money import ZERO, fmt_unit, money_context, quantize_unit, usdc_6dec
 from nav_engine.portfolio import (
     PositionValuation,
     PriceTable,
     coupon_receipts,
     portfolio_risk,
+    redemption_receipts,
     value_positions,
 )
 from nav_engine.schemas import DistributionRow, EngineConfig, Portfolio
@@ -41,6 +50,7 @@ class DayValuation:
 
     date: date
     positions: list[PositionValuation]
+    """The bonds still held on this date; a redeemed line moves to ``matured_positions``."""
     sum_market_value: Decimal
     cash: Decimal
     fees_payable: Decimal
@@ -57,6 +67,10 @@ class DayValuation:
     weighted_modified_duration: float
     weighted_convexity: float
     distributions_per_unit_cum: Decimal
+    redemptions: Decimal = ZERO
+    """Face repaid into cash by bonds maturing on this day (zero on every other day)."""
+    matured_positions: list[PositionValuation] = field(default_factory=list)
+    """Lines at or past maturity: zero market value, zero risk, already paid into ``cash``."""
 
     @property
     def weighted_ytm_pct(self) -> float:
@@ -95,8 +109,15 @@ def compute_nav_path(
     inception = portfolio.inception_date
     if as_of < inception:
         raise DataError(f"as_of {as_of} is before inception_date {inception}")
+    for position in portfolio.positions:
+        if position.maturity <= inception:
+            raise DataError(
+                f"position {position.name!r} matures {position.maturity}, on or before the "
+                f"inception date {inception}; a redeemed bond is not a holding"
+            )
 
     per_day: dict[date, Decimal] = {}
+    ids_per_day: dict[date, list[int]] = {}
     applied: list[DistributionRow] = []
     ignored: list[DistributionRow] = []
     for row in sorted(distributions, key=lambda r: (r.date, r.distribution_id)):
@@ -105,6 +126,7 @@ def compute_nav_path(
         elif row.date <= as_of:
             applied.append(row)
             per_day[row.date] = per_day.get(row.date, ZERO) + row.usdc_per_token
+            ids_per_day.setdefault(row.date, []).append(row.distribution_id)
 
     fund = config.fund
     days: list[DayValuation] = []
@@ -127,14 +149,28 @@ def compute_nav_path(
             fees_payable += fee_today
 
             receipts = coupon_receipts(portfolio, current)
-            cash += receipts
+            redemptions = redemption_receipts(portfolio, current)
+            cash += receipts + redemptions
 
             valuations = value_positions(portfolio, prices, current)
-            risk = portfolio_risk(valuations)
+            held = [v for v in valuations if not v.matured]
+            redeemed = [v for v in valuations if v.matured]
+            risk = portfolio_risk(held)
 
             dist_today = ZERO
             if reference_units is not None and current in per_day:
                 dist_today = per_day[current]
+                # HBToken.distributeCoupon reverts with DistributionExceedsNav when the per-token
+                # amount is not below the NAV it is deducted from, so a NAV computed by applying
+                # one is a number the chain would refuse to accept (and push_nav would reject).
+                nav_before = (risk.sum_market_value + cash - fees_payable) / reference_units
+                if dist_today >= nav_before:
+                    raise DataError(
+                        f"distribution {ids_per_day[current]} on {current} of "
+                        f"{fmt_unit(dist_today)} USDC per token is not below the unit NAV of "
+                        f"{fmt_unit(nav_before)} it is deducted from; the contract reverts this "
+                        "with DistributionExceedsNav"
+                    )
                 cash -= dist_today * reference_units
                 dist_cum += dist_today
 
@@ -148,7 +184,7 @@ def compute_nav_path(
             days.append(
                 DayValuation(
                     date=current,
-                    positions=valuations,
+                    positions=held,
                     sum_market_value=risk.sum_market_value,
                     cash=cash,
                     fees_payable=fees_payable,
@@ -163,6 +199,8 @@ def compute_nav_path(
                     weighted_modified_duration=risk.weighted_modified_duration,
                     weighted_convexity=risk.weighted_convexity,
                     distributions_per_unit_cum=dist_cum,
+                    redemptions=redemptions,
+                    matured_positions=redeemed,
                 )
             )
             nav_prev = nav_total
