@@ -1,0 +1,15 @@
+{
+  "addresses": {
+    "HBToken": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "IdentityRegistry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "MockUSDC": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  },
+  "chainId": 31337,
+  "deployBlock": 1,
+  "timestamp": 1789420690,
+  "txHashes": {
+    "HBToken": "0x5e8ed126a35a187a3706300d6b4cf231dbac1942d71b22aa74a11955811872cb",
+    "IdentityRegistry": "0x655a04e5c450053f20ab76c44e188ab99c5cb97bf79f17b24134d82cc74b578d",
+    "MockUSDC": "0x7cb11b44d2b9c6042e400eee24161d536c5c628680d0680f65055ea21d1c63bd"
+  }
+}
