@@ -112,8 +112,9 @@ NAV, taking the coupon from the holders who were there to earn it. The `NAVUpdat
 this drop like any other NAV change.
 
 A distribution too small to raise the index by even one unit is rejected with `DistributionTooSmall`
-rather than silently absorbed, and a distribution larger than the NAV itself is rejected with
-`DistributionExceedsNav`.
+rather than silently absorbed, since the whole amount would otherwise be locked in the contract. A
+distribution whose *per-token* amount is not strictly below the current NAV is rejected with
+`DistributionExceedsNav`, because NAV drops by that amount and cannot go to zero or below.
 
 ---
 
