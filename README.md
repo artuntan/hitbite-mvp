@@ -6,7 +6,18 @@
 
 `hbTRS` is a whitelisted token representing a simulated, custodied portfolio of Türkiye USD sovereign bonds. Subscriptions and redemptions settle at net asset value in test USDC; coupons are passed through pro-rata. In production the fund is issued and managed by a licensed fund manager; HitBite designs the product, runs the data and transparency layers, and builds distribution.
 
-**Status:** under construction — see [`PROGRESS.md`](PROGRESS.md) for the dated log and [`PLAN.md`](PLAN.md) for the phase plan. Still to come in Phase 10: the live demo link, the screen recording, verified contract addresses and the team section.
+### Live demo, recording and addresses
+
+| | |
+|---|---|
+| **Live demo** | _Awaiting the founders' Vercel project (PLAN.md D16). Run it locally with `make dev`._ |
+| **90-second recording** | _Awaiting the founders' recording._ |
+| **Contract addresses** | Base Sepolia deployment awaits a funded deployer key (PLAN.md Section 5). Deploy with `make deploy CHAIN=base-sepolia`, then `make verify` for Basescan. |
+| **Local addresses** | `contracts/deployments/anvil.json` — deterministic on a fresh Anvil, and committed. |
+
+Nothing above is a placeholder for something that exists; each is an item that genuinely needs a
+credential this repository does not have. `PROGRESS.md` keeps the current list under *Needs from
+founders*.
 
 ## What is real vs. simulated
 
@@ -42,15 +53,67 @@ repository.
 | [`PLAN.md`](PLAN.md) | Phases, and every ambiguity resolved as a numbered decision |
 | [`PROGRESS.md`](PROGRESS.md) | Dated build log: what shipped, what broke, what is blocked |
 
-## Quickstart (Phase 0)
+## Architecture
+
+The full picture, with sequence diagrams for subscribe, coupon and redeem, is in
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
+
+```mermaid
+flowchart LR
+  data["Reference data<br/>portfolio, prices, config<br/><i>simulated</i>"] --> engine["engine/<br/>NAV, scenarios,<br/>attestation"]
+  engine --> json["web/public/data/*.json"]
+  engine -->|"setNAV, rail-checked"| chain["contracts/<br/>HBToken · IdentityRegistry<br/>MockUSDC"]
+  chain -->|"totalSupply, events"| engine
+  json --> api["web/ public API"]
+  chain --> api
+  api --> pages["Investor pages<br/>admin console"]
+  api --> partners["Partners<br/>curators, exchanges"]
+  chain --> partners
+```
+
+The engine reads the chain and the chain reads the engine. That loop is why the number on the
+transparency page can be checked against the contract rather than taken on trust, and the page
+performs exactly that check in public.
+
+## Quickstart
 
 ```bash
 make setup     # submodules, uv, pnpm, playwright
 make lint      # forge fmt, ruff, mypy, eslint, prettier, tsc, secret scan
 make test      # forge test, pytest, vitest, next build, playwright smoke
+make dev       # the web app on http://localhost:3000
 ```
 
-Copy `.env.example` to `.env` (root) and `web/.env.local` (web). Leave every key empty unless you are deploying to Base Sepolia.
+To run the whole thing locally against a chain, in two terminals:
+
+```bash
+make anvil                      # terminal 1: a local node on 127.0.0.1:8545
+make deploy-local && make seed  # terminal 2: deploy, verify two demo wallets, set the opening NAV
+make nav                        # compute NAV into web/public/data/
+make dev                        # the app, now reading a live chain
+```
+
+Copy `.env.example` to `.env` (root) and `web/.env.local` (web). Every variable is documented there.
+Leave every key empty unless you are deploying to Base Sepolia; the local flow needs none, because
+Anvil's accounts are unlocked.
+
+## What HitBite owns, and what a licensed partner runs
+
+| | Who runs it in production |
+|---|---|
+| Product design, the data and transparency layers, distribution | **HitBite** |
+| The token contract | A licensed vendor's audited implementation of this spec |
+| Fund issuance, management and NAV | A licensed fund manager and its administrator (ADGM) |
+| Identity verification | The partner's KYC vendor, writing to the same registry |
+| Custody | A broker through Euroclear, and a licensed digital custodian |
+| Attestation | An independent firm, monthly |
+
+This repository is the reference implementation of the parts in the first row, plus a working model
+of everything else so the design can be evaluated end to end.
+
+## Team
+
+_Two founders, one line each — awaiting their copy._
 
 ## Layout
 
@@ -62,6 +125,29 @@ Copy `.env.example` to `.env` (root) and `web/.env.local` (web). Leave every key
 | `demo/` | End-to-end testnet scenario runner and `REPORT.md` |
 | `notebooks/` | Portfolio analytics notebook and exported figures |
 | `docs/` | Screenshots, diagrams, figures |
+
+## How to check this yourself
+
+A reviewer should not have to take any of it on trust. The three checks that matter most:
+
+```bash
+# 1. The published NAV and the contract's NAV are the same integer.
+cast call $HB_TOKEN "nav()(uint256)" --rpc-url $RPC
+jq '.data.nav.usdc_6dec' < web/public/data/nav.json
+
+# 2. The attestation signature verifies. No attestation is committed — signing needs the
+#    attestor key (PLAN.md D34) — so produce one first, then verify it without a key.
+ATTESTOR_PRIVATE_KEY=0x... make attest
+make attest-verify
+
+# 3. The tests are the spec. Coverage on contracts/src is 100% of lines,
+#    statements, branches and functions.
+make test
+cd contracts && forge coverage --no-match-coverage script
+```
+
+`SECURITY.md` lists what is **not** mitigated as plainly as what is, and states that no audit has
+been performed. `RISKS.md` opens with what is simulated before it discusses any bond risk.
 
 ## Disclaimer
 

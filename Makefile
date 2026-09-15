@@ -34,7 +34,7 @@ endif
 .DEFAULT_GOAL := help
 .PHONY: help setup lint test build check-secrets sync-spec \
         lint-contracts lint-engine lint-web test-contracts test-engine test-web \
-        build-contracts build-web snapshot slither nav attest attest-verify push push-dry clean \
+        build-contracts build-web snapshot slither nav attest attest-verify push push-dry dev clean \
         anvil deploy deploy-local seed verify require-chain require-signer
 
 help: ## List targets
@@ -73,6 +73,9 @@ test-engine: ## pytest
 
 test-web: ## vitest + build + playwright smoke
 	cd web && pnpm test && pnpm build && pnpm test:e2e
+
+dev: ## Run the web app against the configured chain (http://localhost:3000)
+	cd web && pnpm dev
 
 build: build-contracts build-web ## Build contracts and web
 
