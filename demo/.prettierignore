@@ -1,0 +1,4 @@
+node_modules/
+pnpm-lock.yaml
+# Written by `run.ts` on every run. Formatting it by hand would be undone by the next demo.
+REPORT.md

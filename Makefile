@@ -33,8 +33,9 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help setup lint test build check-secrets sync-spec \
-        lint-contracts lint-engine lint-web test-contracts test-engine test-web \
-        build-contracts build-web snapshot slither nav attest attest-verify push push-dry dev coverage clean \
+        lint-contracts lint-engine lint-web lint-demo test-contracts test-engine test-web \
+        build-contracts build-web snapshot slither nav attest attest-verify push push-dry dev coverage \
+        demo demo-local notebook clean \
         anvil deploy deploy-local seed verify require-chain require-signer
 
 help: ## List targets
@@ -47,12 +48,13 @@ setup: ## Install toolchains and dependencies (submodules, uv, pnpm, playwright)
 	git submodule update --init --recursive
 	cd engine && uv sync
 	cd web && pnpm install --frozen-lockfile && pnpm exec playwright install chromium
+	cd demo && pnpm install --frozen-lockfile
 	@echo "setup: done. Copy .env.example to .env and web/.env.local."
 
 # ---------------------------------------------------------------------------
 # Lint / test / build (aggregate targets mirror CI jobs)
 # ---------------------------------------------------------------------------
-lint: lint-contracts lint-engine lint-web check-secrets ## Lint everything
+lint: lint-contracts lint-engine lint-web lint-demo check-secrets ## Lint everything
 
 lint-contracts: ## forge fmt --check
 	cd contracts && forge fmt --check
@@ -62,6 +64,9 @@ lint-engine: ## ruff + mypy
 
 lint-web: ## eslint + prettier + tsc
 	cd web && pnpm lint && pnpm format:check && pnpm typecheck
+
+lint-demo: ## prettier + tsc for the demo runner
+	cd demo && pnpm install --frozen-lockfile && pnpm lint
 
 test: test-contracts test-engine test-web ## Run all test suites
 
@@ -147,6 +152,24 @@ verify: require-chain ## Verify the deployed contracts on Basescan (CHAIN=base-s
 	  (cd contracts && forge verify-contract "$$addr" "src/$$name.sol:$$name" --chain 84532 \
 	     --rpc-url $(RPC_URL) --guess-constructor-args --etherscan-api-key "$$BASESCAN_API_KEY" --watch); \
 	done
+
+# ---------------------------------------------------------------------------
+# Demo and analytics
+# ---------------------------------------------------------------------------
+demo: require-chain ## Run the eight-step demo (BUILD_PROMPT section 9) against CHAIN, write demo/REPORT.md
+	cd demo && pnpm install --frozen-lockfile && CHAIN=$(CHAIN) DEMO_RPC_URL=$(RPC_URL) pnpm run demo
+
+demo-local: ## Run the demo against the local Anvil node
+	@$(MAKE) --no-print-directory demo CHAIN=anvil
+
+# record_timing=False is load-bearing: without it nbclient stamps per-cell wall-clock times into
+# the committed notebook and every re-run becomes a diff.
+notebook: ## Execute the analytics notebook, export docs/portfolio_analytics.html and the figures
+	cd engine && uv sync --group notebook
+	cd engine && uv run --group notebook jupyter nbconvert --to notebook --execute --inplace \
+	  --ExecutePreprocessor.record_timing=False ../notebooks/portfolio_analytics.ipynb
+	cd engine && uv run --group notebook jupyter nbconvert --to html \
+	  --output-dir ../docs --output portfolio_analytics.html ../notebooks/portfolio_analytics.ipynb
 
 coverage: ## Fail if any contract in contracts/src drops below 100% coverage
 	bash scripts/check-coverage.sh
