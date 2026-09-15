@@ -1,0 +1,57 @@
+/* ---------------------------------------------------------------------------
+   Diverging flow colours for /stats (dataviz skill: run the validator, never
+   eyeball the colours).
+
+   `components/charts/chart-theme.css` carries the app's chart chrome and a
+   one-hue ORDINAL ramp for bond positions ordered by maturity. It is the
+   Overview's file and this page does not change it. What it has no slot for is
+   the one encoding /stats needs and the Overview does not: **polarity**.
+
+   Subscriptions and redemptions are USDC into and out of the same vault, on the
+   same 6-decimal scale, either side of zero — a DIVERGING pair, not two
+   categories and not an ordered scale. So it takes two hues that read as
+   opposite plus a neutral midpoint, per the dataviz colour formula:
+
+     in   = the app accent (`--hb-viz-series`, itself `--accent`), the cool pole
+     out  = a warm orange, the only new hex on this page
+     zero = `--hb-viz-axis`, a neutral grey — the midpoint must read as
+            "nothing", so it is never a hue
+
+   Orange rather than red on purpose. The design system reserves green / amber /
+   red for status (`components/README.md`), and a redemption is not an error —
+   painting it in the danger colour would state something the data does not.
+
+   NOTE — PLACEHOLDER BRAND COLOUR: the cool pole is `--accent`, `#2E6BFF`, the
+   BUILD_PROMPT 7.1 placeholder. When the founders supply the real HitBite hex,
+   re-run the validation below at that hue and re-step the warm pole with it.
+
+   VALIDATION (dataviz `scripts/validate_palette.js`, categorical mode) against
+   the surface these bars render on — `--surface` #ffffff light, #14171d dark:
+
+     node scripts/validate_palette.js "#2e6bff,#eb6834" --mode light --surface "#ffffff"
+       -> PASS lightness band | PASS chroma floor | PASS CVD ΔE 30.7 (protan)
+          | PASS normal-vision ΔE 38.7 | PASS contrast >= 3:1
+
+     node scripts/validate_palette.js "#5b8cff,#d95926" --mode dark --surface "#14171d"
+       -> PASS lightness band | PASS chroma floor | PASS CVD ΔE 30.0 (protan)
+          | PASS normal-vision ΔE 32.7 | PASS contrast >= 3:1
+
+   Two series, so a legend is always present (`flows-card.tsx` renders it in text
+   tokens beside a colour key), the arms sit on opposite sides of the zero rule,
+   and every figure is in the table under the chart. Colour is never the only
+   channel.
+   --------------------------------------------------------------------------- */
+
+.hb-stats-flow {
+  /* Cool pole: the same series colour every other chart in the app uses. The
+     fallback only matters if this class is ever used outside `.hb-chart`. */
+  --hb-flow-in: var(--hb-viz-series, var(--accent));
+  --hb-flow-out: #eb6834;
+  /* Neutral diverging midpoint: the zero rule, one step stronger than a gridline. */
+  --hb-flow-zero: var(--hb-viz-axis, var(--border-strong));
+}
+
+/* Matches the design system's own `@custom-variant dark (&:where(.dark, .dark *))`. */
+:where(.dark) .hb-stats-flow {
+  --hb-flow-out: #d95926;
+}
