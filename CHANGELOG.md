@@ -45,6 +45,19 @@ layer, five public API routes, contract and ABI generation from the deployment r
 Overview and Transparency pages. Lighthouse 97 performance, 100 accessibility and 100 best practices
 on both public pages.
 
+**Phase 8 — portfolio and statistics.** The events indexer with reorg-safe deduplication, gap
+reporting and cursor paging, the rebuilt events and stats endpoints, `/portfolio` with claim,
+redeem, cost basis and CSV export, and `/stats`.
+
+**Phase 9 — operator and reference.** The role-gated admin console showing the encoded call for
+every action and requiring typed confirmation for destructive ones, `/rules` and `/risks` rendered
+byte-faithfully from the canonical root documents, and `/developers` with an OpenAPI description
+generated from the same zod schemas the routes validate against.
+
+**Phase 10 — proof artefacts.** The eight-step demo runner with an asserted report, run twice on
+every push in CI; the portfolio analytics notebook, byte-reproducible across runs, with twelve
+exported figures; and screenshots of every page in both themes.
+
 **Phase 7 — investor flow.** The verification store and registrar worker, the full ISO country list
 with blocked codes disabled and explained, the wallet layer (mounted only by the pages that need it,
 so the public pages keep their scores), and the `/verify` and `/subscribe` pages.
@@ -57,7 +70,9 @@ so the public pages keep their scores), and the `/verify` and `/subscribe` pages
   period, and a bond maturing inside the valuation window redeems into cash. No published number
   changed.
 - The secret scan now covers untracked files, so a leak fails the gate before it is ever staged.
-- Slither runs in CI.
+- Slither runs in CI, alongside a gate that fails if any contract in `src/` drops below 100%
+  coverage, a check that the canonical documents have not drifted from their web copies, and a job
+  that runs the full demo scenario on a fresh chain twice.
 
 ### Security
 

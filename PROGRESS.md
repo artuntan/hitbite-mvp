@@ -132,6 +132,18 @@ uses — verifies the published signature, and flipping one digit in the signed 
   All of it was false by then. Both now describe the real contract, including that the cursor is a
   position rather than an offset and that `coverage` must be read before a result is trusted.
 
+**Phases 9 and 10 — shipped**
+- Phase 9: the role-gated `/admin` console, `/rules` and `/risks` rendered from the canonical root
+  documents (D12), `/developers` and the OpenAPI description. Web unit tests 445 → 632, Playwright
+  53 → 99 passing.
+- Phase 10: the eight-step demo runner with `demo/REPORT.md`, the analytics notebook with twelve
+  exported figures, and twenty screenshots covering every page in both themes.
+- Lighthouse on all six public pages: 92 to 96 performance, 100 accessibility, 100 best practices.
+- CI is now six jobs. The new `demo` job runs the whole eight-step scenario on a fresh Anvil **twice
+  in a row** on every push — the second run is the idempotency check — and uploads the report as an
+  artefact. I also added a coverage gate that fails if any contract in `src/` drops below 100%, and
+  a check that `web/content/` has not drifted from the canonical root documents.
+
 **Broke / surprised**
 - I misdiagnosed a test failure and should record it. After linking the two new routes, ten
   Playwright tests failed and reverting the link made them pass, which looked conclusive. It was
@@ -160,10 +172,21 @@ uses — verifies the published signature, and flipping one digit in the signed 
 
 **Needs from founders** (unchanged; see `PLAN.md` Section 5)
 
-**Next**
-- Phase 9: `/admin` (role-gated, with typed confirmations and the encoded call shown), `/rules` and
-  `/risks` rendered from the canonical root documents (D12), `/developers`, and the OpenAPI
-  description of the public API.
+**Next — and this is now mostly the founders' list**
+Every phase 0 through 10 is built, tested and green. What remains needs credentials this machine
+does not have, and is tracked in `PLAN.md` Section 5:
+
+1. A funded Base Sepolia deployer key, so `make deploy CHAIN=base-sepolia` and `make verify` can run
+   and the README's address table can be filled.
+2. Demo wallets with a little testnet ETH, so `make demo` runs against the public testnet rather
+   than only against Anvil.
+3. A Vercel project and a WalletConnect id, for the live demo link.
+4. The brand hex, two team bios, and the 90-second recording.
+5. Confirmation of D19 (reference-unit NAV), D4 (de-verified holders may still redeem) and D26
+   (NAV drops at distribution).
+
+Showcase items (BUILD_PROMPT Section 14) are deliberately not started: they come only after the
+definition of done passes, and item 2 of that list needs the testnet run above.
 
 ## 2026-09-14 — Session 2: Phase 1 review triage, fixes in flight, engine build started
 
