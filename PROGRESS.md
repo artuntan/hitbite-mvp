@@ -104,6 +104,13 @@ The 70/30 split is exact. The NAV drop is exactly the per-token coupon, which is
 real chain rather than only in a unit test. Available liquidity is the subscription money alone, so
 the coupon reserve was correctly excluded and then correctly released once both holders had claimed.
 
+**Attestation seam closed.** The Phase 6 transparency agent flagged that its published-attestation
+branch had only ever run against a document it made up in a scratch directory, never against real
+`nav-engine attest` output. Verified that seam directly: the engine's real output satisfies the web
+app's *strict* zod schema (an unknown field would fail), viem — the library the browser actually
+uses — verifies the published signature, and flipping one digit in the signed message is rejected.
+`web/public/data/` still holds only the four committed documents; no attestation is committed (D34).
+
 **Broke / surprised**
 - I misdiagnosed a test failure and should record it. After linking the two new routes, ten
   Playwright tests failed and reverting the link made them pass, which looked conclusive. It was
