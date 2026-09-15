@@ -97,6 +97,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm format:check
+      # The root markdown is canonical (D12); web/content/ is a copy because Vercel's build root is
+      # web/ and cannot read the repository root. Fail if the two have drifted.
+      - run: pnpm sync:docs --check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
