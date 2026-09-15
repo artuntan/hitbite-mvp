@@ -34,7 +34,7 @@ endif
 .DEFAULT_GOAL := help
 .PHONY: help setup lint test build check-secrets sync-spec \
         lint-contracts lint-engine lint-web test-contracts test-engine test-web \
-        build-contracts build-web snapshot slither nav attest attest-verify push push-dry dev clean \
+        build-contracts build-web snapshot slither nav attest attest-verify push push-dry dev coverage clean \
         anvil deploy deploy-local seed verify require-chain require-signer
 
 help: ## List targets
@@ -147,6 +147,9 @@ verify: require-chain ## Verify the deployed contracts on Basescan (CHAIN=base-s
 	  (cd contracts && forge verify-contract "$$addr" "src/$$name.sol:$$name" --chain 84532 \
 	     --rpc-url $(RPC_URL) --guess-constructor-args --etherscan-api-key "$$BASESCAN_API_KEY" --watch); \
 	done
+
+coverage: ## Fail if any contract in contracts/src drops below 100% coverage
+	bash scripts/check-coverage.sh
 
 snapshot: ## Refresh contracts/.gas-snapshot (unit tests only)
 	cd contracts && forge snapshot --no-match-test "invariant|testFuzz"

@@ -32,6 +32,9 @@ jobs:
       - run: forge test -vvv
         env:
           FOUNDRY_PROFILE: ci
+      - name: Coverage gate — every file in src/ at 100%
+        run: bash ../scripts/check-coverage.sh
+
       - name: Gas snapshot regression (>10% fails)
         if: hashFiles('contracts/.gas-snapshot') != ''
         run: forge snapshot --check --tolerance 10 --no-match-test "invariant|testFuzz"
