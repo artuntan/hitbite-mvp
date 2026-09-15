@@ -111,6 +111,27 @@ app's *strict* zod schema (an unknown field would fail), viem — the library th
 uses — verifies the published signature, and flipping one digit in the signed message is rejected.
 `web/public/data/` still holds only the four committed documents; no attestation is committed (D34).
 
+**Phase 8 (portfolio, stats, indexer) — shipped**
+- The events indexer, the rebuilt `/api/events` and upgraded `/api/stats`, `/portfolio` with claim
+  and redeem, and `/stats`. Web unit tests 292 → 445, Playwright 36 → 53 passing with 3 skipping on
+  documented chain-state conditions.
+- Lighthouse on all three public pages, against a production build:
+
+  | Page | Performance | Accessibility | Best practices |
+  |---|---|---|---|
+  | `/` | 92 | 100 | 100 |
+  | `/stats` | 92 | 100 | 100 |
+  | `/transparency` | 93 | 100 | 100 |
+
+  `/stats` carries charts and still holds the line; it imports nothing from the wallet layer.
+- The indexer agent verified itself on a private Anvil and reported the numbers: 19 events indexed
+  across 13 of 14 names, holders 2, supply folded from events matching the chain, an exact 2:1
+  coupon split, and the ex-distribution NAV drop landing where D26 says it should.
+- Fixed a documentation defect that agent surfaced: `PARTNER_INTEGRATION.md` and `web/README.md`
+  both still described the Phase 6 placeholder endpoint — no filters, no pagination, `holders: null`.
+  All of it was false by then. Both now describe the real contract, including that the cursor is a
+  position rather than an offset and that `coverage` must be read before a result is trusted.
+
 **Broke / surprised**
 - I misdiagnosed a test failure and should record it. After linking the two new routes, ten
   Playwright tests failed and reverting the link made them pass, which looked conclusive. It was
@@ -140,8 +161,9 @@ uses — verifies the published signature, and flipping one digit in the signed 
 **Needs from founders** (unchanged; see `PLAN.md` Section 5)
 
 **Next**
-- Phase 8: `/portfolio` with claim and redeem, the events indexer (D10) and `/stats`. The checkpoint
-  is that a coupon distributed by an admin is claimable by two wallets and the history renders.
+- Phase 9: `/admin` (role-gated, with typed confirmations and the encoded call shown), `/rules` and
+  `/risks` rendered from the canonical root documents (D12), `/developers`, and the OpenAPI
+  description of the public API.
 
 ## 2026-09-14 — Session 2: Phase 1 review triage, fixes in flight, engine build started
 
