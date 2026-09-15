@@ -36,6 +36,8 @@ repository.
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | How the engine, contracts and web app fit together, with sequence diagrams |
 | [`COMPLIANCE_RULES.md`](COMPLIANCE_RULES.md) | Every rule the contracts enforce: whitelist, blocked countries, transfers, pause, NAV rail |
 | [`RISKS.md`](RISKS.md) | What can go wrong, in plain language, starting with what is simulated |
+| [`SECURITY.md`](SECURITY.md) | Threat model, the triaged static-analysis findings, and what is *not* mitigated |
+| [`PARTNER_INTEGRATION.md`](PARTNER_INTEGRATION.md) | For a vault curator or listing team: reading NAV, transfer rules, attestations, collateral pricing |
 | [`SPEC.md`](SPEC.md) | The product spec |
 | [`PLAN.md`](PLAN.md) | Phases, and every ambiguity resolved as a numbered decision |
 | [`PROGRESS.md`](PROGRESS.md) | Dated build log: what shipped, what broke, what is blocked |
