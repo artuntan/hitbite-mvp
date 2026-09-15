@@ -17,6 +17,8 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Overview" },
   { href: "/transparency", label: "Transparency", matchPrefix: true },
+  { href: "/verify", label: "Verify", matchPrefix: true },
+  { href: "/subscribe", label: "Subscribe", matchPrefix: true },
 ];
 
 /**
@@ -25,8 +27,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
  * place to look.
  */
 export const PLANNED_ROUTES: readonly (NavItem & { phase: string })[] = [
-  { href: "/verify", label: "Verify", phase: "Phase 7" },
-  { href: "/subscribe", label: "Subscribe", phase: "Phase 7" },
   { href: "/portfolio", label: "Portfolio", phase: "Phase 8" },
   { href: "/stats", label: "Stats", phase: "Phase 8" },
   { href: "/rules", label: "Rules", phase: "Phase 9" },
