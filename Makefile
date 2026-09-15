@@ -35,7 +35,7 @@ endif
 .PHONY: help setup lint test build check-secrets sync-spec \
         lint-contracts lint-engine lint-web lint-demo test-contracts test-engine test-web \
         build-contracts build-web snapshot slither nav attest attest-verify push push-dry dev coverage \
-        demo demo-local notebook clean \
+        demo demo-local notebook screenshots clean \
         anvil deploy deploy-local seed verify require-chain require-signer
 
 help: ## List targets
@@ -170,6 +170,13 @@ notebook: ## Execute the analytics notebook, export docs/portfolio_analytics.htm
 	  --ExecutePreprocessor.record_timing=False ../notebooks/portfolio_analytics.ipynb
 	cd engine && uv run --group notebook jupyter nbconvert --to html \
 	  --output-dir ../docs --output portfolio_analytics.html ../notebooks/portfolio_analytics.ipynb
+
+screenshots: ## Capture every page in light and dark into docs/screenshots (needs a production build)
+	cd web && pnpm build && pnpm screenshots
+	@command -v pngquant >/dev/null 2>&1 \
+	  && (cd docs/screenshots && pngquant --quality 65-88 --speed 1 --force --ext .png *.png) \
+	  && echo "screenshots: compressed with pngquant" \
+	  || echo "screenshots: pngquant not installed — images are uncompressed (brew install pngquant)"
 
 coverage: ## Fail if any contract in contracts/src drops below 100% coverage
 	bash scripts/check-coverage.sh

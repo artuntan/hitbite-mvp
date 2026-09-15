@@ -8,6 +8,9 @@ const baseURL = `http://127.0.0.1:${port}`;
 // Runs against a production build: `pnpm build` must precede `pnpm test:e2e`.
 export default defineConfig({
   testDir: "e2e",
+  // screenshots.spec.ts is a generator, not a test: a missing picture is not a broken app, and
+  // mixing the two makes a red suite ambiguous. Run it with `pnpm screenshots`.
+  testIgnore: "**/screenshots.spec.ts",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,

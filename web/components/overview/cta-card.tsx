@@ -25,37 +25,37 @@ function phaseFor(href: string): string | null {
 }
 
 /**
- * `NAV_ITEMS` is the shell's single source of truth for routes that exist; the
- * convention is that a page's entry moves out of `PLANNED_ROUTES` and into it in
- * the same commit that ships the page. Reading it here means this card links to
- * the transparency page the moment that page lands, and silently omits the link
- * until then — never a 404 either way.
+ * `NAV_ITEMS` is the shell's single source of truth for routes that exist; a
+ * page's entry moves into it in the same commit that ships the page. Reading it
+ * here means each control below becomes a real link the moment its page lands,
+ * and stays an explained, `aria-disabled` control until then — never a 404
+ * either way (BUILD_PROMPT 16.5, "no dead links").
  */
 const TRANSPARENCY = NAV_ITEMS.find((item) => item.href === "/transparency");
 
-/**
- * Call to action toward verification and subscription.
- *
- * Neither /verify nor /subscribe exists in this build, so neither is linked: a
- * 404 from the Overview is worse than an honest "not yet" (BUILD_PROMPT 16.5,
- * "no dead links"). Those two controls are `aria-disabled` rather than removed —
- * still focusable, announced as unavailable, and explained in text right beside
- * them. Every link that is rendered points at a route that exists today.
- */
+function isBuilt(href: string): boolean {
+  return NAV_ITEMS.some((item) => item.href === href);
+}
+
+const FLOW_IS_BUILT = FLOW_STEPS.every((step) => isBuilt(step.href));
+
+/** Call to action toward verification and subscription. */
 export function CtaCard() {
   return (
     <Card>
       <CardHeader>
         <CardTitle as="h3">Verify, then subscribe</CardTitle>
         <CardDescription id="cta-availability">
-          The investor flow is not part of this build yet. Until it ships, these controls are
-          inactive on purpose rather than pointing at a page that does not exist.
+          {FLOW_IS_BUILT
+            ? "Two steps on this test network, with no money at stake. Verification is auto-approved by a simulated registrar and asks for no identity document; the USDC comes from a faucet."
+            : "Part of the investor flow is not in this build yet. Until it ships, those controls are inactive on purpose rather than pointing at a page that does not exist."}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-5">
         <ul className="grid gap-4 sm:grid-cols-2">
           {FLOW_STEPS.map((step) => {
+            const built = isBuilt(step.href);
             const phase = phaseFor(step.href);
             return (
               <li
@@ -63,16 +63,24 @@ export function CtaCard() {
                 className="border-border bg-surface-sunken flex flex-col gap-3 rounded-lg border p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    aria-disabled="true"
-                    aria-describedby="cta-availability"
-                    className="cursor-not-allowed opacity-60"
-                  >
-                    {step.title}
-                  </Button>
-                  <StatusBadge tone="neutral">{phase ?? "Not built yet"}</StatusBadge>
+                  {built ? (
+                    <Button variant="secondary" size="sm" asChild>
+                      <Link href={step.href}>{step.title}</Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        aria-disabled="true"
+                        aria-describedby="cta-availability"
+                        className="cursor-not-allowed opacity-60"
+                      >
+                        {step.title}
+                      </Button>
+                      <StatusBadge tone="neutral">{phase ?? "Not built yet"}</StatusBadge>
+                    </>
+                  )}
                 </div>
                 <p className="text-muted text-sm leading-relaxed">{step.description}</p>
               </li>
@@ -82,7 +90,7 @@ export function CtaCard() {
 
         <div className="flex flex-col gap-3">
           <p className="text-muted text-sm leading-relaxed">
-            What you can do today: read the published NAV and holdings through the{" "}
+            You can also read the published NAV and holdings straight from the{" "}
             <a
               href="/api/nav"
               className="text-accent-ink underline underline-offset-4 hover:no-underline"
