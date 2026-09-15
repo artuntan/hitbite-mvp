@@ -45,6 +45,10 @@ layer, five public API routes, contract and ABI generation from the deployment r
 Overview and Transparency pages. Lighthouse 97 performance, 100 accessibility and 100 best practices
 on both public pages.
 
+**Phase 7 — investor flow.** The verification store and registrar worker, the full ISO country list
+with blocked codes disabled and explained, the wallet layer (mounted only by the pages that need it,
+so the public pages keep their scores), and the `/verify` and `/subscribe` pages.
+
 **Phase 8 — portfolio and statistics.** The events indexer with reorg-safe deduplication, gap
 reporting and cursor paging, the rebuilt events and stats endpoints, `/portfolio` with claim,
 redeem, cost basis and CSV export, and `/stats`.
@@ -57,10 +61,6 @@ generated from the same zod schemas the routes validate against.
 **Phase 10 — proof artefacts.** The eight-step demo runner with an asserted report, run twice on
 every push in CI; the portfolio analytics notebook, byte-reproducible across runs, with twelve
 exported figures; and screenshots of every page in both themes.
-
-**Phase 7 — investor flow.** The verification store and registrar worker, the full ISO country list
-with blocked codes disabled and explained, the wallet layer (mounted only by the pages that need it,
-so the public pages keep their scores), and the `/verify` and `/subscribe` pages.
 
 ### Changed
 
