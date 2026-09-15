@@ -122,7 +122,7 @@ the CDN rather than a function.
 | `/api/holdings`    | `holdings.json`, verbatim                                                  |
 | `/api/attestation` | `{ status: "published", document }` or `{ status: "not_published", … }`    |
 | `/api/stats`       | Published figures + NAV history + on-chain reads + the NAV agreement check |
-| `/api/events`      | A minimal recent-log read. See the limitations it ships with.              |
+| `/api/events`      | Indexed events from the deploy block, filterable, paged by cursor          |
 
 Every response is `{ "ok": true, "data": … }`. Every failure is
 
@@ -147,21 +147,30 @@ curl -s 'http://localhost:3000/api/events?limit=5' | jq '.data.events[] | {name,
 It always returns the published half: NAV, portfolio analytics, distribution yield, the fee
 schedule and the NAV history series. The on-chain half is a discriminated union — `status: "ok"`
 with the contract's own integers, or `status: "unavailable"` with the reason. It never invents a
-zero when an RPC times out. `holders` is `null`: counting holders means indexing `Transfer` logs,
-which is Phase 8.
+zero when an RPC times out. `holders` is a real count now, folded from `Transfer` logs and excluding
+the zero address; it is reported as a floor when index coverage is incomplete, and is `null` only
+when no index could be built. `data.activity` carries the distribution, verification, pause and
+daily-flow aggregates.
 
 `nav_agreement` is the check BUILD_PROMPT.md §13 asks for — the engine's `nav.usdc_6dec` against
 the contract's `nav()`, compared as integers. `matches` is `null` (not `false`) when there is
 nothing to compare against: "we could not check" and "the check failed" are different facts.
 
-### What `/api/events` does not do yet
+### Reading `/api/events`
 
-One `eth_getLogs` against the deployed `HBToken`, ending at the chain head and reaching back at
-most 10,000 blocks, newest first, capped by `?limit=` (default 50, max 200). No filters, no
-pagination, no server-side index, no cost basis, no CSV — and older events that exist on chain are
-not returned once they fall outside the window. Each response carries a `limitations` array saying
-exactly that, because the people who most need to know are reading the JSON. The real indexer is
-Phase 8 (PLAN.md D10).
+Indexed from the recorded `deployBlock`, chunked, cached for 60 seconds, no database (D10). Filter
+with `?event=` (repeatable and comma-separated) and `?account=`, which matches an address in every
+argument position rather than only the first indexed one. Page with `?cursor=`, `?limit=` (1–200,
+default 50) and `?order=`.
+
+The cursor is a position, `chainId:blockNumber:logIndex`, and exclusive — new events at the head do
+not shift the pages behind it, and a cursor from another chain is a 400 rather than a silent
+misread.
+
+Read `coverage` before trusting a result: it reports completeness, any range that could not be read
+and why, duplicates dropped, reorg conflicts, the cache age, and whether a stale index is being
+served after a failed rebuild. `limitations` is derived from that build, not a fixed disclaimer. A
+range the node refuses becomes a named gap, never a short list that looks complete.
 
 ---
 
@@ -175,8 +184,9 @@ testnet, which is what catches a `SERVER_RPC_URL` pointed somewhere it should no
 
 `lib/wagmi.ts` is the wallet config and carries `"use client"`. That is enforcement, not decoration:
 a server component importing `wagmiConfig` gets a client reference it cannot call, so the wallet
-bundle cannot drift onto a public page by accident. `/`, `/transparency`, `/rules` and `/risks`
-render from JSON and import nothing from it.
+bundle cannot drift onto a public page by accident. The public pages — `/`,
+`/transparency` and `/stats` — render from JSON and the event index and import nothing from it.
+`/rules` and `/risks` join them in Phase 9.
 
 `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is **optional**. Without it, WalletConnect's relay is
 unavailable, so only injected browser-extension wallets (MetaMask, Rabby, Brave) are offered — which

@@ -125,23 +125,52 @@ Call this before you attempt a transfer, not after. A transfer to an ineligible 
 |---|---|
 | `/api/nav` | NAV per token, NAV total, valuation date, and the assumptions behind them |
 | `/api/holdings` | Every position: face, clean price, accrued, dirty, market value, weight, yield, duration |
-| `/api/stats` | Supply, chain id, NAV agreement, and what is not yet available |
+| `/api/stats` | Holders, supply, distributions, NAV history, and daily subscription and redemption flow |
 | `/api/attestation` | The signed holdings document, or an explicit `not_published` state |
-| `/api/events` | Recent contract events over a bounded block window |
-
-Two of these are honest about their limits in ways worth reading rather than discovering:
+| `/api/events` | Indexed contract events from the deploy block, filterable and paged |
 
 **`/api/attestation` may return `status: "not_published"`.** That is a normal state, answered with
 HTTP 200, carrying the reason and the command that would publish one. It is not an error and should
 not be retried as one. Until an attestation exists there is nothing to verify, and the API says so
 rather than returning an empty object you might mistake for a valid document.
 
-**`/api/events` is deliberately minimal.** One bounded `eth_getLogs` over a 10,000-block window,
-newest first. Every response carries a `limitations` array naming exactly what is missing, plus
-`window_truncated` and `results_truncated` flags. There is no cursor, no filter by event name, and
-no server-side index. `/api/stats` returns `holders: null` for the same reason. If you need complete
-history today, index the chain yourself from the `deployBlock` in
-`contracts/deployments/<chain>.json`.
+### `/api/events`
+
+Indexed from the `deployBlock` in `contracts/deployments/<chain>.json`, chunked, cached for 60
+seconds. Query parameters:
+
+| Parameter | Form | Default |
+|---|---|---|
+| `event` | Repeatable and comma-separated. An unknown name is a 400 listing the valid ones | all 14 |
+| `account` | `0x` and 40 hex, matched in **every** argument position, not just the first indexed one | none |
+| `from_block`, `to_block` | Whole decimals, inclusive | none |
+| `limit` | 1 to 200 | 50 |
+| `cursor` | `page.next_cursor`, verbatim | none |
+| `order` | `asc` or `desc` | `desc` |
+
+**The cursor is a position, not an offset.** It is `chainId:blockNumber:logIndex` and exclusive, so
+new events arriving at the head do not shift the pages behind it. A cursor minted against a
+different chain is refused with a 400 rather than silently misinterpreted.
+
+**Read the `coverage` object before you trust a result.** It reports whether the index is complete,
+which ranges could not be read and why, how many duplicate logs were dropped, how many slots held a
+conflicting transaction after a reorg, the cache age, and whether a stale index is being served
+because a rebuild failed. `limitations` is derived from that specific build, not a fixed disclaimer.
+A range the node would not serve appears as a named gap; it never silently becomes a short list that
+looks complete.
+
+### `/api/stats`
+
+`holders` is a real count, folded from `Transfer` logs, excluding the zero address. When coverage is
+incomplete it is flagged as a floor rather than reported as exact.
+
+Distributions report two figures, and the difference matters. `usdc_amount_6dec` is what the issuer
+paid into the vault; `usdc_allocated_6dec` is what the index actually allocated to holders. They
+differ by the truncation remainder, reported as `truncation_remainder_6dec`, which becomes ordinary
+vault liquidity rather than a locked reserve. Quote the one you mean.
+
+`daily` gives one row per UTC day of subscription and redemption flow. Anything the index cannot
+answer stays `null` with a reason attached.
 
 ---
 
