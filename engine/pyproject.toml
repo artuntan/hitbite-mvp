@@ -26,6 +26,14 @@ dev = [
     "pandas-stubs>=2.3,<3",
     "types-PyYAML",
 ]
+# `notebooks/portfolio_analytics.ipynb` only. Deliberately NOT in the default groups, so
+# `uv sync --frozen` in CI and on a contributor's first run stays as light as it is today;
+# `make notebook` (or `uv run --group notebook ...`) pulls these in on demand.
+notebook = [
+    "ipykernel>=6.29",   # the kernel `nbconvert --execute` runs the notebook in
+    "nbconvert>=7.16",   # notebook -> executed notebook, and notebook -> HTML
+    "matplotlib>=3.9,<4",# figures; DejaVu Sans ships with it, so text renders identically anywhere
+]
 
 [build-system]
 requires = ["hatchling"]
