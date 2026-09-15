@@ -9,8 +9,23 @@ paths = [
   '''pnpm-lock\.yaml''',
   '''uv\.lock''',
   '''scripts/anvil-public-keys\.txt''',
+  # Machine-written deployment records and the file generated from them. Their schema is fixed
+  # (chainId, addresses, deployBlock, txHashes, timestamp) and neither the deploy script's
+  # `record()` nor `sync-contracts.ts` can emit a key. scripts/check-secrets.sh still scans both.
+  '''contracts/deployments/.*\.json''',
+  '''web/lib/generated/addresses\.ts''',
 ]
 regexes = [
+  # An Ethereum address is 20 bytes of public data. A secp256k1 private key is 32 bytes, so a
+  # 40-hex-digit string is the wrong length to be one: allowing this shape cannot hide a key.
+  # gitleaks' generic-api-key rule flags addresses on entropy alone, which is what this answers.
+  '''0x[0-9a-fA-F]{40}\b''',
+  # Creation transaction hashes of the deterministic local Anvil deployment, quoted in
+  # contracts/README.md. Public chain data. A tx hash and a private key are both 32 bytes, so these
+  # are listed by value rather than by shape — add a line here when a new deployment is documented.
+  '''5e8ed126a35a187a3706300d6b4cf231dbac1942d71b22aa74a11955811872cb''',
+  '''655a04e5c450053f20ab76c44e188ab99c5cb97bf79f17b24134d82cc74b578d''',
+  '''7cb11b44d2b9c6042e400eee24161d536c5c628680d0680f65055ea21d1c63bd''',
   # Anvil's ten published development private keys (Foundry docs); never used on a public network here.
   '''ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
   '''59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d''',
