@@ -72,7 +72,27 @@ rule: a 40-hex string is the wrong length to be a 32-byte private key, so that s
 globally and provably cannot hide one; the transaction hashes, which *are* the same length as a key,
 are listed by value. Verified by planting a real-looking key and confirming gitleaks still fails.
 
+**Phase 7 (verify, subscribe) — shipped**
+- The verification store and registrar worker (D7, D8), the wallet layer, `/verify` and
+  `/subscribe`. Web unit tests 80 → 292, Playwright 19 → 36. CI green on all five jobs.
+- The wallet bundle stays where it belongs. Route first-load sizes: `/` 232 kB and `/transparency`
+  120 kB, unchanged; `/verify` 393 kB and `/subscribe` 396 kB carry the wallet. Lighthouse on `/`
+  is 93 / 100 / 100, down from 97 on performance but still above the checkpoint's 90.
+- `/verify` leads with what it is not: *"This is not KYC, and nothing here checks who you are. No
+  identity document is requested, read, uploaded or stored. There is no vendor behind this form, no
+  reviewer, no sanctions screen and no register of people."* It then tells the reader not to type
+  real personal data. The form collects no name and the route drops one if sent (D59).
+- Closed a gap both page agents flagged and neither could fix: vitest's include reached only `lib/`,
+  so the pure logic beside a page had no unit coverage. The subscribe quote arithmetic is now tested
+  against the contract's formula written out independently, and validated by mutation — rounding the
+  division up instead of down fails four of the sixteen.
+
 **Broke / surprised**
+- I misdiagnosed a test failure and should record it. After linking the two new routes, ten
+  Playwright tests failed and reverting the link made them pass, which looked conclusive. It was
+  not: a server I had started by hand for the Lighthouse run was still bound to Playwright's port,
+  so Playwright reused it and tested a stale build. The link was never the cause. Kill stray servers
+  before trusting a bisect.
 - The yield solver was quietly wrong. It stopped on an absolute 1e-14 step in yield units, which is
   smaller than the smallest representable step near maturity, so it reported failure *after*
   converging. On the shipped book it returned a silent −3.46 % yield on 2029-02-28 and then aborted
@@ -96,9 +116,8 @@ are listed by value. Verified by planting a real-looking key and confirming gitl
 **Needs from founders** (unchanged; see `PLAN.md` Section 5)
 
 **Next**
-- Phase 7: `/verify` and `/subscribe`, the faucet, the registrar worker and the verification store
-  (D7, D8), plus the full country list (D23). This is the first phase that needs a wallet in the
-  browser, so the wallet bundle finally gets loaded — on those pages only, never on the public ones.
+- Phase 8: `/portfolio` with claim and redeem, the events indexer (D10) and `/stats`. The checkpoint
+  is that a coupon distributed by an admin is claimable by two wallets and the history renders.
 
 ## 2026-09-14 — Session 2: Phase 1 review triage, fixes in flight, engine build started
 
