@@ -57,6 +57,9 @@ export const txHash = z
   .string()
   .regex(/^0x[0-9a-fA-F]{64}$/, "expected a 32-byte hex transaction hash");
 
+/** Any 32-byte hash — a block hash, where `txHash` would read as the wrong thing. */
+export const hash32 = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "expected a 32-byte hex hash");
+
 /** Yields, durations and convexities: analytics, not money, and floats by design (`Float6`). */
 export const analytic = z.number().finite();
 
@@ -388,6 +391,307 @@ export const attestationResponseSchema = apiSuccessSchema(attestationStatusSchem
 export const navResponseSchema = apiSuccessSchema(navDocumentSchema);
 export const holdingsResponseSchema = apiSuccessSchema(holdingsDocumentSchema);
 
+// --------------------------------------------------------------------------- the event index
+
+/**
+ * Every contract event the indexer decodes (PLAN.md D10).
+ *
+ * This is both contracts' product event surface, taken from `contracts/src/interfaces/`. The ones
+ * left out carry no product meaning and would bury the ones that do: ERC-20 `Approval`, the
+ * AccessControl role events, `MaxNavMoveBpsUpdated`, `MinSubscriptionUpdated` and MockUSDC's
+ * `Faucet`. Adding a name here is additive for a caller switching on it; removing one is not.
+ */
+export const EVENT_NAMES = [
+  "NAVUpdated",
+  "NAVForced",
+  "Subscribed",
+  "Redeemed",
+  "CouponDistributed",
+  "CouponClaimed",
+  "OperationalMint",
+  "OperationalBurn",
+  "Transfer",
+  "Paused",
+  "Unpaused",
+  "IdentityVerified",
+  "IdentityRemoved",
+  "CountryBlockStatusChanged",
+] as const;
+
+export const eventNameSchema = z.enum(EVENT_NAMES);
+export type EventName = (typeof EVENT_NAMES)[number];
+
+/** Which contract emitted the event: `token` is `HBToken`, `registry` is `IdentityRegistry`. */
+export const eventSourceSchema = z.enum(["token", "registry"]);
+export type EventSource = z.infer<typeof eventSourceSchema>;
+
+/** A lower-cased address, as the `accounts` array and the account filter both use. */
+export const lowerCaseAddress = z
+  .string()
+  .regex(/^0x[0-9a-f]{40}$/, "expected a lower-cased 20-byte hex address");
+
+export const chainEventSchema = z.strictObject({
+  name: eventNameSchema,
+  source: eventSourceSchema,
+  /** The emitting contract. Not an account: it never matches the `account` filter. */
+  address: evmAddress,
+  block_number: nonNegativeInt,
+  /** The block's hash. Identity of a log is `(block_number, log_index, transaction_hash)`. */
+  block_hash: hash32,
+  /** Unix seconds, or `null` when the block's timestamp has not been fetched yet. */
+  block_timestamp: nonNegativeInt.nullable(),
+  /** The same instant as `block_timestamp`, ISO UTC, for a reader rather than a parser. */
+  block_time: isoTimestamp.nullable(),
+  transaction_hash: txHash,
+  transaction_index: nonNegativeInt,
+  log_index: nonNegativeInt,
+  /**
+   * Decoded arguments in ABI order, every value stringified: addresses checksummed, integers as
+   * decimal strings of the exact integer the contract emitted (PLAN.md D22), booleans as
+   * `"true"`/`"false"`. JSON has no BigInt and a JSON number would lose the low digits of an
+   * 18-decimal amount.
+   */
+  args: z.record(z.string(), z.string()),
+  /** Every address appearing anywhere in `args`, lower-cased. The account filter matches this. */
+  accounts: z.array(lowerCaseAddress),
+});
+export type ChainEvent = z.infer<typeof chainEventSchema>;
+
+/** A half-open block range the indexer could not read, and why. */
+export const blockGapSchema = z.strictObject({
+  from_block: nonNegativeInt,
+  to_block: nonNegativeInt,
+  reason: z.string(),
+});
+export type BlockGap = z.infer<typeof blockGapSchema>;
+
+/**
+ * What the index actually managed to read, said plainly.
+ *
+ * `complete: false` with a non-empty `gaps` is the honest answer when a public RPC truncated or
+ * refused part of the range. A short list that looks complete is the failure mode this block
+ * exists to prevent.
+ */
+export const indexCoverageSchema = z.strictObject({
+  complete: z.boolean(),
+  from_block: nonNegativeInt,
+  to_block: nonNegativeInt,
+  head_block: nonNegativeInt,
+  chunk_size: nonNegativeInt,
+  /** `eth_getLogs` calls made, including retries and splits. */
+  log_requests: nonNegativeInt,
+  gaps: z.array(blockGapSchema),
+  /** Exact `(block, log index, transaction hash)` repeats dropped. Harmless. */
+  duplicates_dropped: nonNegativeInt,
+  /** Slots that held two different transactions while the index was built. That is a reorg. */
+  reorg_conflicts: nonNegativeInt,
+  /** Logs the node itself marked `removed`. */
+  removed_logs_dropped: nonNegativeInt,
+  /** Logs matching an indexed event that would not decode against its ABI. Should be zero. */
+  undecodable_logs: nonNegativeInt,
+  blocks_timestamped: nonNegativeInt,
+  blocks_without_timestamp: nonNegativeInt,
+  /** When this index was built, and how old the copy that answered this request is. */
+  indexed_at: isoTimestamp,
+  cache_age_seconds: nonNegativeInt,
+  cache_ttl_seconds: nonNegativeInt,
+  /** `true` when a rebuild failed and the previous index was served rather than nothing. */
+  stale: z.boolean(),
+  stale_reason: z.string().nullable(),
+});
+export type IndexCoverage = z.infer<typeof indexCoverageSchema>;
+
+export const eventOrderSchema = z.enum(["asc", "desc"]);
+
+/** The filters this request actually applied, echoed so a caller can see what it asked for. */
+export const eventFiltersSchema = z.strictObject({
+  /** Empty means every indexed event. */
+  event: z.array(eventNameSchema),
+  account: evmAddress.nullable(),
+  from_block: nonNegativeInt.nullable(),
+  to_block: nonNegativeInt.nullable(),
+});
+
+export const eventPageSchema = z.strictObject({
+  order: eventOrderSchema,
+  limit: nonNegativeInt,
+  max_limit: nonNegativeInt,
+  /** The cursor this request was given, and the one to pass for the next page. */
+  cursor: z.string().nullable(),
+  next_cursor: z.string().nullable(),
+  has_more: z.boolean(),
+  returned: nonNegativeInt,
+  /** How many events matched the filter in total, before the cursor and the limit. */
+  matched: nonNegativeInt,
+});
+
+export const eventsResponseSchema = apiSuccessSchema(
+  z.discriminatedUnion("status", [
+    z.strictObject({
+      status: z.literal("ok"),
+      chain_id: intField,
+      network: z.string(),
+      token_address: evmAddress,
+      registry_address: evmAddress,
+      deploy_block: nonNegativeInt,
+      from_block: nonNegativeInt,
+      to_block: nonNegativeInt,
+      /** True when the index could not cover everything from `deploy_block`; see `coverage.gaps`. */
+      window_truncated: z.boolean(),
+      /** True when more events matched than this page returned; see `page.next_cursor`. */
+      results_truncated: z.boolean(),
+      limit: nonNegativeInt,
+      count: nonNegativeInt,
+      events: z.array(chainEventSchema),
+      filters: eventFiltersSchema,
+      page: eventPageSchema,
+      coverage: indexCoverageSchema,
+      /** What this endpoint still does not do. Rendered as-is; see PLAN.md D10. */
+      limitations: z.array(z.string()),
+    }),
+    z.strictObject({
+      status: z.literal("unavailable"),
+      chain_id: intField,
+      network: z.string(),
+      reason: z.string(),
+      limitations: z.array(z.string()),
+    }),
+  ]),
+);
+export type EventsResponse = z.infer<typeof eventsResponseSchema>;
+
+// --------------------------------------------------------------------------- derived activity
+
+/**
+ * The holder count, with the one thing a reader has to know about it stated in the payload.
+ *
+ * `excludes_zero_address` is a literal `true` rather than a comment: the ERC-20 mint and burn
+ * sentinel is not an account, and a count that included it would be wrong by one from the first
+ * subscription onwards.
+ */
+export const holdersSchema = z.strictObject({
+  count: nonNegativeInt,
+  excludes_zero_address: z.literal(true),
+  source: z.literal("Transfer logs"),
+  basis: z.string(),
+  /** Addresses that ever held a positive balance, whether or not they still do. */
+  ever_held: nonNegativeInt,
+  /** `false` when the index has gaps, so the count is a floor rather than an answer. */
+  complete: z.boolean(),
+});
+export type Holders = z.infer<typeof holdersSchema>;
+
+export const flowTotalsSchema = z.strictObject({
+  count: nonNegativeInt,
+  accounts: nonNegativeInt,
+  usdc_6dec: integerString,
+  tokens_wei: integerString,
+});
+
+export const distributionTotalsSchema = z.strictObject({
+  count: nonNegativeInt,
+  /** `CouponDistributed.usdcAmount`: what the issuer paid into the vault. */
+  usdc_amount_6dec: integerString,
+  /** `CouponDistributed.usdcAllocated`: the part the cumulative index attributed to holders. */
+  usdc_allocated_6dec: integerString,
+  /** `usdc_amount - usdc_allocated`: the PLAN.md D29 truncation remainder. Vault liquidity. */
+  truncation_remainder_6dec: integerString,
+  latest_distribution_id: integerString.nullable(),
+  latest_at: isoTimestamp.nullable(),
+  note: z.string(),
+});
+
+export const dailyActivitySchema = z.strictObject({
+  date: isoDate,
+  subscriptions_count: nonNegativeInt,
+  subscriptions_usdc_in_6dec: integerString,
+  subscriptions_tokens_out_wei: integerString,
+  redemptions_count: nonNegativeInt,
+  redemptions_tokens_in_wei: integerString,
+  redemptions_usdc_out_6dec: integerString,
+  distributions_count: nonNegativeInt,
+  distributions_usdc_amount_6dec: integerString,
+  distributions_usdc_allocated_6dec: integerString,
+  claims_count: nonNegativeInt,
+  claims_usdc_6dec: integerString,
+  /** The last `NAVUpdated.newNav` of that UTC day, or `null` if NAV did not change. */
+  nav_close_usdc_6dec: integerString.nullable(),
+});
+export type DailyActivity = z.infer<typeof dailyActivitySchema>;
+
+export const onchainNavPointSchema = z.strictObject({
+  block_number: nonNegativeInt,
+  timestamp: nonNegativeInt.nullable(),
+  time: isoTimestamp.nullable(),
+  date: isoDate.nullable(),
+  previous_nav_usdc_6dec: integerString,
+  nav_usdc_6dec: integerString,
+  reported_aum_usdc_6dec: integerString,
+  /** `true` when `NAVForced` was emitted in the same transaction: an admin bypassed the rail. */
+  forced: z.boolean(),
+  transaction_hash: txHash,
+});
+
+export const verificationTotalsSchema = z.strictObject({
+  verified_events: nonNegativeInt,
+  removed_events: nonNegativeInt,
+  /** Accounts verified and not since removed. Re-verification overwrites; it does not add. */
+  currently_verified: nonNegativeInt,
+});
+
+/**
+ * Everything BUILD_PROMPT 7.2 asks `/stats` for that can only come from events: holders,
+ * distributions to date, and subscriptions and redemptions over time.
+ *
+ * A discriminated union for the same reason the chain block is one — when the indexer cannot read
+ * the chain, the honest answer is `unavailable` with a reason, not a page full of zeros.
+ */
+export const eventActivitySchema = z.discriminatedUnion("status", [
+  z.strictObject({
+    status: z.literal("ok"),
+    chain_id: intField,
+    network: z.string(),
+    token_address: evmAddress,
+    registry_address: evmAddress,
+    deploy_block: nonNegativeInt,
+    from_block: nonNegativeInt,
+    to_block: nonNegativeInt,
+    event_count: nonNegativeInt,
+    event_counts: z.record(eventNameSchema, nonNegativeInt),
+    holders: holdersSchema,
+    supply_from_events: z.strictObject({
+      wei: integerString,
+      minted_wei: integerString,
+      burned_wei: integerString,
+      /** Whether it equals the contract's `totalSupply()`; `null` when the chain read failed. */
+      matches_chain: z.boolean().nullable(),
+      note: z.string(),
+    }),
+    subscriptions: flowTotalsSchema,
+    redemptions: flowTotalsSchema,
+    distributions: distributionTotalsSchema,
+    claims: flowTotalsSchema,
+    verifications: verificationTotalsSchema,
+    pauses: z.strictObject({ paused: nonNegativeInt, unpaused: nonNegativeInt }),
+    /** One row per UTC day from the first activity to the last, zero rows included. */
+    daily: z.array(dailyActivitySchema),
+    /** Events with no resolved block timestamp, and therefore in no daily bucket. */
+    undated_events: nonNegativeInt,
+    nav_history_onchain: z.array(onchainNavPointSchema),
+    nav_history_truncated: z.boolean(),
+    coverage: indexCoverageSchema,
+    limitations: z.array(z.string()),
+  }),
+  z.strictObject({
+    status: z.literal("unavailable"),
+    chain_id: intField,
+    network: z.string(),
+    reason: z.string(),
+    limitations: z.array(z.string()),
+  }),
+]);
+export type EventActivity = z.infer<typeof eventActivitySchema>;
+
 // --------------------------------------------------------------------------- /api/stats
 
 /**
@@ -420,8 +724,12 @@ export const chainStatsSchema = z.discriminatedUnion("status", [
     supply_backed_ratio_1e18: integerString,
     min_subscription_usdc_6dec: integerString,
     max_nav_move_bps: nonNegativeInt,
-    /** `null` until the Phase 8 indexer exists; see `notes`. */
-    holders: z.null(),
+    /**
+     * Holders with a non-zero balance, folded from `Transfer` logs by the event indexer, or
+     * `null` when the index could not be built (the reason is then in `activity.reason`). The
+     * zero address is never counted — see `activity.holders` for that statement in the payload.
+     */
+    holders: nonNegativeInt.nullable(),
   }),
   z.strictObject({
     status: z.literal("unavailable"),
@@ -463,62 +771,9 @@ export const statsResponseSchema = apiSuccessSchema(
       count: nonNegativeInt,
     }),
     chain: chainStatsSchema,
+    activity: eventActivitySchema,
     nav_agreement: navAgreementSchema,
     notes: z.array(z.string()),
   }),
 );
 export type StatsResponse = z.infer<typeof statsResponseSchema>;
-
-// --------------------------------------------------------------------------- /api/events
-
-/** Contract events surfaced by the minimal Phase 6 reader. */
-export const eventNameSchema = z.enum([
-  "Subscribed",
-  "Redeemed",
-  "CouponDistributed",
-  "CouponClaimed",
-  "NAVUpdated",
-  "Transfer",
-]);
-export type EventName = z.infer<typeof eventNameSchema>;
-
-export const chainEventSchema = z.strictObject({
-  name: eventNameSchema,
-  block_number: nonNegativeInt,
-  transaction_hash: txHash,
-  log_index: nonNegativeInt,
-  /** Decoded arguments, every value stringified — addresses as hex, numbers as decimal strings. */
-  args: z.record(z.string(), z.string()),
-});
-export type ChainEvent = z.infer<typeof chainEventSchema>;
-
-export const eventsResponseSchema = apiSuccessSchema(
-  z.discriminatedUnion("status", [
-    z.strictObject({
-      status: z.literal("ok"),
-      chain_id: intField,
-      network: z.string(),
-      token_address: evmAddress,
-      deploy_block: nonNegativeInt,
-      from_block: nonNegativeInt,
-      to_block: nonNegativeInt,
-      /** True when the scan window started after `deploy_block`, i.e. older events are missing. */
-      window_truncated: z.boolean(),
-      /** True when more events matched than `limit` returned. */
-      results_truncated: z.boolean(),
-      limit: nonNegativeInt,
-      count: nonNegativeInt,
-      events: z.array(chainEventSchema),
-      /** What this endpoint does not do yet. Rendered as-is; see PLAN.md D10. */
-      limitations: z.array(z.string()),
-    }),
-    z.strictObject({
-      status: z.literal("unavailable"),
-      chain_id: intField,
-      network: z.string(),
-      reason: z.string(),
-      limitations: z.array(z.string()),
-    }),
-  ]),
-);
-export type EventsResponse = z.infer<typeof eventsResponseSchema>;
