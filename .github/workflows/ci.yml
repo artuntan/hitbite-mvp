@@ -112,6 +112,44 @@ jobs:
           path: web/playwright-report
           retention-days: 7
 
+  demo:
+    name: demo (eight-step scenario on Anvil, run twice)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.1
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Start a local Anvil node
+        run: anvil --port 8545 --silent &
+      - name: Deploy and seed
+        run: |
+          make deploy-local
+          make seed CHAIN=anvil
+      - run: pnpm -C demo install --frozen-lockfile
+      # Twice on purpose: the second run is the idempotency check. It must find the verification and
+      # faucet steps already satisfied, restore the documented starting state, and still assert the
+      # same integers. Do NOT gate on `git diff` of REPORT.md — hashes, blocks and timings change by
+      # design on every run.
+      - name: Run the demo, then run it again
+        run: |
+          make demo CHAIN=anvil
+          make demo CHAIN=anvil
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-report
+          path: demo/REPORT.md
+          retention-days: 14
+
   secrets:
     name: secrets (gitleaks + regex)
     runs-on: ubuntu-latest
