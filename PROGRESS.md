@@ -87,6 +87,23 @@ are listed by value. Verified by planting a real-looking key and confirming gitl
   against the contract's formula written out independently, and validated by mutation — rounding the
   division up instead of down fails four of the sixteen.
 
+**Phase 8 checkpoint proved on a live chain, at the contract level**
+Ran it by hand on a private Anvil (port 8547, chosen to avoid an agent's node on 8545). Two verified
+holders subscribed 7,000 and 3,000 test USDC, the issuer distributed a 12.00 USDC coupon, and both
+claimed:
+
+| | Expected | Actual |
+|---|---|---|
+| Holder A pending | 8.400000 | 8.400000 |
+| Holder B pending | 3.600000 | 3.600000 |
+| A actually received on claim | 8.400000 | 8.400000 |
+| NAV after distribution | 0.998800 | 0.998800 |
+| Available liquidity | 10,000.000000 | 10,000.000000 |
+
+The 70/30 split is exact. The NAV drop is exactly the per-token coupon, which is D26 holding on a
+real chain rather than only in a unit test. Available liquidity is the subscription money alone, so
+the coupon reserve was correctly excluded and then correctly released once both holders had claimed.
+
 **Broke / surprised**
 - I misdiagnosed a test failure and should record it. After linking the two new routes, ten
   Playwright tests failed and reverting the link made them pass, which looked conclusive. It was
