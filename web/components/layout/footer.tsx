@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Container } from "@/components/layout/container";
-import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { NAV_ITEMS, SECONDARY_NAV_ITEMS } from "@/components/layout/nav-items";
 
 /**
  * Footer disclaimer, verbatim from BUILD_PROMPT Section 15. Do not edit.
@@ -15,6 +15,18 @@ export function Footer() {
       <Container className="flex flex-col gap-6 py-8">
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
           {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-muted hover:text-ink transition-colors"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <nav aria-label="Reference" className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          {SECONDARY_NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}

@@ -24,11 +24,23 @@ export const NAV_ITEMS: readonly NavItem[] = [
 ];
 
 /**
- * Routes specified in BUILD_PROMPT 7.2 that are not built yet, with the phase
- * (PLAN.md Section 4) that delivers them. Kept here so the next agent has one
- * place to look.
+ * Reference material and the operator console. These live in the footer rather
+ * than the header: ten links across the top stops being navigation and becomes
+ * a list. They are real routes and must never be treated as unbuilt.
  */
-export const PLANNED_ROUTES: readonly (NavItem & { phase: string })[] = [
-  { href: "/rules", label: "Rules", phase: "Phase 9" },
-  { href: "/risks", label: "Risks", phase: "Phase 9" },
+export const SECONDARY_NAV_ITEMS: readonly NavItem[] = [
+  { href: "/rules", label: "Rules", matchPrefix: true },
+  { href: "/risks", label: "Risks", matchPrefix: true },
+  { href: "/developers", label: "Developers", matchPrefix: true },
+  { href: "/admin", label: "Admin", matchPrefix: true },
 ];
+
+/** Every route the app links, for a dead-link check. */
+export const ALL_NAV_ITEMS: readonly NavItem[] = [...NAV_ITEMS, ...SECONDARY_NAV_ITEMS];
+
+/**
+ * Routes specified in BUILD_PROMPT 7.2 that are not built yet, with the phase
+ * (PLAN.md Section 4) that delivers them. Empty now that Phase 9 has landed;
+ * kept so the next page has somewhere to be listed before it exists.
+ */
+export const PLANNED_ROUTES: readonly (NavItem & { phase: string })[] = [];
