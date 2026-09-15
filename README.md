@@ -111,6 +111,16 @@ Anvil's accounts are unlocked.
 This repository is the reference implementation of the parts in the first row, plus a working model
 of everything else so the design can be evaluated end to end.
 
+## Screenshots
+
+Every page in both themes is in [`docs/screenshots/`](docs/screenshots), regenerated with
+`make screenshots`.
+
+| | |
+|---|---|
+| ![Overview](docs/screenshots/overview-light.png) | ![Transparency](docs/screenshots/transparency-dark.png) |
+| Overview, light | Transparency, dark — note the NAV check reading *not checked* rather than claiming a pass it cannot defend |
+
 ## Team
 
 _Two founders, one line each — awaiting their copy._
@@ -124,7 +134,7 @@ _Two founders, one line each — awaiting their copy._
 | `web/` | Next.js app: investor pages, admin console, public JSON API |
 | `demo/` | End-to-end testnet scenario runner and `REPORT.md` |
 | `notebooks/` | Portfolio analytics notebook and exported figures |
-| `docs/` | Screenshots, diagrams, figures |
+| `docs/` | [Screenshots](docs/screenshots) of every page in both themes, the analytics figures, and the exported notebook |
 
 ## How to check this yourself
 
@@ -133,7 +143,7 @@ A reviewer should not have to take any of it on trust. The three checks that mat
 ```bash
 # 1. The published NAV and the contract's NAV are the same integer.
 cast call $HB_TOKEN "nav()(uint256)" --rpc-url $RPC
-jq '.data.nav.usdc_6dec' < web/public/data/nav.json
+jq '.nav.usdc_6dec' < web/public/data/nav.json   # the API wraps this in {ok, data}
 
 # 2. The attestation signature verifies. No attestation is committed — signing needs the
 #    attestor key (PLAN.md D34) — so produce one first, then verify it without a key.
@@ -148,6 +158,42 @@ cd contracts && forge coverage --no-match-coverage script
 
 `SECURITY.md` lists what is **not** mitigated as plainly as what is, and states that no audit has
 been performed. `RISKS.md` opens with what is simulated before it discusses any bond risk.
+
+## Definition of done — honest status
+
+BUILD_PROMPT section 13 lists eight criteria. Where one is not met, the reason is a credential this
+repository does not have, not work that was skipped.
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | `make test` green locally and in CI | **Met.** 161 contract, 385 engine, 632 web unit and 99 end-to-end tests; six CI jobs green |
+| 2 | `make demo` completes and `demo/REPORT.md` has passing assertions with tx hashes | **Met on Anvil**, run twice on every push in CI. Base Sepolia needs a funded deployer key |
+| 3 | Two wallets complete verify → subscribe → coupon → claim → transfer → redeem | **Proven on-chain** by the demo's 38 assertions. The same flow through the browser needs funded testnet wallets |
+| 4 | An unverified wallet cannot receive; a US- or TR-coded wallet cannot verify; a paused contract blocks transfers | **Met.** Asserted in unit tests and again on a live chain by the demo |
+| 5 | `nav.json`, on-chain `nav()` and the transparency page agree; the attestation verifies in the browser | **Met.** Verified by hand on a live chain, and the signature checked with viem and independently with `cast` |
+| 6 | Public pages score ≥ 90 on Lighthouse; no console errors; mobile works | **Met on Lighthouse** — 92 to 96 performance, 100 accessibility, 100 best practices on all six public pages. Mobile layout is responsive but has not been tested on a real device |
+| 7 | README passes the 60-second test | **Met**, except the live demo and recording, which need the founders |
+| 8 | No secrets in git history; `.env.example` complete; licence and disclaimers present | **Met.** gitleaks and a regex scan run on every push over tracked *and* untracked files |
+
+## Manual QA checklist
+
+Section 13 asks for this, and it is the part automation cannot cover. Fresh browser, new wallet:
+
+- [ ] Walk every page in **both** themes: overview, transparency, verify, subscribe, portfolio, stats, rules, risks, developers, admin.
+- [ ] Every page shows the testnet banner and the footer disclaimer.
+- [ ] Resize to a phone width on each page. Nothing overflows, no horizontal scroll.
+- [ ] Tab through each page. Focus is always visible and never trapped.
+- [ ] Connect a wallet on the wrong network. The switch control appears and works; refusing the switch leaves a usable page.
+- [ ] Disconnect mid-transaction. The page explains what happened and offers a next action.
+- [ ] Reject a signature. Same.
+- [ ] Reload between approve and subscribe. The flow resumes rather than restarting.
+- [ ] Try to verify with a blocked country. The reason is shown and the form will not submit.
+- [ ] Try to subscribe below the minimum, and with an empty balance. Each is explained before signing.
+- [ ] Run every admin action with a role-holding wallet, and check the encoded call matches what you expect before confirming.
+- [ ] Open the app with no deployment configured. Every page says so rather than showing zeros.
+- [ ] Check the browser console on each page. No errors.
+
+Nothing should dead-end without a message and a next action.
 
 ## Disclaimer
 
