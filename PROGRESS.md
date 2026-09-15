@@ -64,6 +64,14 @@ Founders: read the latest entry first. "Needs from founders" items block only re
   generator now emits the `allow-secret` marker itself rather than the marker being hand-added and
   lost on the next regeneration.
 
+**CI green on all five jobs** (run 34911482390): contracts, Slither, engine, web, secrets.
+Getting there took one fix. The secrets job failed on 21 gitleaks findings which were all the
+`generic-api-key` rule matching public chain data on entropy alone — three unique values, two
+Ethereum addresses and one creation transaction hash. Fixed precisely rather than by disabling the
+rule: a 40-hex string is the wrong length to be a 32-byte private key, so that shape is allowed
+globally and provably cannot hide one; the transaction hashes, which *are* the same length as a key,
+are listed by value. Verified by planting a real-looking key and confirming gitleaks still fails.
+
 **Broke / surprised**
 - The yield solver was quietly wrong. It stopped on an absolute 1e-14 step in yield units, which is
   smaller than the smallest representable step near maturity, so it reported failure *after*
