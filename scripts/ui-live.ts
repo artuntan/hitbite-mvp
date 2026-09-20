@@ -262,34 +262,58 @@ try {
     });
   }
   await page.setViewportSize({ width: 1440, height: 1050 });
-  // Keep the browser's reported head behind the next receipt to reproduce RPC lag.
-  // Contract reads, signatures and transactions still use the actual testnet.
+  // Delay only post-confirmation balance reads; transaction inclusion stays real.
+  const beforeClaim = investor.transactions.length;
   const laggingHead = await investor.ctx.client.getBlockNumber({
     cacheTime: 0,
   });
+  let receiptSeen = false;
   let delayedHeadReads = 0;
   const delayHead = async (route: Route) => {
-    let requests: { method?: string; id?: number }[];
+    let requests: { method?: string; id?: number; params?: unknown[] }[];
     try {
       const body = route.request().postDataJSON();
       requests = Array.isArray(body) ? body : [body];
     } catch {
       return route.continue();
     }
-    const ids = requests
+    const headIds = requests
       .filter((r) => r?.method === "eth_blockNumber")
       .map((r) => r.id);
-    if (!ids.length) return route.continue();
-    delayedHeadReads += ids.length;
+    const receiptIds = requests
+      .filter(
+        (r) =>
+          r?.method === "eth_getTransactionReceipt" &&
+          investor.transactions.length > beforeClaim &&
+          r.params?.[0] === investor.transactions.at(-1),
+      )
+      .map((r) => r.id);
+    if (!receiptIds.length && (!receiptSeen || !headIds.length))
+      return route.continue();
     const response = await route.fetch();
     const body = await response.json();
-    const change = (r: { id?: number; result?: string }) =>
-      ids.includes(r.id) && r.result
-        ? { ...r, result: `0x${laggingHead.toString(16)}` }
-        : r;
+    const responses = (Array.isArray(body) ? body : [body]) as {
+      id?: number;
+      result?: unknown;
+    }[];
+    if (
+      responses.some(
+        (r) =>
+          receiptIds.includes(r.id) &&
+          (r.result as { blockNumber?: string } | null)?.blockNumber,
+      )
+    )
+      receiptSeen = true;
+    const change = (r: { id?: number; result?: unknown }) => {
+      if (receiptSeen && headIds.includes(r.id) && r.result) {
+        delayedHeadReads++;
+        return { ...r, result: `0x${laggingHead.toString(16)}` };
+      }
+      return r;
+    };
     await route.fulfill({
       response,
-      json: Array.isArray(body) ? body.map(change) : change(body),
+      json: Array.isArray(body) ? responses.map(change) : change(body),
     });
   };
   await page.route("**/*", delayHead);
@@ -311,7 +335,6 @@ try {
       return request(input);
     };
   });
-  const beforeClaim = investor.transactions.length;
   await claim.click();
   await expect(coupons.locator(".action-inline")).toHaveAttribute(
     "aria-busy",
