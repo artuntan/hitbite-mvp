@@ -41,7 +41,7 @@ Names are processed transiently and hashed into tickets; the application does no
 - Secret scanning, push protection, dependency alerts, Dependabot updates, CodeQL and private vulnerability reporting are enabled. Scanners cannot detect every possible secret or vulnerability.
 - CI scans the candidate tree and new commit history, including credentials deleted before the final tree. Output is redacted. A [bounded exposure review](verification.md#public-repository-review) covers preserved history separately.
 - Main requires a PR, four passing CI jobs, an up-to-date branch and resolved conversations. Administrators are subject to protection; force pushes and deletion are disabled. Zero approving reviews are required in this single-maintainer repo.
-- Actions default to read-only access and use full commit SHAs. The main-branch NAV job alone gets the write permissions needed to create a PR, dispatch CI and merge after checks. Role secrets are scoped to the steps that use them.
+- Actions default to read-only access and use full commit SHAs. The main-branch NAV job alone gets the write permissions needed to create a PR, start its own PR CI and merge after checks. Role secrets are scoped to the steps that use them.
 - External fork workflows require approval. Vercel fork protection is enabled. Registrar and ticket secrets are Production-only, absent from Preview. Vercel does not receive issuer/oracle/attestor/E2E keys.
 
 The [NAV workflow](../.github/workflows/nav.yml) writes on-chain before merging JSON. CI/merge/deployment failures can temporarily leave records stale or different from the chain. The run fails visibly for operator review; it does not rewrite chain history.
