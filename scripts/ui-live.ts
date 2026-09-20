@@ -88,6 +88,36 @@ try {
     page.getByRole("navigation", { name: "Investment steps" }),
   ).toHaveCount(0);
   await page.getByLabel("USDC amount").fill("0.2");
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const steps = page.getByRole("list", { name: "Subscription transactions" });
+    await expect(steps.getByRole("listitem")).toHaveCount(2);
+    for (const indicator of await steps.locator(".step-indicator").all()) {
+      const bounds = await indicator.boundingBox();
+      assert(
+        bounds &&
+          bounds.width >= 22 &&
+          Math.abs(bounds.width - bounds.height) < 0.5,
+      );
+      assert.equal(
+        await indicator.evaluate(
+          (e) =>
+            e.scrollWidth > e.clientWidth || e.scrollHeight > e.clientHeight,
+        ),
+        false,
+      );
+    }
+    assert.equal(
+      await page.locator("body").evaluate((e) => e.scrollWidth > innerWidth),
+      false,
+    );
+    await page.screenshot({
+      caret: "initial",
+      path: `.context/subscription-steps-${width}.png`,
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 1050 });
   const approve = page.getByRole("button", {
     name: "Approve USDC",
     exact: true,
@@ -103,6 +133,21 @@ try {
   await expect(
     page.getByRole("button", { name: "Subscribe", exact: true }),
   ).toBeEnabled({ timeout: 120000 });
+  await expect(
+    page.locator('.approval-progress [aria-current="step"]'),
+  ).toContainText("Subscribe");
+  await expect(
+    page.locator(".approval-progress .done .step-indicator svg"),
+  ).toBeVisible();
+  await page.screenshot({
+    caret: "initial",
+    path: ".context/subscription-approved.png",
+    fullPage: true,
+  });
+  results.push({
+    step: "Numbered subscription steps stay circular and unclipped at three widths; approval advances the active step to Subscribe",
+    passed: true,
+  });
   await page.getByRole("button", { name: "Subscribe", exact: true }).click();
   await expect(
     page.getByTestId("receipt").filter({ hasText: "Subscribed" }),
@@ -185,24 +230,96 @@ try {
   ).toBeVisible({
     timeout: 120000,
   });
+  const coupons = page.getByRole("region", {
+    name: "Claimable coupons",
+    exact: true,
+  });
+  const claim = coupons.getByRole("button", {
+    name: "Claim coupons",
+    exact: true,
+  });
+  await expect(claim).toBeEnabled({ timeout: 120000 });
+  await page.getByRole("heading", { name: "Portfolio", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Coupon payout" })).toHaveCount(
+    0,
+  );
+  assert.equal(
+    await coupons.evaluate(
+      (e) => !!e.closest('[aria-label="Account balances"]'),
+    ),
+    true,
+  );
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: width > 800 ? 1050 : 844 });
+    assert.equal(
+      await page.locator("body").evaluate((e) => e.scrollWidth > innerWidth),
+      false,
+    );
+    await page.screenshot({
+      caret: "initial",
+      path: `.context/coupon-ready-${width}.png`,
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 1050 });
+  // Decline one wallet request in the browser only, then retry the actual claim.
+  await page.evaluate(() => {
+    const bridge = window as unknown as {
+      testWalletRequest: (input: { method: string }) => Promise<unknown>;
+    };
+    const request = bridge.testWalletRequest;
+    let decline = true;
+    bridge.testWalletRequest = async (input) => {
+      if (decline && input.method === "eth_sendTransaction") {
+        decline = false;
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        throw Object.assign(new Error("User rejected the request"), {
+          code: 4001,
+        });
+      }
+      return request(input);
+    };
+  });
+  const beforeClaim = investor.transactions.length;
+  await claim.click();
+  await expect(coupons.locator(".action-inline")).toHaveAttribute(
+    "aria-busy",
+    "true",
+  );
+  await expect(coupons.locator("button")).toBeDisabled();
+  await expect(coupons.getByRole("alert")).toContainText("Signature declined", {
+    timeout: 120000,
+  });
+  assert.equal(investor.transactions.length, beforeClaim);
+  await expect(claim).toBeEnabled();
+  await claim.click();
   await expect(
-    page.getByRole("button", { name: "Claim coupons", exact: true }),
-  ).toBeEnabled({ timeout: 120000 });
-  await page
-    .getByRole("button", { name: "Claim coupons", exact: true })
-    .click();
+    coupons.getByText("Claim confirmed", { exact: true }),
+  ).toBeVisible({ timeout: 120000 });
+  await coupons.locator(".inline-confirmation summary").click();
   await expect(
-    page.getByTestId("receipt").filter({ hasText: "CouponClaimed" }),
+    coupons.getByTestId("receipt").filter({ hasText: "CouponClaimed" }),
   ).toBeVisible({
     timeout: 120000,
   });
+  await expect(coupons.getByTestId("portfolio-coupons")).toContainText(
+    "0.000000",
+  );
+  await expect(claim).toBeDisabled();
+  await expect(coupons.getByRole("alert")).toHaveCount(0);
+  await page.setViewportSize({ width: 320, height: 844 });
+  assert.equal(
+    await page.locator("body").evaluate((e) => e.scrollWidth > innerWidth),
+    false,
+  );
+  await page.setViewportSize({ width: 1440, height: 1050 });
   await page.screenshot({
     caret: "initial",
     path: ".context/step-4-hold.png",
     fullPage: true,
   });
   results.push({
-    step: "Admin coupon distribution and investor claim via UI",
+    step: "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim, confirmed receipt and zero-balance state",
     passed: true,
   });
   await page.getByRole("tab", { name: "Redeem", exact: true }).click();

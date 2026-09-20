@@ -87,13 +87,34 @@ export function Portfolio({
           </strong>
           <span>Available to subscribe · includes gas</span>
         </div>
-        <div className="portfolio-metric">
+        <section
+          className={`portfolio-metric coupon-metric${data.coupon && !data.paused ? " claim-ready" : ""}`}
+          aria-label="Claimable coupons"
+        >
           <span>Claimable coupons</span>
           <strong data-testid="portfolio-coupons">
             {units(data.coupon, 6, 6)} <small>USDC</small>
           </strong>
-          <span>Accrued from funded distributions</span>
-        </div>
+          <Action
+            compact
+            inline
+            secondary={!data.coupon || data.paused}
+            title="Claim coupons"
+            label="Claim"
+            contract="HBToken"
+            fn="claimCoupon"
+            address={deployment!.addresses.HBToken}
+            abi={hBTokenAbi}
+            description="Ready to withdraw to your wallet."
+            disabled={
+              data.paused
+                ? "Claims are paused by the issuer."
+                : !data.coupon
+                  ? "No coupons to claim yet."
+                  : undefined
+            }
+          />
+        </section>
       </section>
       <div className="terminal-grid">
         <div className="terminal-main">
@@ -235,36 +256,6 @@ export function Portfolio({
                 <Receipt receipt={receipt} />
               </div>
             )}
-          </section>
-          <section
-            className="card terminal-card coupon-card"
-            aria-label="Coupon payout"
-          >
-            <div className="terminal-section-heading">
-              <h2>Coupons</h2>
-              <span className="workspace-label">USDC PAYOUT</span>
-            </div>
-            <Action
-              compact
-              secondary={!data.coupon}
-              title="Claim coupons"
-              contract="HBToken"
-              fn="claimCoupon"
-              address={deployment!.addresses.HBToken}
-              abi={hBTokenAbi}
-              description={
-                data.coupon
-                  ? `${units(data.coupon, 6, 6)} USDC ready to claim.`
-                  : "Your next funded distribution will appear here."
-              }
-              disabled={
-                data.paused
-                  ? "Claims are paused by the issuer."
-                  : !data.coupon
-                    ? "No coupons available to claim."
-                    : undefined
-              }
-            />
           </section>
         </div>
       </div>

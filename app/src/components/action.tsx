@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -63,6 +63,7 @@ export function Action({
   label,
   compact = false,
   secondary = false,
+  inline = false,
 }: {
   title: string;
   description: string;
@@ -77,7 +78,9 @@ export function Action({
   label?: string;
   compact?: boolean;
   secondary?: boolean;
+  inline?: boolean;
 }) {
+  const descriptionId = useId();
   const { address: account, chainId } = useAccount();
   const { data: wallet } = useWalletClient();
   const query = useQueryClient();
@@ -158,15 +161,33 @@ export function Action({
     }
   }
   return (
-    <section className={`action-card${compact ? " action-compact" : ""}`}>
+    <section
+      className={`action-card${compact ? " action-compact" : ""}${inline ? " action-inline" : ""}`}
+      aria-busy={busy}
+    >
       {!compact && <h3>{title}</h3>}
-      <p className="action-description">{description}</p>
+      <p className="action-description" id={descriptionId}>
+        {inline ? reason || description : description}
+      </p>
+      {inline && (
+        <span className="sr-only" role="status">
+          {busy
+            ? pendingHash
+              ? "Confirming your coupon claim."
+              : "Confirm the coupon claim in your wallet."
+            : receipt?.status === "success"
+              ? "Coupons claimed successfully."
+              : ""}
+        </span>
+      )}
       <Caption>
         Calls {contract}.{fn}() at {short(address)}. You approve it in your
         wallet.
       </Caption>
       <button
         className={secondary ? "secondary" : undefined}
+        aria-label={inline && !busy ? title : undefined}
+        aria-describedby={descriptionId}
         onClick={send}
         disabled={Boolean(reason) || busy || !wallet}
       >
@@ -177,8 +198,9 @@ export function Action({
               ? "Confirming…"
               : "Check your wallet…"
           : label || title}
+        {inline && !busy && <Icon name="arrow" />}
       </button>
-      {reason && !receipt && (
+      {reason && !receipt && !inline && (
         <p className="caption muted action-reason">{reason}</p>
       )}
       {error && (
@@ -196,7 +218,23 @@ export function Action({
           View pending transaction ↗
         </a>
       )}
-      {receipt && <Receipt receipt={receipt} />}
+      {receipt &&
+        (inline ? (
+          <details className="inline-confirmation">
+            <summary>
+              <Icon name="check" />
+              <span>
+                {receipt.status === "success"
+                  ? "Claim confirmed"
+                  : "Transaction reverted"}
+              </span>
+              <Icon name="chevron" />
+            </summary>
+            <Receipt receipt={receipt} />
+          </details>
+        ) : (
+          <Receipt receipt={receipt} />
+        ))}
     </section>
   );
 }
