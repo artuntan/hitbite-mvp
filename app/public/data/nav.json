@@ -80,8 +80,8 @@
   "backing_label": "Simulated assets / token NAV liability; not evidence of custody or redeemable cash.",
   "chain_id": 5042002,
   "token": "0x6D5163D237203Af9bce4292562B94e585327927E",
-  "timestamp": "2026-09-20T10:09:02Z",
-  "block_number": 63070021,
+  "timestamp": "2026-09-20T10:10:45Z",
+  "block_number": 63070227,
   "onchain_nav_units": "1000000",
   "vault_cash": "11.909732",
   "available_liquidity": "11.7",
@@ -90,14 +90,14 @@
   "simulated_distribution_yield_30d": "0.177915376676986584107324",
   "distribution_yield_method": "Trailing 30-day funded coupon per token / current NAV; not annualized.",
   "publication": {
-    "transaction_hash": "0xb4806482f04e8b24940f70551472a654be421b86523b57120e848a99b1a4a94d",
-    "block_number": 63070021
+    "transaction_hash": "0x2c20519a0b0c8884f039c0c247ff0773edca6b1b4ed78fed2a3f40435b29fde2",
+    "block_number": 63070227
   },
   "history": [
     {
       "date": "2026-09-20",
       "nav": "1",
-      "block": 63070021
+      "block": 63070227
     }
   ]
 }
