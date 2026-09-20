@@ -1,0 +1,103 @@
+{
+  "simulated": true,
+  "label": "Simulated reference basket. No bonds are held by this testnet.",
+  "valuation_date": "2026-09-20",
+  "model": "Reference basket scaled by actual token supply; real vault cash excluded from simulated NAV.",
+  "day_count": "Actual/Actual, semiannual coupons; fees Actual/365",
+  "reference_units": "100000",
+  "supply": "0.5",
+  "bootstrap": false,
+  "nav_per_token": "1",
+  "nav_units": "1000000",
+  "portfolio_value": "0.5000000000",
+  "cash": "0.000000",
+  "fees": {
+    "management_rate": "0.0075",
+    "expense_rate": "0.0030",
+    "management_accrued": "0.0000000000",
+    "expenses_accrued": "0.0000000000"
+  },
+  "net_assets": "0.5000000000",
+  "holdings": [
+    {
+      "id": "SIM-2029",
+      "name": "TURKEY 6.0% 2029",
+      "weight": "0.4",
+      "coupon": "0.06",
+      "maturity": "2029-09-20",
+      "face": "40000",
+      "clean_price": "100",
+      "purchase_date": "2026-09-20",
+      "dirty_price": "100.00",
+      "accrued_per_100": "0.00",
+      "simulated_ytm": "0.06000000000000000000000000000157377750591591855180",
+      "reference_value": "40000.00",
+      "scaled_face": "0.200000",
+      "value": "0.20000000",
+      "price_date": "2026-09-20",
+      "price_source": "Manual simulated input; held constant until explicitly revised"
+    },
+    {
+      "id": "SIM-2034",
+      "name": "TURKEY 6.65% 2034",
+      "weight": "0.4",
+      "coupon": "0.0665",
+      "maturity": "2034-09-20",
+      "face": "40000",
+      "clean_price": "100",
+      "purchase_date": "2026-09-20",
+      "dirty_price": "100.0000",
+      "accrued_per_100": "0.0000",
+      "simulated_ytm": "0.06650000000000000000000000000027689017773257514370",
+      "reference_value": "40000.0000",
+      "scaled_face": "0.200000",
+      "value": "0.2000000000",
+      "price_date": "2026-09-20",
+      "price_source": "Manual simulated input; held constant until explicitly revised"
+    },
+    {
+      "id": "SIM-2036",
+      "name": "TURKEY 7.04% 2036",
+      "weight": "0.2",
+      "coupon": "0.0704",
+      "maturity": "2036-09-20",
+      "face": "20000",
+      "clean_price": "100",
+      "purchase_date": "2026-09-20",
+      "dirty_price": "100.0000",
+      "accrued_per_100": "0.0000",
+      "simulated_ytm": "0.07039999999999999999999999999949875778082256909884",
+      "reference_value": "20000.0000",
+      "scaled_face": "0.100000",
+      "value": "0.1000000000",
+      "price_date": "2026-09-20",
+      "price_source": "Manual simulated input; held constant until explicitly revised"
+    }
+  ],
+  "weighted_simulated_ytm": "0.064680000000000000000000000000640018629623911297968",
+  "next_simulated_coupon_date": "2027-03-20",
+  "supply_backed_ratio": "1.0000",
+  "backing_label": "Simulated assets / token NAV liability; not evidence of custody or redeemable cash.",
+  "chain_id": 5042002,
+  "token": "0x6D5163D237203Af9bce4292562B94e585327927E",
+  "timestamp": "2026-09-20T09:08:44Z",
+  "block_number": 63062802,
+  "onchain_nav_units": "1000000",
+  "vault_cash": "10.5",
+  "available_liquidity": "10.5",
+  "coupon_reserve": "0.0",
+  "vault_coverage_ratio": "21",
+  "simulated_distribution_yield_30d": "0",
+  "distribution_yield_method": "Trailing 30-day funded coupon per token / current NAV; not annualized.",
+  "publication": {
+    "transaction_hash": "0xf7df957f0f2141faea1f30fd2796619a04484471007c4daa1e3332e88461f1cf",
+    "block_number": 63062802
+  },
+  "history": [
+    {
+      "date": "2026-09-20",
+      "nav": "1",
+      "block": 63062802
+    }
+  ]
+}

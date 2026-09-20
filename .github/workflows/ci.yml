@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   web:
-    name: Workspace (lint, config tests, types, empty app build)
+    name: Workspace (lint, config tests, types, app build)
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: "1"
@@ -65,5 +65,14 @@ jobs:
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - run: python3 scripts/check-secrets.py --gitleaks
 
-  # Phase 2 adds actual Foundry tests; Phase 4 adds Python lint/tests and NAV
-  # dry-run plus nav.yml. No placeholder financial run is counted as passing.
+  nav:
+    name: NAV (math tests, lint, deterministic dry-run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.7.21'
+      - run: uv run --python 3.11 --no-project python -m unittest discover -s tests/nav -v
+      - run: uv tool run ruff==0.16.6 check nav_engine/hb.py tests/nav
+      - run: uv run --python 3.11 nav_engine/hb.py nav --dry-run

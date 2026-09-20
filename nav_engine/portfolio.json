@@ -1,0 +1,15 @@
+{
+  "simulated": true,
+  "label": "Simulated reference basket. No bonds are held by this testnet.",
+  "reference_units": "100000",
+  "cash": "0",
+  "management_fee_rate": "0.0075",
+  "expense_rate": "0.0030",
+  "fee_start": "2026-09-20",
+  "day_count": "Actual/Actual, semiannual coupons; fees Actual/365",
+  "holdings": [
+    {"id":"SIM-2029","name":"TURKEY 6.0% 2029","weight":"0.4","coupon":"0.06","maturity":"2029-09-20","face":"40000","clean_price":"100","purchase_date":"2026-09-20"},
+    {"id":"SIM-2034","name":"TURKEY 6.65% 2034","weight":"0.4","coupon":"0.0665","maturity":"2034-09-20","face":"40000","clean_price":"100","purchase_date":"2026-09-20"},
+    {"id":"SIM-2036","name":"TURKEY 7.04% 2036","weight":"0.2","coupon":"0.0704","maturity":"2036-09-20","face":"20000","clean_price":"100","purchase_date":"2026-09-20"}
+  ]
+}
