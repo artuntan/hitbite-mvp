@@ -13,6 +13,7 @@ import calendar
 import csv
 import json
 import os
+import time
 import traceback
 from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_DOWN, Decimal, getcontext
@@ -236,6 +237,22 @@ def save_nav(result):
     write(path, result)
 
 
+def confirmed_nav(block_number):
+    # A receipt can reach one RPC backend before its historical state/logs reach
+    # another. Retry only pinned reads; never sign or submit a second transaction.
+    for attempt in range(8):
+        try:
+            return live_nav(block_number)
+        except Exception as error:
+            status = getattr(getattr(error, "response", None), "status_code", None)
+            retryable = status in {400, 408, 429, 500, 502, 503, 504} or type(error).__name__ in {
+                "ReadTimeout", "ConnectTimeout", "ConnectionError", "BlockNotFound"
+            }
+            if not retryable or attempt == 7:
+                raise
+            time.sleep(min(2 * (attempt + 1), 8))
+
+
 def canonical(payload):
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
@@ -301,7 +318,8 @@ def push(dry_run=False):
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
     if receipt["status"] != 1:
         raise ValueError("NAV transaction reverted.")
-    refreshed = live_nav(receipt["blockNumber"])
+    print("NAV transaction confirmed:", tx_hash.to_0x_hex(), flush=True)
+    refreshed = confirmed_nav(receipt["blockNumber"])
     if refreshed["nav_units"] != str(value) or refreshed["onchain_nav_units"] != str(value):
         raise ValueError("Snapshot or date changed during publication; rerun NAV.")
     refreshed["publication"] = {"transaction_hash": tx_hash.to_0x_hex(), "block_number": receipt["blockNumber"]}

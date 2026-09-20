@@ -3,6 +3,7 @@ import unittest
 from datetime import date
 from decimal import Decimal as D
 from pathlib import Path
+from unittest.mock import call, patch
 
 spec = importlib.util.spec_from_file_location("hb", Path(__file__).parents[2] / "nav_engine/hb.py")
 hb = importlib.util.module_from_spec(spec)
@@ -10,6 +11,26 @@ spec.loader.exec_module(hb)
 
 
 class NavTests(unittest.TestCase):
+    def test_confirmed_snapshot_retries_the_same_block_without_republishing(self):
+        error = RuntimeError("Provider error containing private request details")
+        error.response = type("Response", (), {"status_code": 400})()
+        snapshot = {"block_number": 42, "nav_units": "1000000"}
+        with patch.object(hb, "live_nav", side_effect=[error, error, snapshot]) as read, \
+                patch.object(hb.time, "sleep") as wait:
+            self.assertEqual(hb.confirmed_nav(42), snapshot)
+            self.assertEqual(read.call_args_list, [call(42)] * 3)
+            self.assertEqual(wait.call_count, 2)
+        with patch.object(hb, "live_nav", side_effect=ValueError("Invalid model")) as read, \
+                patch.object(hb.time, "sleep") as wait:
+            with self.assertRaises(ValueError):
+                hb.confirmed_nav(42)
+            read.assert_called_once_with(42)
+            wait.assert_not_called()
+        with patch.object(hb, "live_nav", side_effect=error) as read, patch.object(hb.time, "sleep"):
+            with self.assertRaises(RuntimeError):
+                hb.confirmed_nav(42)
+            self.assertEqual(read.call_count, 8)
+
     def test_failure_report_never_includes_provider_message_or_credentials(self):
         error = RuntimeError("https://provider.invalid/private-token request body and signing data")
         error.response = type("Response", (), {"status_code": 400})()
