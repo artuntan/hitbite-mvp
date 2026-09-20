@@ -272,7 +272,7 @@ try {
     timeout: 120000,
   });
   await page.goto(baseUrl + "/transparency");
-  await expect(page.locator(".metrics-grid .metric").first()).toContainText(
+  await expect(page.getByTestId("transparency-nav")).toContainText(
     units(nav, 6, 6),
     { timeout: 120000 },
   );
