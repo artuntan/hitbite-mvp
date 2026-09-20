@@ -14,6 +14,7 @@ from pathlib import Path
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gitleaks", action="store_true", help="Also require a redacted gitleaks scan")
+    parser.add_argument("--history-base", help="Also scan every commit since this trusted base")
     args = parser.parse_args()
     root = Path(subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip())
     names = subprocess.check_output(
@@ -65,6 +66,28 @@ def main() -> int:
             result = subprocess.run(
                 ["gitleaks", "dir", "--redact=100", "--no-banner", "--report-format", "json",
                  "--report-path", str(report), directory], check=False
+            )
+            if result.returncode:
+                if report.exists():
+                    for finding in json.loads(report.read_text()):
+                        print(f"{finding['File']}:{finding['StartLine']}: {finding['RuleID']} (value withheld)", file=sys.stderr)
+                return result.returncode
+    if args.history_base:
+        if not args.gitleaks:
+            parser.error("--history-base requires --gitleaks")
+        base = args.history_base
+        if base == "0" * 40:
+            base = "origin/main"
+        if base != "origin/main" and not re.fullmatch(r"[a-fA-F0-9]{40}", base):
+            parser.error("history base must be a commit SHA or origin/main")
+        # The merge base covers every new commit, including a secret added and
+        # removed before the final tree. No raw candidate values enter CI logs.
+        base = subprocess.check_output(["git", "merge-base", base, "HEAD"], text=True).strip()
+        with tempfile.TemporaryDirectory(prefix="hitbite-history-scan-") as directory:
+            report = Path(directory) / "history.json"
+            result = subprocess.run(
+                ["gitleaks", "git", "--redact=100", "--no-banner", "--log-opts", f"{base}..HEAD",
+                 "--report-format", "json", "--report-path", str(report), str(root)], check=False,
             )
             if result.returncode:
                 if report.exists():

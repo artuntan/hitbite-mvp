@@ -11,6 +11,10 @@ import { identityRegistryAbi } from "@hitbite/config/abi";
 import { copy } from "@hitbite/config/copy";
 import { client, config, deployment } from "@/lib/chain";
 import { application, issue, message, open } from "@/lib/verification";
+import {
+  readVerificationRequest,
+  VerificationRequestError,
+} from "@/lib/verification-http";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -31,26 +35,23 @@ export async function POST(request: NextRequest) {
   const secret = process.env.VERIFICATION_SECRET;
   if (!secret || secret.length < 32 || !process.env.REGISTRAR_PRIVATE_KEY)
     return response({ error: "Simulated registrar is not configured." }, 503);
-  if (Number(request.headers.get("content-length") || 0) > 8192)
-    return response({ error: "Request too large." }, 413);
   let body: Record<string, unknown>;
   try {
-    const text = await request.text();
-    if (text.length > 8192)
-      return response({ error: "Request too large." }, 413);
-    body = JSON.parse(text);
-  } catch {
+    body = await readVerificationRequest(request);
+  } catch (error) {
+    if (error instanceof VerificationRequestError)
+      return response({ error: error.message }, error.status);
     return response({ error: "Invalid request." }, 400);
   }
   try {
+    const input = body.action === "challenge" ? application(body) : undefined;
     if ((await client.getChainId()) !== config.chain.id)
       return response({ error: "Testnet RPC is unavailable." }, 503);
     const registry = {
       address: deployment.addresses.IdentityRegistry,
       abi: identityRegistryAbi,
     } as const;
-    if (body.action === "challenge") {
-      const input = application(body);
+    if (input) {
       if ([840, 792].includes(input.country))
         return response({ error: copy.blockedCountry }, 403);
       if (
