@@ -445,3 +445,7 @@ The founder keeps the current visual direction and requests a transparent header
 ## 2026-09-20 — Founder refinement: Transparency workspace
 
 Rebuild Transparency in the approved investment-workspace visual language. Prioritize live NAV/supply/liquidity, published NAV history, signed-snapshot verification and simulated holdings; disclose valuation inputs, fees, yields and the intended production model progressively. Keep real vault balances distinct from the simulated portfolio. Preserve all signature/trust-anchor checks, source downloads, explorer links and explicit simulation labels. Support keyboard inspection of NAV history, sparse/empty history, data errors and narrow viewports. This is a read-only frontend revision; contract behavior and historical generated STATUS remain unchanged.
+
+## 2026-09-20 amendment — Founder-supplied HitBite logo
+
+Use the founder's transparent AVIF wordmark in the shared fixed header, replacing the placeholder mark and text. Preserve its native aspect ratio and the approved transparent-to-glass scroll behavior. Size the complete wordmark for desktop and mobile, retaining a usable home link and room for Transparency and the position summary. Verify the production build and existing read-only shell checks before publishing.

@@ -280,30 +280,16 @@ small {
   background: #080808;
 }
 .wordmark {
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: -1px;
-  font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  min-height: 44px;
+  flex-shrink: 0;
   text-decoration: none;
 }
-.brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  background: #080808;
-  width: 29px;
-  height: 29px;
-  transform: skew(-8deg);
-  font-size: 25px;
-  line-height: 1;
-}
-.wordmark .testnet-tag {
-  margin-left: 4px;
-  letter-spacing: 0.6px;
+.brand-logo {
+  display: block;
+  width: 140px;
+  height: auto;
 }
 .shell-header nav {
   display: flex;
@@ -715,12 +701,9 @@ html {
   transition: opacity 280ms ease;
 }
 
-.shell-header .wordmark {
-  font-size: 23px;
-  flex-shrink: 0;
-}
 .shell-header nav {
   gap: 28px;
+  flex-shrink: 0;
 }
 .shell-header nav > a {
   font-size: 13px;
@@ -762,6 +745,7 @@ html {
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .position-trigger > svg {
   width: 16px;
@@ -1338,14 +1322,8 @@ footer .toggle {
     border-radius: 17px;
     gap: 12px;
   }
-  .shell-header .wordmark {
-    font-size: 20px;
-    gap: 7px;
-  }
-  .brand-mark {
-    width: 24px;
-    height: 24px;
-    font-size: 22px;
+  .brand-logo {
+    width: 110px;
   }
   .shell-header nav {
     gap: 16px;
@@ -1506,11 +1484,23 @@ footer .toggle {
   }
 }
 @media (max-width: 380px) {
-  .shell-header .wordmark > span:last-child {
-    display: none;
+  .shell-header {
+    gap: 8px;
+  }
+  .brand-logo {
+    width: clamp(82px, calc(100vw - 238px), 110px);
   }
   .shell-header nav {
-    gap: 14px;
+    gap: 8px;
+  }
+  .position-trigger {
+    padding-inline: 8px;
+  }
+  .position-trigger-copy {
+    min-width: 70px;
+  }
+  .position-trigger > svg {
+    display: none;
   }
   .active-card {
     padding: 24px 20px;
