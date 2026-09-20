@@ -1,0 +1,199 @@
+{
+  "timestamp": "2026-09-20T12:54:22.053Z",
+  "appUrl": "https://hitbite-testnet-v2.vercel.app",
+  "designCommit": "e76d1d93b13814d848374c976649ff9209c55ffb",
+  "confirmationFixCommit": "aec93c1fc1423be37d07827ac8f33213d5852670",
+  "productionMerge": "bd30c0a1c42f986346521a70992cfe771cfab5b3",
+  "pullRequests": [
+    "https://github.com/artuntan/hitbite-mvp/pull/6",
+    "https://github.com/artuntan/hitbite-mvp/pull/7"
+  ],
+  "productionCI": {
+    "url": "https://github.com/artuntan/hitbite-mvp/actions/runs/35511812504",
+    "conclusion": "success"
+  },
+  "liveFlow": {
+    "timestamp": "2026-09-20T12:53:20.915Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "chainId": 5042002,
+    "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+    "verificationWasFresh": false,
+    "transactions": [
+      "0xf2c1ae012739f5daaff2a6498fe6450c97fc4e82879b88ab174193e2c5d544ef",
+      "0x209b74c062acb7acd12190f7413751c9b7fed15f5178a0d2b5d03c91f271b49b",
+      "0xb8d06d8d5ee0c85cc1d5a49c5401c013e176ee55a1658dd11e3b154a7339b2d6",
+      "0x3274f6bd604e69e757155d2b30ff0ad145eb99aa53e0b5b6ba6e935f80f11543",
+      "0x6d0906c13adaa6848419741f26327c4180210fb1cd1f629d4ba969d0e5265b9f",
+      "0x84d0b870e6c0554ca07ec4eee7bbe7696dbf03e5736dc546f3576cecf68d62f0",
+      "0x417693864a0f3e5d1212656e69d0d9e0b388a5645a895894e931d813f5a87e98"
+    ],
+    "kind": "Automated injected-wallet browser test; not founder acceptance",
+    "results": [
+      {
+        "step": "Connect and existing verified registry status",
+        "passed": true
+      },
+      {
+        "step": "Numbered subscription steps stay circular and unclipped at three widths; approval advances the active step to Subscribe",
+        "passed": true
+      },
+      {
+        "step": "Approve and subscribe via UI",
+        "passed": true
+      },
+      {
+        "step": "Automatic workspace entry, remembered after reload, four viewport sizes and keyboard order tabs",
+        "passed": true
+      },
+      {
+        "step": "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim and zero balance despite a lagging RPC head",
+        "passed": true
+      },
+      {
+        "step": "Full redemption via UI; empty account remains in workspace after reload",
+        "passed": true
+      },
+      {
+        "step": "App and Transparency NAV agreement",
+        "passed": true
+      },
+      {
+        "step": "Client-side signature verification",
+        "passed": true
+      },
+      {
+        "step": "Mobile layout and persisted walkthrough",
+        "passed": true
+      }
+    ],
+    "pageErrors": []
+  },
+  "localProductionFlow": {
+    "timestamp": "2026-09-20T12:50:24.537Z",
+    "baseUrl": "http://localhost:3000",
+    "chainId": 5042002,
+    "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+    "verificationWasFresh": false,
+    "transactions": [
+      "0xb67076dd334464ae3ddfc9b1c3f295ec9f6068d80416703ed64eb4d687e96c53",
+      "0xb86c4d41d978e6222c9870c44e679c482251247864c193a3f0cdaaf0332216ea",
+      "0xf8a1956bfabb7bcd60f82851c4700d9dfa3f91a3aba733036cab40e3e41e150f",
+      "0x611c17d735b2abde88c9482004f1273a61078f2d8727d35bde8a717cfc741345",
+      "0x7babfaa7686a6d9ee83883b6bb2cb466d42262a75b43b22626cc67dbeb83bb45",
+      "0xe58abbc3756841fee822d3e87535970996571f5f9b2e141f41d80d186fb6358f",
+      "0x15d30440b0e447617da531b921851f7d0479e27fcf7d6d8fe1d62d34eac6c8b4"
+    ],
+    "kind": "Automated injected-wallet browser test; not founder acceptance",
+    "results": [
+      {
+        "step": "Connect and existing verified registry status",
+        "passed": true
+      },
+      {
+        "step": "Numbered subscription steps stay circular and unclipped at three widths; approval advances the active step to Subscribe",
+        "passed": true
+      },
+      {
+        "step": "Approve and subscribe via UI",
+        "passed": true
+      },
+      {
+        "step": "Automatic workspace entry, remembered after reload, four viewport sizes and keyboard order tabs",
+        "passed": true
+      },
+      {
+        "step": "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim and zero balance despite a lagging RPC head",
+        "passed": true
+      },
+      {
+        "step": "Full redemption via UI; empty account remains in workspace after reload",
+        "passed": true
+      },
+      {
+        "step": "App and Transparency NAV agreement",
+        "passed": true
+      },
+      {
+        "step": "Client-side signature verification",
+        "passed": true
+      },
+      {
+        "step": "Mobile layout and persisted walkthrough",
+        "passed": true
+      }
+    ],
+    "pageErrors": []
+  },
+  "readOnlyDesignRegression": {
+    "productionMerge": "459367896baf9218cad1b2544f49c033c6449e74",
+    "transparency": {
+      "timestamp": "2026-09-20T12:38:45.108Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "chainId": 5042002,
+      "results": [
+        "Real NAV and holdings; one-point history has no fabricated trend; 1440/1024/768/390/320px layouts",
+        "Actual signature verifies; displayed/downloaded signed JSON and NAV match sources; contract copy/explorer links work",
+        "Valuation inputs, model fees/yields and all eight production layers remain inspectable without page overflow",
+        "A refreshed mismatching snapshot invalidates the verified state, shows NAV mismatch and fails re-verification",
+        "Synthetic history fixtures: keyboard/buttons select exact observations; flat and empty series render honestly",
+        "Tampered payload is rejected; unavailable NAV disables verification and retry restores valid data",
+        "App/Transparency client navigation and optional explanations remain usable"
+      ],
+      "pageErrors": [],
+      "transactions": 0,
+      "fixtures": "Browser interception only; no published data modified",
+      "publishedSnapshot": "2026-09-20T10:10:45Z"
+    },
+    "shell": {
+      "timestamp": "2026-09-20T12:38:44.619Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "results": [
+        "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+        "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+        "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+        "Transparency attestation still verifies client-side",
+        "Existing /app links still open the investor flow",
+        "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    }
+  },
+  "smoke": {
+    "timestamp": "2026-09-20T12:52:26.698Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "chainId": 5042002,
+    "checks": [
+      "RPC chain allowlist",
+      "deployed contract code",
+      "6-decimal settlement asset",
+      "fresh matching NAV",
+      "attestation trust anchor",
+      "US/TR blocklist",
+      "all four product routes"
+    ],
+    "readOnly": true
+  },
+  "earlierValidationCleanup": [
+    {
+      "timestamp": "2026-09-20T12:43:16.024Z",
+      "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+      "balanceRedeemed": "200000000000000000",
+      "claimAlreadyConfirmed": true,
+      "transactionHash": "0x0893a422e3ce62e6e526c0b1ffc7c4b6d179cd5f9c2b27be0a9da56c2f11fafd"
+    },
+    {
+      "timestamp": "2026-09-20T12:48:15.918Z",
+      "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+      "balanceRedeemed": "200000000000000000",
+      "claimAlreadyConfirmed": true,
+      "transactionHash": "0x030884cd3c3d402aae2ab39f9f18d5141f412b59274d50342b4357adbe2da4b2"
+    }
+  ],
+  "notes": [
+    "Real Arc testnet transactions use only the designated test and issuer wallets. The test investor was fully redeemed after the final run.",
+    "Browser-only fixtures decline one wallet request and report an older RPC head after the actual claim receipt. Balances, receipts and transactions remain real on-chain data.",
+    "Readonly design suites cover the unchanged blue styling before the follow-up confirmation-floor fix; the final public flow covers that fix and responsive transaction states.",
+    "Original contracts, historical generated STATUS and earlier founder acceptance are unchanged."
+  ]
+}
