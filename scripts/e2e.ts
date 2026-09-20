@@ -54,6 +54,7 @@ const subscription = parseUnits(process.env.E2E_SUBSCRIBE_USDC || "1", 6),
   coupon = parseUnits(process.env.E2E_COUPON_USDC || "0.2", 6);
 let pausedByRunner = false;
 let ciUrl = "";
+let founderConfirmed = false;
 function receiptEvidence(receipt: TransactionReceipt) {
   assert.equal(receipt.status, "success");
   const events: string[] = [];
@@ -208,6 +209,26 @@ try {
             r.step === "Client-side signature verification" && r.passed,
         ),
       );
+    },
+  );
+  await step(
+    "Founder confirms the complete fresh-wallet flow",
+    "Founder walkthrough",
+    async () => {
+      const acceptance = JSON.parse(
+        readFileSync(".context/founder-acceptance.json", "utf8"),
+      );
+      assert.equal(acceptance.confirmed, true);
+      assert.equal(acceptance.baseUrl, baseUrl);
+      founderConfirmed = true;
+      mkdirSync("deployments/evidence", { recursive: true });
+      writeFileSync(
+        "deployments/evidence/founder-acceptance.json",
+        json(acceptance),
+      );
+      return {
+        detail: `Founder explicitly confirmed verification, subscription, coupon claim and redemption at ${acceptance.timestamp}.`,
+      };
     },
   );
   await step("CI checks for the source commit", "CI", async () => {
@@ -595,6 +616,7 @@ try {
     "Connect",
     "Overview",
     "Transparency",
+    "Founder walkthrough",
     "CI",
   ];
   const url = ctx.chain.blockExplorers?.default.url || "";
@@ -615,7 +637,7 @@ try {
         `| ${clean(e.name)} | ${e.status === "pass" ? "✅" : "❌"} | ${e.hash ? `[${e.hash}](${url}/tx/${e.hash}) · block ${e.block}` : clean(e.detail)} | ${e.events?.join(", ") || "—"} |`,
     )
     .join("\n");
-  const status = `# Generated live testnet status\n\nGenerated only by \`pnpm e2e\`. Started ${started}; finished ${new Date().toISOString()}.\n\nApp: [${new URL(baseUrl).host}](${baseUrl}) · Chain: ${ctx.chain.id} · [Source commit](https://github.com/artuntan/hitbite-mvp/commit/${sourceCommit})${ciUrl ? ` · [CI](${ciUrl})` : ""}\n\n${overall ? "The automated Core gate is incomplete; see failed or unrun checks." : "All automated Core checks passed against the live Arc deployment."}\n\n| Feature | Result | Evidence |\n|---|---|---|\n${matrix}\n\n## Live run\n\nWallet A: \`${a.address}\`  \nWallet B: \`${b.address}\`  \nIssuer: \`${issuer.address}\`\n\n| Check | Result | Receipt / observation | Events |\n|---|---|---|---|\n${transactions}\n\n## Acceptance and limits\n\n- ⚠️ Founder acceptance remains unconfirmed: an automated wallet bridge is not a claim that the founder personally completed the flow.\n- This run covers the selected Arc deployment. Base Sepolia deployment, monthly coupon automation and WalletConnect QR pairing are not claimed. Injected browser wallets are supported.\n- Portfolio and prices are simulated. Quotes carry forward until manually revised; attestation authenticates a historical simulated snapshot, not real custody.\n- The simulated registrar uses signed review tickets and on-chain eligibility records; production KYC and distributed abuse prevention require the licensed partner.\n- Tests transact with real testnet USDC; transaction fees mean wallet cash differences include gas. Event amounts and token balances are checked separately.\n`;
+  const status = `# Generated live testnet status\n\nGenerated only by \`pnpm e2e\`. Started ${started}; finished ${new Date().toISOString()}.\n\nApp: [${new URL(baseUrl).host}](${baseUrl}) · Chain: ${ctx.chain.id} · [Source commit](https://github.com/artuntan/hitbite-mvp/commit/${sourceCommit})${ciUrl ? ` · [CI](${ciUrl})` : ""}\n\n${overall ? "The automated Core gate is incomplete; see failed or unrun checks." : "All automated Core checks passed against the live Arc deployment."}\n\n| Feature | Result | Evidence |\n|---|---|---|\n${matrix}\n\n## Live run\n\nWallet A: \`${a.address}\`  \nWallet B: \`${b.address}\`  \nIssuer: \`${issuer.address}\`\n\n| Check | Result | Receipt / observation | Events |\n|---|---|---|---|\n${transactions}\n\n## Acceptance and limits\n\n${founderConfirmed ? "- ✅ The founder explicitly confirmed completing the full flow with a fresh wallet. See [acceptance record](deployments/evidence/founder-acceptance.json)." : "- ⚠️ Founder acceptance remains unconfirmed; an automated wallet bridge is not founder acceptance."}\n- This run covers the selected Arc deployment. Base Sepolia deployment, monthly coupon automation and WalletConnect QR pairing are not claimed. Injected browser wallets are supported.\n- Portfolio and prices are simulated. Quotes carry forward until manually revised; attestation authenticates a historical simulated snapshot, not real custody.\n- The simulated registrar uses signed review tickets and on-chain eligibility records; production KYC and distributed abuse prevention require the licensed partner.\n- Tests transact with real testnet USDC; transaction fees mean wallet cash differences include gas. Event amounts and token balances are checked separately.\n`;
   writeFileSync("STATUS.md", status);
   mkdirSync("deployments/evidence", { recursive: true });
   writeFileSync(
@@ -630,7 +652,9 @@ try {
       walletA: a.address,
       walletB: b.address,
       automatedCorePassed: !overall,
-      founderAcceptance: "unconfirmed",
+      founderAcceptance: founderConfirmed
+        ? "confirmed by founder"
+        : "unconfirmed",
       evidence,
     }),
   );
