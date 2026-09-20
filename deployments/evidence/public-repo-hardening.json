@@ -1,0 +1,181 @@
+{
+  "schema": "hitbite.public-repository-review.v1",
+  "checkedAt": "2026-09-20T15:40:32.508031+00:00",
+  "scope": "Internal repository hardening and testnet verification; not an independent audit.",
+  "sourcePullRequests": [
+    "https://github.com/artuntan/hitbite-mvp/pull/13",
+    "https://github.com/artuntan/hitbite-mvp/pull/16",
+    "https://github.com/artuntan/hitbite-mvp/pull/17",
+    "https://github.com/artuntan/hitbite-mvp/pull/18"
+  ],
+  "github": {
+    "visibility": "public",
+    "secretScanning": "enabled",
+    "pushProtection": "enabled",
+    "privateVulnerabilityReporting": true,
+    "codeql": "configured",
+    "actions": {
+      "enabled": true,
+      "allowed_actions": "all",
+      "sha_pinning_required": true
+    },
+    "defaultWorkflowPermissions": {
+      "default_workflow_permissions": "read",
+      "can_approve_pull_request_reviews": true
+    },
+    "forkApproval": "all_external_contributors",
+    "main": {
+      "adminEnforcement": true,
+      "strictChecks": true,
+      "requiredChecks": [
+        "Workspace (lint, config tests, types, app build)",
+        "Contracts (unit, fuzz, invariants)",
+        "Candidate-tree secret checks",
+        "NAV (math tests, lint, deterministic dry-run)"
+      ],
+      "requiredApprovingReviews": 0,
+      "resolvedConversations": true,
+      "forcePushes": false,
+      "deletions": false
+    },
+    "openAlertCountsAtCheck": {
+      "secretScanning": 0,
+      "codeql": 0,
+      "dependencies": 0
+    }
+  },
+  "dependencyAudit": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "dependencies": 535,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 535
+  },
+  "exposureReview": {
+    "commits": 147,
+    "uniqueGitBlobs": 883,
+    "comparedLocalCredentialValues": 9,
+    "matchingActiveCredentialValues": 0,
+    "actionsRunsInspected": 14,
+    "retainedArtifactsInspected": 24,
+    "limits": "Bounded internal review; excludes expired/deleted logs, external caches and third-party accounts. GitHub-only secret values were unavailable for exact comparison."
+  },
+  "firewall": {
+    "provider": "Vercel",
+    "ruleId": "rule_verification_request_limit_6qw87V",
+    "path": "/api/verify",
+    "method": "POST",
+    "key": "ip",
+    "windowSeconds": 60,
+    "requestsPerWindow": 20,
+    "counters": "regional",
+    "liveTest": {
+      "checkedAt": "2026-09-20T14:52:25.401184+00:00",
+      "url": "https://hitbite.markets/api/verify",
+      "requestCount": 21,
+      "statuses": [
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        403,
+        429
+      ],
+      "retryAfter": null,
+      "landingStatus": 200,
+      "transactionsSent": 0
+    }
+  },
+  "verificationApi": {
+    "local": {
+      "checkedAt": "2026-09-20T15:03:14.440Z",
+      "baseUrl": "http://localhost:3000",
+      "checks": [
+        "Browser-only HTML 429 fixture gives a readable retry message and restores the form",
+        "Browser-only HTML 503 fixture does not expose parser/internal details",
+        "Real API rejects malformed/oversized bodies and cross-origin requests without transactions",
+        "Security headers are served"
+      ],
+      "transactionsSent": 0,
+      "browserErrors": []
+    },
+    "production": {
+      "checkedAt": "2026-09-20T15:05:23.498Z",
+      "baseUrl": "https://hitbite.markets",
+      "checks": [
+        "Browser-only HTML 429 fixture gives a readable retry message and restores the form",
+        "Browser-only HTML 503 fixture does not expose parser/internal details",
+        "Real API rejects malformed/oversized bodies and cross-origin requests without transactions",
+        "Security headers are served"
+      ],
+      "transactionsSent": 0,
+      "browserErrors": []
+    }
+  },
+  "freshWalletVerification": {
+    "timestamp": "2026-09-20T15:05:57.619Z",
+    "baseUrl": "https://hitbite.markets",
+    "results": [
+      "Landing CTA opens app; only Transparency and position in platform header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh wallet signed review confirms on-chain and automatically closes verification; another wallet's workspace preference does not skip setup",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0,
+    "verificationHash": "0xd378079ac2dd3ab10c990d02d6be4739696c4a9cae7a2abbdf5611509af7bfc1",
+    "verificationFundingHash": "0x484a8ce3d7e96338dfa840783ccd5420ef408afc8f4a699c3ac27a671a1c860d",
+    "testFundingTransactions": 1,
+    "registrarTransactions": 1,
+    "note": "walletTransactions counts investor-submitted transactions only; funding and registrar receipts below are real testnet transactions."
+  },
+  "protectedNavDelivery": {
+    "run": "https://github.com/artuntan/hitbite-mvp/actions/runs/35519987522",
+    "sourceCommit": "7b7591c43ca50e6ffcf5948b7a33d667630747eb",
+    "conclusion": "success",
+    "snapshotPR": "https://github.com/artuntan/hitbite-mvp/pull/19",
+    "mergedAt": "2026-09-20T15:36:50Z",
+    "mergeCommit": "3594a9aa6f31f89d0d2ce96b76f9c6aa77ac0107",
+    "publication": {
+      "transaction_hash": "0xcf013667f8e7c87595c407a4df978e2083fdcae17a11b9abd26d50e61d64e4ed",
+      "block_number": 63109011
+    },
+    "livePublicationMatches": true,
+    "priorIntegrationFailure": "https://github.com/artuntan/hitbite-mvp/actions/runs/35518441090",
+    "rpcDiagnosticFailures": [
+      "https://github.com/artuntan/hitbite-mvp/actions/runs/35518922227",
+      "https://github.com/artuntan/hitbite-mvp/actions/runs/35519335787"
+    ]
+  },
+  "localDiagnosticPublication": {
+    "transaction_hash": "0x0b334fa8cd3e070a78e02bdb155bbf9ab09ccce2ccfd609a5f2a1427313c14ca",
+    "block_number": 63108221
+  },
+  "publisherRpc": "https://rpc.quicknode.testnet.arc.io",
+  "license": "MIT; unchanged",
+  "historicalStatus": "Unchanged; generated only by the real acceptance runner."
+}

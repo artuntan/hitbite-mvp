@@ -27,6 +27,7 @@ Native USDC's ERC-20 interface is `0x3600000000000000000000000000000000000000`, 
 | [Founder acceptance](../deployments/evidence/founder-acceptance.json) | Founder's actual wallet-flow confirmation | Separate from automated or independent review |
 | [Public entry](../deployments/evidence/public-entry.json) | Public navigation and responsive behavior | No new financial transactions |
 | [Domain checks](../deployments/evidence/domain-activation.json) | Canonical domain, redirects and read-only checks | Hosting/DNS may subsequently change |
+| [Repository hardening](../deployments/evidence/public-repo-hardening.json) | Dated settings, exposure-review scope, live API/firewall and protected-publication evidence | Internal review with explicit limits; not an independent audit |
 | [CI runs](https://github.com/artuntan/hitbite-mvp/actions/workflows/ci.yml) | Checks for a particular commit | No production-safety guarantee |
 | [NAV runs](https://github.com/artuntan/hitbite-mvp/actions/workflows/nav.yml) | Publication and delivery outcomes | Simulated prices need separate operator review |
 
