@@ -35,6 +35,11 @@
 * {
   box-sizing: border-box;
 }
+img,
+svg {
+  -webkit-user-drag: none;
+  user-select: none;
+}
 body {
   margin: 0;
   background: var(--canvas);
@@ -848,13 +853,9 @@ html {
 .product-symbol {
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
   border-radius: 12px;
-  background: var(--brand-soft);
-  color: var(--brand-action);
-  display: grid;
-  place-items: center;
-  font-size: 18px;
-  letter-spacing: -1px;
+  object-fit: contain;
 }
 .product-name > div {
   display: flex;
@@ -1400,7 +1401,6 @@ footer .toggle {
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    font-size: 16px;
   }
   .product-name {
     gap: 10px;

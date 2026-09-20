@@ -7,7 +7,7 @@ import { config, deployment, short, units, type Snapshot } from "@/lib/chain";
 import { Action, Receipt } from "./action";
 import { Activity } from "./activity";
 import { Subscribe, Redeem } from "./investment-forms";
-import { Alert, Caption, Status } from "./ui";
+import { Alert, Caption, ProductSymbol, Status } from "./ui";
 
 export function Portfolio({
   address,
@@ -128,9 +128,7 @@ export function Portfolio({
             </div>
             <div className="position-instrument">
               <div className="product-name">
-                <span className="product-symbol" aria-hidden="true">
-                  hB
-                </span>
+                <ProductSymbol />
                 <div>
                   <strong>hbTRS</strong>
                   <span>Simulated sovereign bond fund</span>
