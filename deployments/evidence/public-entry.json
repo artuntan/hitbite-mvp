@@ -1,0 +1,96 @@
+{
+  "pullRequest": "https://github.com/artuntan/hitbite-mvp/pull/12",
+  "implementationCommit": "4e397a0",
+  "productionMerge": "35f132b59bbffacd53894587e88fc32c54e2af51",
+  "preMergeCI": "https://github.com/artuntan/hitbite-mvp/actions/runs/35515672056",
+  "preMergeCIResult": "All checks passed, including Vercel preview",
+  "productionDeploymentStatus": "Vercel success; custom domain tested anonymously",
+  "production": {
+    "timestamp": "2026-09-20T14:13:48.065Z",
+    "baseUrl": "https://hitbite.markets",
+    "publicEntry": true,
+    "results": [
+      "Exact copy, supplied favicon, no GitHub links, responsive single-screen layout; short screens can scroll without clipping",
+      "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+      "Landing fetches only same-origin resources and sets no cookies",
+      "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+      "Public CTA opens the app without an invitation or login; browser back returns to an intact landing layout",
+      "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+    ],
+    "layouts": [
+      {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "scrollWidth": 360,
+        "scrollHeight": 640
+      },
+      {
+        "width": 768,
+        "height": 768,
+        "scrollWidth": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "localLegacyFalseFlagBuild": {
+    "timestamp": "2026-09-20T14:09:57.162Z",
+    "baseUrl": "http://localhost:3000",
+    "publicEntry": true,
+    "results": [
+      "Exact copy, supplied favicon, no GitHub links, responsive single-screen layout; short screens can scroll without clipping",
+      "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+      "Landing fetches only same-origin resources and sets no cookies",
+      "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+      "Public CTA opens the app without an invitation or login; browser back returns to an intact landing layout",
+      "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+    ],
+    "layouts": [
+      {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "scrollWidth": 360,
+        "scrollHeight": 640
+      },
+      {
+        "width": 768,
+        "height": 768,
+        "scrollWidth": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "checks": [
+    "NEXT_PUBLIC_APP_LIVE=false pnpm check: lint, types, 14 config/security tests and production build",
+    "pnpm check:secrets with gitleaks"
+  ],
+  "accessPolicy": "No invitation or access request to open the public website/app. Existing simulated eligibility verification, professional-investor confirmation, US/T\u00fcrkiye country restrictions and contract permissions remain unchanged.",
+  "transactions": 0
+}
