@@ -116,7 +116,9 @@ export function Subscribe({
         description={
           approved
             ? "Confirm to exchange your USDC for hbTRS."
-            : `Allow exactly ${value ? formatUnits(value, 6) : "0"} USDC. This step moves no funds.`
+            : value
+              ? `Allow exactly ${formatUnits(value, 6)} USDC. This step moves no funds.`
+              : "Approve USDC, then confirm your subscription."
         }
         disabled={busy ? "Waiting for confirmation." : reason}
         onSuccess={approved ? onComplete : setApprovalReceipt}

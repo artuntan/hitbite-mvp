@@ -1561,6 +1561,9 @@ footer .toggle {
   letter-spacing: -1px;
   margin-top: 8px;
 }
+.portfolio-heading h1:focus {
+  outline: none;
+}
 .account-status {
   display: flex;
   align-items: center;

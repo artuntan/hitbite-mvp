@@ -131,6 +131,9 @@ try {
   await expect(
     page.getByRole("heading", { name: "Portfolio", exact: true }),
   ).toBeVisible({ timeout: 120000 });
+  await expect(page.locator(".activity-table")).toBeVisible({
+    timeout: 120000,
+  });
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: width > 800 ? 1050 : 844 });
     assert.equal(
