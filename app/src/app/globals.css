@@ -325,51 +325,6 @@ small {
   color: var(--brand-action);
   box-shadow: 0 1px 0 var(--brand-action);
 }
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  margin: 0;
-  white-space: nowrap;
-}
-.toggle input[type="checkbox"] {
-  appearance: none;
-  width: 28px;
-  height: 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: 99px;
-  background: var(--surface-subtle);
-  position: relative;
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
-}
-.toggle input:after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  background: #fff;
-  border: 1px solid #aaa;
-  border-radius: 99px;
-  transition: transform 0.15s;
-}
-.toggle input:checked {
-  background: var(--ink);
-  border-color: var(--ink);
-}
-.toggle input:checked:after {
-  transform: translateX(12px);
-  border-color: #fff;
-}
-.walkthrough {
-  padding-left: 12px;
-  border-left: 2px solid var(--brand);
-  color: var(--text-muted);
-}
 .skip-link {
   position: absolute;
   top: -100px;
@@ -434,7 +389,7 @@ fieldset {
   padding: 0;
   margin: 0;
 }
-label:not(.toggle) {
+label {
   display: block;
   font-size: 14px;
   font-weight: 500;
@@ -995,7 +950,7 @@ html {
 .active-card form {
   margin-top: 24px;
 }
-.active-card label:not(.toggle) {
+.active-card label {
   font-size: 12px;
   margin: 18px 0;
   font-weight: 500;
@@ -1318,9 +1273,6 @@ footer a {
   color: var(--text-muted);
   text-decoration: none;
   padding: 8px 0;
-}
-footer .toggle {
-  font-size: 10px;
 }
 @supports not (backdrop-filter: blur(24px)) {
   .shell-header::before,
@@ -2117,7 +2069,6 @@ footer .toggle {
 .action-inline[aria-busy="true"] > button {
   justify-self: start;
 }
-.action-inline > .walkthrough,
 .action-inline > .error,
 .action-inline > .pending-link,
 .inline-confirmation {

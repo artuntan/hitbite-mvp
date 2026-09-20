@@ -2,31 +2,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useQuery } from "@tanstack/react-query";
 import { config, snapshot, short, units, type NavData } from "@/lib/chain";
 
-const subscribe = (callback: () => void) => {
-  window.addEventListener("storage", callback);
-  window.addEventListener("walkthrough", callback);
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener("walkthrough", callback);
-  };
-};
-export function useWalkthrough() {
-  return useSyncExternalStore(
-    subscribe,
-    () => localStorage.getItem("hitbite.walkthrough") === "true",
-    () => false,
-  );
-}
-export function Caption({ children }: { children: React.ReactNode }) {
-  const visible = useWalkthrough();
-  return visible ? <p className="caption walkthrough">{children}</p> : null;
-}
 export function ProductSymbol() {
   return (
     <Image
@@ -94,23 +75,6 @@ export function WalletButton() {
         </p>
       )}
     </div>
-  );
-}
-export function WalkthroughToggle() {
-  const walkthrough = useWalkthrough();
-  return (
-    <label className="toggle help-toggle">
-      <input
-        type="checkbox"
-        aria-label="Walkthrough"
-        checked={walkthrough}
-        onChange={(e) => {
-          localStorage.setItem("hitbite.walkthrough", String(e.target.checked));
-          window.dispatchEvent(new Event("walkthrough"));
-        }}
-      />
-      <span>Show explanations</span>
-    </label>
   );
 }
 export function Icon({

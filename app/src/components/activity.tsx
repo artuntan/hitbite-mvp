@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { decodeEventLog, type Address } from "viem";
 import { hBTokenAbi, identityRegistryAbi } from "@hitbite/config/abi";
 import { client, deployment, short, txUrl, units } from "@/lib/chain";
-import { Caption } from "./ui";
 const eventLabels: Record<string, string> = {
   Subscribed: "Subscription",
   Redeemed: "Redemption",
@@ -113,10 +112,6 @@ export function Activity({
           {address ? "Your wallet" : "Testnet"}
         </span>
       </div>
-      <Caption>
-        Each row is an event emitted by a confirmed contract transaction. Coupon
-        distributions apply to all holders.
-      </Caption>
       {isPending ? (
         <p className="muted">Loading contract events…</p>
       ) : error ? (

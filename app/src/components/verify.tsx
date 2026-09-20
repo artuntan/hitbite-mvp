@@ -6,7 +6,7 @@ import countryData from "@hitbite/config/countries";
 import { copy } from "@hitbite/config/copy";
 import { client, short } from "@/lib/chain";
 import { type Hex, type TransactionReceipt } from "viem";
-import { Caption, Icon } from "./ui";
+import { Icon } from "./ui";
 import { Receipt } from "./action";
 export function Verify({
   verified,
@@ -119,9 +119,6 @@ export function Verify({
           <p className="step-description">
             A 10-second simulated review. No documents needed.
           </p>
-          <Caption>
-            Your name stays off-chain. This is not real identity verification.
-          </Caption>
           <form
             onSubmit={(e) => {
               e.preventDefault();

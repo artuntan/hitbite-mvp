@@ -123,7 +123,6 @@ export function Subscribe({
           onBusyChange?.(pending);
         }}
         title={approved ? "Subscribe" : "Approve USDC"}
-        contract={approved ? "HBToken" : "USDC"}
         fn={approved ? "subscribe" : "approve"}
         address={approved ? d.addresses.HBToken : d.addresses.USDC}
         abi={approved ? hBTokenAbi : erc20Abi}
@@ -242,7 +241,6 @@ export function Redeem({
           onBusyChange?.(pending);
         }}
         title="Redeem tokens"
-        contract="HBToken"
         fn="redeem"
         address={deployment!.addresses.HBToken}
         abi={hBTokenAbi}

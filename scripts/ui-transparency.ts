@@ -273,11 +273,27 @@ try {
   await expect(
     page.getByRole("heading", { name: "Transparency", exact: true }),
   ).toBeVisible();
-  await page.getByRole("checkbox", { name: "Walkthrough" }).check();
-  await expect(page.getByText(/No wallet signature is needed/)).toBeVisible();
-  await page.getByRole("checkbox", { name: "Walkthrough" }).uncheck();
+  await page.evaluate(() =>
+    localStorage.setItem("hitbite.walkthrough", "true"),
+  );
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Walkthrough" })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByText("Show explanations", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator(".walkthrough")).toHaveCount(0);
+  await page.getByRole("link", { name: "HitBite app", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Connect your wallet." }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Show explanations", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator(".walkthrough")).toHaveCount(0);
   results.push(
-    "App/Transparency client navigation and optional explanations remain usable",
+    "App/Transparency navigation works; removed explanations stay absent even with the legacy preference enabled",
   );
   assert.deepEqual(errors, []);
   writeFileSync(

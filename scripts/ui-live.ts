@@ -490,11 +490,9 @@ try {
     fullPage: true,
   });
   results.push({ step: "Client-side signature verification", passed: true });
-  await page.getByRole("checkbox", { name: "Walkthrough" }).check();
-  await page.reload();
-  await expect(
-    page.getByRole("checkbox", { name: "Walkthrough" }),
-  ).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Walkthrough" })).toHaveCount(
+    0,
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(baseUrl + "/app");
 

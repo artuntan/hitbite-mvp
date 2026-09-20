@@ -7,7 +7,7 @@ import { config, deployment, short, units, type Snapshot } from "@/lib/chain";
 import { Action, Receipt } from "./action";
 import { Activity } from "./activity";
 import { Subscribe, Redeem } from "./investment-forms";
-import { Alert, Caption, ProductSymbol, Status } from "./ui";
+import { Alert, ProductSymbol, Status } from "./ui";
 
 export function Portfolio({
   address,
@@ -101,7 +101,6 @@ export function Portfolio({
             secondary={!data.coupon || data.paused}
             title="Claim coupons"
             label="Claim"
-            contract="HBToken"
             fn="claimCoupon"
             address={deployment!.addresses.HBToken}
             abi={hBTokenAbi}
@@ -175,10 +174,6 @@ export function Portfolio({
               <span>Simulated portfolio</span>
               <Link href="/transparency">Fund data & contracts ↗</Link>
             </div>
-            <Caption>
-              Position value uses the published simulated NAV. Coupons are
-              separate. These tokens have no claim on real bonds.
-            </Caption>
           </section>
           <Activity address={address} table />
         </div>
