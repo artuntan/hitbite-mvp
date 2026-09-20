@@ -1,0 +1,67 @@
+{
+  "sourceCommit": "2ae80de374ecf204aafa5a19c313e0218990c906",
+  "ci": "https://github.com/artuntan/hitbite-mvp/actions/runs/35505763545",
+  "kind": "UI revision regression evidence; historical Core/founder acceptance remains separately dated",
+  "liveFlow": {
+    "timestamp": "2026-09-20T10:43:12.556Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "chainId": 5042002,
+    "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+    "verificationWasFresh": false,
+    "transactions": [
+      "0x9d90de3a7fbee45938073142a22e8d9358b32a361c316e61da5d771f5e88f27a",
+      "0xea6ac7c7cc5249c9a18a4e353ac98e86fa0966bfd68f8d9eab7a70c4e88ab62b",
+      "0xd050f36656610ee22c1de0fc82b38cc6856dbf16538a2f8fce4e511f15526d51",
+      "0xb785bb4b650741203f5f62d7d89a0b6d00b9bbc9a45d3163c5829b4ab6aec257",
+      "0x5f060acdbdf8c30a8e51b8349386d02dd93c2202b1b0977a7a5477c199fc0ba4",
+      "0x58d2669fcfa03895fede8740cb13b7a16cbc4cc0a89a9dfc38150a85350240fc",
+      "0xe0ca90a92d3eabd4a633213c22ffac67ab3c8bac69e2179005ef407e61b8c3ce"
+    ],
+    "kind": "Automated injected-wallet browser test; not founder acceptance",
+    "results": [
+      {
+        "step": "Connect and existing verified registry status",
+        "passed": true
+      },
+      {
+        "step": "Approve and subscribe via UI",
+        "passed": true
+      },
+      {
+        "step": "Admin coupon distribution and investor claim via UI",
+        "passed": true
+      },
+      {
+        "step": "Full redemption via UI",
+        "passed": true
+      },
+      {
+        "step": "App and Transparency NAV agreement",
+        "passed": true
+      },
+      {
+        "step": "Client-side signature verification",
+        "passed": true
+      },
+      {
+        "step": "Mobile layout and persisted walkthrough",
+        "passed": true
+      }
+    ],
+    "pageErrors": []
+  },
+  "liveLayout": {
+    "timestamp": "2026-09-20T10:43:17.407Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header stays fixed while scrolling; glass blur is active; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "transactions": 0
+  }
+}
