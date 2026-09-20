@@ -1,0 +1,102 @@
+{
+  "recordedAt": "2026-09-20T11:26:20.765Z",
+  "implementationCommit": "78120d7801a6f21d27d3b1648c01af14402078e1",
+  "productionCommit": "6cb98df3a51e497ff19812f98222a55d15d65fca",
+  "pullRequest": "https://github.com/artuntan/hitbite-mvp/pull/3",
+  "liveFlow": {
+    "timestamp": "2026-09-20T11:25:54.387Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "chainId": 5042002,
+    "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+    "verificationWasFresh": false,
+    "transactions": [
+      "0xda2d8ad2659999e3b53d85ab07ea12708db08d6987b2714b9bd79b1a740cb68b",
+      "0x1ffeeb975f58441feb58a6862afaf359755220955cbc2a21815b7b2d4a5f5579",
+      "0x8d94298cdbd03ccc43f24031cea198a477d8e4d987fc5c7bf49d46588ea403b3",
+      "0xdc8c21c229ad34dfefe0036820c483c9b2dd5a3724d03a4fc3549330ef5056af",
+      "0xe98e88186dae0f2e6b5e1e35805c49f9b2108043b5d1c92836023234c44facc9",
+      "0x5206645d953a97b09d2723a7f4e6b5525ebeaefb460b099d0c84077a075bafe5",
+      "0x1e52644cb89e15db5299bf8ec4ffe838f655ccb6e649fa502680bd214dd04c46"
+    ],
+    "kind": "Automated injected-wallet browser test; not founder acceptance",
+    "results": [
+      {
+        "step": "Connect and existing verified registry status",
+        "passed": true
+      },
+      {
+        "step": "Approve and subscribe via UI",
+        "passed": true
+      },
+      {
+        "step": "Automatic workspace entry, remembered after reload, four viewport sizes and keyboard order tabs",
+        "passed": true
+      },
+      {
+        "step": "Admin coupon distribution and investor claim via UI",
+        "passed": true
+      },
+      {
+        "step": "Full redemption via UI; empty account remains in workspace after reload",
+        "passed": true
+      },
+      {
+        "step": "App and Transparency NAV agreement",
+        "passed": true
+      },
+      {
+        "step": "Client-side signature verification",
+        "passed": true
+      },
+      {
+        "step": "Mobile layout and persisted walkthrough",
+        "passed": true
+      }
+    ],
+    "pageErrors": []
+  },
+  "liveLayout": {
+    "timestamp": "2026-09-20T11:25:08.747Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "localFreshVerification": {
+    "timestamp": "2026-09-20T11:15:59.795Z",
+    "baseUrl": "http://localhost:3000",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh wallet signed review confirms on-chain and automatically closes verification; another wallet's workspace preference does not skip setup",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0,
+    "verificationHash": "0x272bb3ccb45d8cd97d8beb588626efef6eb895a9852b537139a64dd5b0a47428",
+    "verificationFundingHash": "0xa67ebdeccf86bdc2e41f79014e84e87ccd2b8f2616dfa952751e715d14db355b"
+  },
+  "localPendingOrderControls": {
+    "baseUrl": "http://localhost:3000",
+    "transactions": [
+      "0x4cebd46ed4344cebf441106e3ee91b8590fe88cc053534b8ecb79b4388651c2d"
+    ],
+    "passed": true
+  },
+  "notes": [
+    "Browser transactions use real Arc testnet contracts and test USDC. This is automated testing, not a new founder acceptance claim.",
+    "Workspace balances, NAV, liquidity and event amounts are read from chain; portfolio data remains labelled simulated.",
+    "Fresh-wallet verification was checked through the local API against Arc; the deployed transaction flow used the existing verified UI wallet.",
+    "Historical STATUS.md and original core acceptance evidence were not overwritten."
+  ]
+}
