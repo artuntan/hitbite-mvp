@@ -396,3 +396,9 @@ This entry begins v2. All preceding entries describe v1 and do not establish v2 
 
 - Completed the README with faucet/network instructions, investor flow, exact deployment addresses, architecture and production responsibility mapping, simulation assumptions, role operations, daily NAV/deployment configuration and reproducible acceptance prerequisites. The founder has confirmed the live flow.
 - Final merge and an actual dispatch of the default-branch daily NAV job follow this checkpoint. Their results will be appended after execution; scheduling alone is not claimed as delivery proof.
+
+### Default-branch NAV delivery check
+
+- PR #1 merged after all CI and Vercel checks passed: https://github.com/artuntan/hitbite-mvp/pull/1. The workspace branch name is unchanged.
+- The first dispatched daily workflow successfully computed NAV, confirmed the oracle transaction, signed the snapshot and committed its JSON. Its final delivery check rejected Vercel's successful HTTP 201 (Created) response because it accepted only HTTP 200. A direct hook check confirmed HTTP 201 with a pending deployment; the deployment request itself succeeded.
+- Corrected the delivery checker to accept successful 2xx responses, while retaining its required comparison of the live publication transaction with the newly confirmed snapshot. No signer, valuation or contract code changed. The full daily workflow is being rerun to verify the correction.

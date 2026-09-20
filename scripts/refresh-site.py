@@ -12,7 +12,7 @@ def main():
     expected = json.loads(Path("app/public/data/nav.json").read_text())["publication"]["transaction_hash"]
     request = urllib.request.Request(hook, method="POST")
     with urllib.request.urlopen(request, timeout=30) as response:
-        if response.status != 200:
+        if not 200 <= response.status < 300:
             raise RuntimeError("Deploy hook request failed.")
     print("Requested deployment of the confirmed NAV snapshot.")
     deadline = time.monotonic() + 420
