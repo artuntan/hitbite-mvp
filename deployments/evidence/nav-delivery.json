@@ -1,0 +1,22 @@
+{
+  "workflow": {
+    "conclusion": "success",
+    "databaseId": 35504318935,
+    "headSha": "fd9f5977c7db523ad50f783be5d6c0bf75dd73fe",
+    "updatedAt": "2026-09-20T10:11:59Z",
+    "url": "https://github.com/artuntan/hitbite-mvp/actions/runs/35504318935"
+  },
+  "liveBrowser": {
+    "timestamp": "2026-09-20T10:12:17.080Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "publication": {
+      "transaction_hash": "0x2c20519a0b0c8884f039c0c247ff0773edca6b1b4ed78fed2a3f40435b29fde2",
+      "block_number": 63070227
+    },
+    "navUnits": "1000000",
+    "pageErrors": [],
+    "overview": true,
+    "signature": true,
+    "mobile": true
+  }
+}
