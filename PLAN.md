@@ -475,3 +475,7 @@ The founder removes both GitHub destinations from the landing and the Show expla
 ## 2026-09-20 amendment — Activate hitbite.markets
 
 The founder has connected hitbite.markets in Vercel and requests repair of the non-working domain. Resolve the conflicting apex-to-www Vercel redirect and www-to-apex application redirect by serving the apex directly and keeping www-to-apex. Activate production site/verification origins and the NAV workflow's public URL on hitbite.markets, rebuild, and redirect the previous Vercel public address so existing app links reach the accepted verification origin. Preserve registrar DNS, wallet/contract state and secrets. Verify HTTPS, redirect path/query preservation, metadata, application navigation and verification-origin handling on the actual custom domain.
+
+## 2026-09-20 amendment — Always-public testnet entry
+
+The founder confirms the testnet should stay public and questions the misleading Request access link. Remove the access-request CTA and the obsolete launch/access-only presentation switch so both landing actions always open `/app`. Keep contact email as ordinary contact, and preserve the existing self-service verification, country restrictions and contract authorization. Verify anonymous landing-to-app navigation and the absence of access-request UI on desktop/mobile, then publish to hitbite.markets.
