@@ -519,3 +519,19 @@ This entry begins v2. All preceding entries describe v1 and do not establish v2 
 - Verified exact static metadata and generated 1200×630 PNGs for Twitterbot and Slackbot requests. This proves bot-compatible responses and rendered images; it does not claim a manual third-party account preview. Historical generated STATUS remains unchanged. Final performance/deployment evidence and screenshots follow.
 
 - PR #9 deployed after all CI/Vercel checks passed (implementation `72ed4b7`, merge `6b43574`). All six public landing groups, six shell groups, seven Transparency groups and seven read-only smoke checks passed. Public Lighthouse scored 99/100/100/100 in default simulation and 100/100/100/100 with real DevTools throttling; the latter LCP was 1.575s and non-font transfer 150,551 bytes, narrowly above the strict brief budgets. A small follow-up splits the landing font into static body/semibold subsets and removes unnecessary transparency from the white-canvas wordmark before final measurement.
+
+### Public landing: final production verification
+
+- PR #10 merged after all CI/Vercel checks passed (optimization `a9984d6`, production merge `f07cdc8`). Final source main CI passed: https://github.com/artuntan/hitbite-mvp/actions/runs/35514348427. The landing is live at https://hitbite-testnet-v2.vercel.app; the account platform opens at `/app`.
+- The final public landing passed all six browser groups with exact copy, four viewport sizes, live/missing/stale/malformed NAV, reduced motion, keyboard focus, drag protection, navigation and share-image metadata/PNG checks. The earlier access-only build passed five groups. No page errors or wallet transactions were recorded.
+- Final public Lighthouse 13.5.0 mobile scores are **100 / 100 / 100 / 100** in both default simulation and real DevTools throttling. The actual throttled-4G run measured **1,441 ms LCP** with 4× CPU slowdown and **149,589 non-font transfer bytes**, meeting both strict budgets. Default simulation separately estimated 1,708 ms LCP and 149,528 non-font bytes; its method is not conflated with the observed 4G measurement.
+- Public platform shell (six groups), Transparency (seven groups) and smoke (seven checks) passed on the landing release; the final optimization affects only landing fonts and its white-canvas wordmark. The original brand artwork and platform fonts are preserved. Local servers are stopped.
+- Evidence and labelled measurement methods are in `deployments/evidence/landing-ux.json`; full Lighthouse reports remain under `.context/`. Custom DNS is deferred as requested, and `hitbite.markets` is prepared for the later migration. Existing repository privacy/contact details and unverified manual social-account previews are documented in README and evidence. Historical generated STATUS is unchanged.
+
+Desktop, final public release:
+
+![HitBite landing at 1440 × 900](deployments/evidence/landing-desktop.png)
+
+Mobile, final public release:
+
+![HitBite landing at 390 × 844](deployments/evidence/landing-mobile.png)

@@ -1,0 +1,241 @@
+{
+  "implementationCommit": "72ed4b73378c22c440bda9906485a97b0686b5f9",
+  "optimizationCommit": "a9984d66d199dc3910a8eb25a68220f6ca0cc589",
+  "productionMergeCommit": "f07cdc8f0a752aafd4b64513806065dc16651387",
+  "ciUrl": "https://github.com/artuntan/hitbite-mvp/actions/runs/35514348427",
+  "publicLanding": {
+    "timestamp": "2026-09-20T13:45:41.291Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "appLive": true,
+    "results": [
+      "Exact copy, one headline, responsive single-screen layout; short screens can scroll without clipping",
+      "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+      "Landing fetches only same-origin resources and sets no cookies",
+      "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+      "Primary CTA opens the existing app; browser back returns to an intact landing layout",
+      "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+    ],
+    "layouts": [
+      {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "scrollWidth": 360,
+        "scrollHeight": 640
+      },
+      {
+        "width": 768,
+        "height": 768,
+        "scrollWidth": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "publicLighthouseDefault": {
+    "version": "13.5.0",
+    "timestamp": "2026-09-20T13:45:12.667Z",
+    "url": "https://hitbite-testnet-v2.vercel.app/",
+    "method": "simulate",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    },
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "lcpMs": 1707.758,
+    "fcpMs": 842.758,
+    "cls": 0,
+    "nonFontTransferBytes": 149528,
+    "fullReport": ".context/lighthouse-landing-public.report.json"
+  },
+  "publicLighthouseReal4G": {
+    "version": "13.5.0",
+    "timestamp": "2026-09-20T13:44:37.680Z",
+    "url": "https://hitbite-testnet-v2.vercel.app/",
+    "method": "devtools",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    },
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "lcpMs": 1441.142,
+    "fcpMs": 856.675,
+    "cls": 0.005834729582519068,
+    "nonFontTransferBytes": 149589,
+    "fullReport": ".context/lighthouse-landing-4g-public.report.json"
+  },
+  "finalLocalLanding": {
+    "timestamp": "2026-09-20T13:40:48.734Z",
+    "baseUrl": "http://localhost:3000",
+    "appLive": true,
+    "results": [
+      "Exact copy, one headline, responsive single-screen layout; short screens can scroll without clipping",
+      "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+      "Landing fetches only same-origin resources and sets no cookies",
+      "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+      "Primary CTA opens the existing app; browser back returns to an intact landing layout",
+      "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+    ],
+    "layouts": [
+      {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "scrollWidth": 360,
+        "scrollHeight": 640
+      },
+      {
+        "width": 768,
+        "height": 768,
+        "scrollWidth": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "localAccessOnlyBuild": {
+    "scope": "Launch-switch logic verified before the final font/wordmark-only optimization",
+    "evidence": {
+      "timestamp": "2026-09-20T13:28:26.993Z",
+      "baseUrl": "http://localhost:3000",
+      "appLive": false,
+      "results": [
+        "Exact copy, one headline, responsive single-screen layout; short screens can scroll without clipping",
+        "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+        "Landing fetches only same-origin resources and sets no cookies",
+        "Launch switch hides both testnet links and NAV and changes primary CTA to email access",
+        "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+      ],
+      "layouts": [
+        {
+          "width": 1440,
+          "height": 900,
+          "scrollWidth": 1440,
+          "scrollHeight": 900
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844
+        },
+        {
+          "width": 360,
+          "height": 640,
+          "scrollWidth": 360,
+          "scrollHeight": 640
+        },
+        {
+          "width": 768,
+          "height": 768,
+          "scrollWidth": 768,
+          "scrollHeight": 768
+        }
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    }
+  },
+  "platformRegressions": {
+    "sourceMerge": "6b4357458351553e86bd69cdbb81f7903270cb6c",
+    "note": "Later optimization changes only landing fonts and wordmark; platform behavior is unchanged.",
+    "publicShell": {
+      "timestamp": "2026-09-20T13:35:33.629Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "results": [
+        "Landing CTA opens app; only Transparency and position in platform header; 1440/768/390/320px without overflow",
+        "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+        "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+        "Transparency attestation still verifies client-side",
+        "Existing /app links still open the investor flow",
+        "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    },
+    "publicTransparency": {
+      "timestamp": "2026-09-20T13:35:34.203Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "chainId": 5042002,
+      "results": [
+        "Real NAV and holdings; one-point history has no fabricated trend; 1440/1024/768/390/320px layouts",
+        "Actual signature verifies; displayed/downloaded signed JSON and NAV match sources; contract copy/explorer links work",
+        "Valuation inputs, model fees/yields and all eight production layers remain inspectable without page overflow",
+        "A refreshed mismatching snapshot invalidates the verified state, shows NAV mismatch and fails re-verification",
+        "Synthetic history fixtures: keyboard/buttons select exact observations; flat and empty series render honestly",
+        "Tampered payload is rejected; unavailable NAV disables verification and retry restores valid data",
+        "App/Transparency client navigation and optional explanations remain usable"
+      ],
+      "pageErrors": [],
+      "transactions": 0,
+      "fixtures": "Browser interception only; no published data modified",
+      "publishedSnapshot": "2026-09-20T10:10:45Z"
+    },
+    "readOnlySmoke": {
+      "timestamp": "2026-09-20T13:35:29.162Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "passed": [
+        "RPC chain allowlist",
+        "deployed contract code",
+        "6-decimal settlement asset",
+        "fresh matching NAV",
+        "attestation trust anchor",
+        "US/TR blocklist",
+        "all four product routes"
+      ]
+    }
+  },
+  "limits": [
+    "Custom DNS intentionally deferred by founder; future domain is hitbite.markets.",
+    "Contact address remains the supplied hello@hitbite.com until replaced.",
+    "GitHub repository is private; external reviewers require access.",
+    "Twitterbot/Slackbot HTML and generated images were checked; manual social-account previews are not claimed."
+  ],
+  "screenshots": [
+    "deployments/evidence/landing-desktop.png",
+    "deployments/evidence/landing-mobile.png"
+  ],
+  "walletTransactions": 0
+}
