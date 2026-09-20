@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { parseEventLogs } from "viem";
-import { chromium, expect } from "@playwright/test";
+import { chromium, expect, type Route } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { walletPage } from "../tests/browser/wallet.ts";
 import { hBTokenAbi } from "../packages/config/abi.ts";
@@ -262,6 +262,61 @@ try {
     });
   }
   await page.setViewportSize({ width: 1440, height: 1050 });
+  // Delay only post-confirmation balance reads; transaction inclusion stays real.
+  const beforeClaim = investor.transactions.length;
+  const laggingHead = await investor.ctx.client.getBlockNumber({
+    cacheTime: 0,
+  });
+  let receiptSeen = false;
+  let delayedHeadReads = 0;
+  const delayHead = async (route: Route) => {
+    let requests: { method?: string; id?: number; params?: unknown[] }[];
+    try {
+      const body = route.request().postDataJSON();
+      requests = Array.isArray(body) ? body : [body];
+    } catch {
+      return route.continue();
+    }
+    const headIds = requests
+      .filter((r) => r?.method === "eth_blockNumber")
+      .map((r) => r.id);
+    const receiptIds = requests
+      .filter(
+        (r) =>
+          r?.method === "eth_getTransactionReceipt" &&
+          investor.transactions.length > beforeClaim &&
+          r.params?.[0] === investor.transactions.at(-1),
+      )
+      .map((r) => r.id);
+    if (!receiptIds.length && (!receiptSeen || !headIds.length))
+      return route.continue();
+    const response = await route.fetch();
+    const body = await response.json();
+    const responses = (Array.isArray(body) ? body : [body]) as {
+      id?: number;
+      result?: unknown;
+    }[];
+    if (
+      responses.some(
+        (r) =>
+          receiptIds.includes(r.id) &&
+          (r.result as { blockNumber?: string } | null)?.blockNumber,
+      )
+    )
+      receiptSeen = true;
+    const change = (r: { id?: number; result?: unknown }) => {
+      if (receiptSeen && headIds.includes(r.id) && r.result) {
+        delayedHeadReads++;
+        return { ...r, result: `0x${laggingHead.toString(16)}` };
+      }
+      return r;
+    };
+    await route.fulfill({
+      response,
+      json: Array.isArray(body) ? responses.map(change) : change(body),
+    });
+  };
+  await page.route("**/*", delayHead);
   // Decline one wallet request in the browser only, then retry the actual claim.
   await page.evaluate(() => {
     const bridge = window as unknown as {
@@ -280,7 +335,6 @@ try {
       return request(input);
     };
   });
-  const beforeClaim = investor.transactions.length;
   await claim.click();
   await expect(coupons.locator(".action-inline")).toHaveAttribute(
     "aria-busy",
@@ -304,7 +358,24 @@ try {
   });
   await expect(coupons.getByTestId("portfolio-coupons")).toContainText(
     "0.000000",
+    { timeout: 120000 },
   );
+  await expect(coupons.locator(".action-inline")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
+  const claimedReceipt = await investor.ctx.client.getTransactionReceipt({
+    hash: investor.transactions.at(-1)!,
+  });
+  const displayedBlock = BigInt(
+    (await page.locator(".workspace-status .mono").innerText()).slice(1),
+  );
+  assert(
+    displayedBlock >= claimedReceipt.blockNumber &&
+      claimedReceipt.blockNumber > laggingHead,
+  );
+  assert(delayedHeadReads > 0, "The delayed RPC-head fixture was exercised.");
+  await page.unroute("**/*", delayHead);
   await expect(claim).toBeDisabled();
   await expect(coupons.getByRole("alert")).toHaveCount(0);
   await page.setViewportSize({ width: 320, height: 844 });
@@ -319,7 +390,7 @@ try {
     fullPage: true,
   });
   results.push({
-    step: "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim, confirmed receipt and zero-balance state",
+    step: "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim and zero balance despite a lagging RPC head",
     passed: true,
   });
   await page.getByRole("tab", { name: "Redeem", exact: true }).click();

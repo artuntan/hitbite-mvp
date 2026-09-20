@@ -53,12 +53,19 @@ export const roles = {
   oracle: keccak256(stringToHex("ORACLE_ROLE")),
   registrar: keccak256(stringToHex("REGISTRAR_ROLE")),
 };
+// Public RPC endpoints can briefly report a head older than a confirmed receipt.
+// Keep every balance read at or after the latest confirmation in this session.
+let confirmedBlock = 0n;
+export function recordConfirmedBlock(blockNumber: bigint) {
+  if (blockNumber > confirmedBlock) confirmedBlock = blockNumber;
+}
 export async function snapshot(address?: Address) {
   if (!deployment)
     throw new Error("No confirmed deployment is configured for this testnet.");
   if ((await client.getChainId()) !== config.chain.id)
     throw new Error("RPC chain mismatch.");
-  const blockNumber = await client.getBlockNumber({ cacheTime: 0 });
+  const head = await client.getBlockNumber({ cacheTime: 0 });
+  const blockNumber = head > confirmedBlock ? head : confirmedBlock;
   const token = {
     address: deployment.addresses.HBToken,
     abi: hBTokenAbi,

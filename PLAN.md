@@ -453,3 +453,7 @@ Use the founder's transparent AVIF wordmark in the shared fixed header, replacin
 ## 2026-09-20 amendment — Blue brand palette and inline coupon withdrawal
 
 The founder identifies Facebook blue as HitBite's primary brand color. Replace the olive interface with shared blue accents and cool neutral surfaces/text across setup, Portfolio, Transparency and wallet controls; preserve the supplied logo and glass header. Integrate coupon withdrawal, pending/error/confirmation feedback and receipts directly into the top-right Claimable coupons balance card, removing the separate payout panel. Replace the fragile approval number/icon styling with fixed, accessible ordered-step indicators. Preserve transaction amounts, permissions and guards; verify the changed UI with the existing browser flow, including claim decline/retry and responsive step states, before publishing.
+
+### Coupon confirmation consistency
+
+Live verification exposed an RPC head response one block older than a successful coupon receipt. Keep balance snapshots at or after the latest confirmed transaction block in the browser session, and keep the action disabled while its displayed balances are older than that receipt. Add a browser-only delayed-head regression alongside real testnet claims; no contract behavior changes.
