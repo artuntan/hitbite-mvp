@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-09-20T12:20:47.975Z",
+  "implementationCommit": "b357dea7f5f1367839702bb2a0e2ec2930bed168",
+  "productionMerge": "738ae3dbcc6c9d1740fb747c98f1013cda2ff84d",
+  "pullRequest": "https://github.com/artuntan/hitbite-mvp/pull/5",
+  "live": {
+    "timestamp": "2026-09-20T12:20:17.337Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "assetIdenticalToAttachment": true,
+    "aspectRatioPreserved": true,
+    "noHeaderOverlap": true,
+    "homeLinkTargetAtLeast44px": true,
+    "viewports": [
+      {
+        "width": 1440,
+        "logoWidth": 140,
+        "logoHeight": 41.28125
+      },
+      {
+        "width": 1024,
+        "logoWidth": 140,
+        "logoHeight": 41.28125
+      },
+      {
+        "width": 768,
+        "logoWidth": 140,
+        "logoHeight": 41.28125
+      },
+      {
+        "width": 390,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 381,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 375,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 360,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 320,
+        "logoWidth": 82,
+        "logoHeight": 24.171875
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "shell": {
+    "timestamp": "2026-09-20T12:20:21.112Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "localProduction": {
+    "timestamp": "2026-09-20T12:16:53.092Z",
+    "baseUrl": "http://localhost:3000",
+    "assetIdenticalToAttachment": true,
+    "aspectRatioPreserved": true,
+    "noHeaderOverlap": true,
+    "homeLinkTargetAtLeast44px": true,
+    "viewports": [
+      {
+        "width": 1440,
+        "logoWidth": 140,
+        "logoHeight": 41.28125
+      },
+      {
+        "width": 1024,
+        "logoWidth": 140,
+        "logoHeight": 41.28125
+      },
+      {
+        "width": 768,
+        "logoWidth": 140,
+        "logoHeight": 41.28125
+      },
+      {
+        "width": 390,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 381,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 375,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 360,
+        "logoWidth": 110,
+        "logoHeight": 32.4375
+      },
+      {
+        "width": 320,
+        "logoWidth": 82,
+        "logoHeight": 24.171875
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "notes": [
+    "Original founder-supplied AVIF served unchanged.",
+    "Read-only browser checks; no signatures or on-chain transactions.",
+    "Generated STATUS and historical acceptance are unchanged."
+  ]
+}
