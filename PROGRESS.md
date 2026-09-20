@@ -318,3 +318,14 @@ This entry begins v2. All preceding entries describe v1 and do not establish v2 
 
 - Implementation commit `9186ac8339680ba89f24dd4a243f2b38050e9222` is pushed. [CI run 35500104125](https://github.com/artuntan/hitbite-mvp/actions/runs/35500104125) passed all three jobs (workspace, Foundry scaffold, candidate-tree secret checks).
 - Founder steering received after this checkpoint: continue until the platform is complete without stopping for phase approvals, and minimize interim explanations. This supersedes the earlier per-phase approval stops; evidence, incremental commits and truthful status reporting remain required.
+
+## 2026-09-20 — v2 Phase 2: contracts checkpoint
+
+- Implemented the v2 registry, 18-decimal hbTRS, and local/Base Sepolia-only MockUSDC. Implemented current eligibility checks, initial US/TR blocklist, issuer/oracle roles, exact v2 NAV events/rail, subscribe/redeem math, pause, and externally funded coupon-index accounting with preserved fractional accrual and reserved liquidity.
+- Added the allowlisted Foundry deployment script; the receipt-validating wrapper in Phase 3 will publish deployment JSON only after broadcast confirmation.
+- `forge test --root contracts`: 26 unit/fuzz tests plus the stateful invariant suite passed. Each fuzz test ran 512 inputs; invariant campaign ran 128 sequences / 8,192 calls with no reverts, checking funded coupon reserves, conservation and supply.
+- `forge coverage --root contracts --no-match-test invariant`: HBToken 100% lines (111/111), 99.27% statements, 95% branches; registry and MockUSDC 100% lines/statements/branches. Deployment and invariant handler code are excluded from these source coverage claims; raw report is `.context/phase2-coverage.txt`.
+- Corrected an invariant-test setup issue where reading the balance consumed a one-shot prank before transfer; no protocol change was needed. Fuzz round trips require a positive redemption output and assert loss of at most one micro-USDC.
+- Added actual contract tests to CI. Runtime configuration assertions remain active. No deployment or live-product claim is made by this contract checkpoint.
+- Confirmed the founder's faucet transfers: deployer and both independent E2E wallets each have 20 testnet USDC on chain 5042002. Vercel CLI login is available. Private values remain only in ignored `.env` (mode 0600); no private keys are in code or logs.
+- Continuing into Arc deployment under the founder's instruction to finish all phases without further approval stops.

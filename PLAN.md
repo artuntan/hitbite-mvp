@@ -4,6 +4,8 @@
 
 Approval record (2026-09-20): the founder approved this plan, including its Next.js 16 amendment, NAV bootstrap model and revoked-holder exit policy. Proposed/pending wording below is retained as the original planning record; approval is also recorded in `PROGRESS.md`. Later phases retain their separate checkpoints.
 
+Execution amendment (2026-09-20): the founder subsequently instructed the agent to continue until the platform is complete without further phase-approval stops. Checkpoint tests, reports, commits and pushes still apply; earlier approval-stop language is superseded. The founder has funded the testnet accounts and enabled Vercel access.
+
 Scope change: this plan replaces the v1 plan with the attached Arc Testnet v2 brief. [BUILD_PROMPT_V2.md](BUILD_PROMPT_V2.md) defines the product; [design.md](design.md) defines its visual system. Both are byte-for-byte copies of the supplied attachments. The previous plan and implementation remain available at [tag v1](https://github.com/artuntan/hitbite-mvp/tree/v1).
 
 No v2 application code is included in Phase 0. Each subsequent phase ends with evidence in `PROGRESS.md`, a descriptive commit, a push, and founder approval before the next phase. `STATUS.md` is generated only by `pnpm e2e`; it does not exist yet and will not be created manually. Older entries in `PROGRESS.md` describe v1, not v2.

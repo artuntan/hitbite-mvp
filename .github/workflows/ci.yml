@@ -32,7 +32,7 @@ jobs:
       - run: pnpm check
 
   contracts:
-    name: Foundry scaffold
+    name: Contracts (unit, fuzz, invariants)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,10 +43,9 @@ jobs:
           version: v1.8.1
       - run: forge fmt --check --root contracts
       - run: forge build --root contracts
-      - name: Report checkpoint scope
-        run: |
-          echo 'Phase 1 contains the Foundry configuration and pinned dependencies only.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Contract implementation and the required test suite start in Phase 2.' >> "$GITHUB_STEP_SUMMARY"
+      - run: forge test --root contracts
+        env:
+          FOUNDRY_PROFILE: ci
 
   secrets:
     name: Candidate-tree secret checks

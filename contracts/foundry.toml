@@ -20,6 +20,15 @@ runs = 512
 [profile.ci.fuzz]
 runs = 2048
 
+[invariant]
+runs = 128
+depth = 64
+fail_on_revert = true
+
+[lint]
+exclude_lints = ["mixed-case-function", "mixed-case-variable", "screaming-snake-case-immutable"]
+ignore = ["test/**/*.sol"]
+
 # Chain endpoints, deploy permissions and the v2 contract suite arrive in Phase 2.
 # Cancun bytecode is compatible with the target's newer EVM baseline; local tests
 # alone do not validate Arc's native-USDC behavior.
