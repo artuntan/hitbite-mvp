@@ -4,7 +4,14 @@ import { useAccount } from "wagmi";
 import type { TransactionReceipt } from "viem";
 import { copy } from "@hitbite/config/copy";
 import { config, deployment, units, type Snapshot } from "@/lib/chain";
-import { Caption, WalletButton, Icon, useSnapshot, Alert } from "./ui";
+import {
+  Caption,
+  WalletButton,
+  Icon,
+  ProductSymbol,
+  useSnapshot,
+  Alert,
+} from "./ui";
 import { Verify } from "./verify";
 import { Subscribe } from "./investment-forms";
 import { Portfolio } from "./portfolio";
@@ -108,9 +115,7 @@ function InvestorFlow({
       <h1 className="sr-only">Your HitBite investment</h1>
       <div className="investment-product">
         <div className="product-name">
-          <span className="product-symbol" aria-hidden="true">
-            hB
-          </span>
+          <ProductSymbol />
           <div>
             <strong>hbTRS</strong>
             <span>Simulated bond fund</span>

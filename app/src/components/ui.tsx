@@ -27,6 +27,20 @@ export function Caption({ children }: { children: React.ReactNode }) {
   const visible = useWalkthrough();
   return visible ? <p className="caption walkthrough">{children}</p> : null;
 }
+export function ProductSymbol() {
+  return (
+    <Image
+      className="product-symbol"
+      src="/brand/hbtrs.png"
+      alt=""
+      width={40}
+      height={40}
+      sizes="40px"
+      loading="eager"
+      draggable={false}
+    />
+  );
+}
 export function WalletButton() {
   const { isConnected, address, chainId } = useAccount();
   const { disconnect } = useDisconnect();
@@ -167,7 +181,12 @@ export function Header() {
       : undefined;
   return (
     <header className="shell-header" ref={header}>
-      <Link className="wordmark" href="/" aria-label="HitBite app">
+      <Link
+        className="wordmark"
+        href="/"
+        aria-label="HitBite app"
+        draggable={false}
+      >
         <Image
           className="brand-logo"
           src="/brand/hitbite.avif"
@@ -175,6 +194,7 @@ export function Header() {
           width={512}
           height={151}
           loading="eager"
+          draggable={false}
           unoptimized
         />
       </Link>

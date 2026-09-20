@@ -457,3 +457,7 @@ The founder identifies Facebook blue as HitBite's primary brand color. Replace t
 ### Coupon confirmation consistency
 
 Live verification exposed an RPC head response one block older than a successful coupon receipt. Keep balance snapshots at or after the latest confirmed transaction block in the browser session, and keep the action disabled while its displayed balances are older than that receipt. Add a browser-only delayed-head regression alongside real testnet claims; no contract behavior changes.
+
+## 2026-09-20 amendment — hbTRS identity and image interaction
+
+Use the founder-supplied square hbTRS PNG for the instrument in setup and Portfolio, preserving the original image and delivering optimized display sizes. Disable native mouse dragging for all site images, including images inserted later or in wallet portals, while preserving normal links, text selection and unrelated drag behavior. Verify desktop/mobile layouts and image interactions without new wallet transactions.
