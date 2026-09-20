@@ -13,6 +13,7 @@ import calendar
 import csv
 import json
 import os
+import traceback
 from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_DOWN, Decimal, getcontext
 from pathlib import Path
@@ -25,6 +26,20 @@ CHAINS = {"arc-testnet": (5042002, "https://rpc.testnet.arc.io"),
           "base-sepolia": (84532, "https://sepolia.base.org"),
           "local": (31337, "http://127.0.0.1:8545")}
 LABEL = "Simulated attestor. Replaced by an independent firm in production."
+
+
+def failure_summary(error):
+    """Log only error type, local source location and numeric HTTP status."""
+    parts = [type(error).__name__]
+    # Use the deepest engine frame, without exception text, locals or RPC URLs.
+    locations = [f"{f.name}:{f.lineno}" for f in traceback.extract_tb(error.__traceback__)
+                 if Path(f.filename).resolve() == Path(__file__).resolve()]
+    if locations:
+        parts.append(locations[-1])
+    status = getattr(getattr(error, "response", None), "status_code", None)
+    if isinstance(status, int) and 100 <= status <= 599:
+        parts.append(f"HTTP {status}")
+    return "NAV engine failed (" + ", ".join(parts) + "). Check configuration, RPC and inputs."
 
 
 def decimal_text(value):
@@ -273,6 +288,9 @@ def push(dry_run=False):
         print(json.dumps({"dry_run": True, "function": "setNAV(uint256)", "nav_units": str(value)}))
         return
     account = Account.from_key(os.environ["ORACLE_PRIVATE_KEY"])
+    if not token.functions.hasRole(token.functions.ORACLE_ROLE().call(), account.address).call():
+        raise ValueError("Configured NAV signer lacks ORACLE_ROLE.")
+    print("NAV signer role verified:", account.address, flush=True)
     priority = w3.eth.max_priority_fee
     maximum = max(20_000_000_000 if w3.eth.chain_id == 5042002 else 0, latest["baseFeePerGas"] * 2 + priority)
     call = token.get_function_by_signature("setNAV(uint256)")(value)
@@ -319,5 +337,5 @@ if __name__ == "__main__":
         main()
     except Exception as error:
         # Provider and signer exceptions can contain request data. Keep all values local.
-        print("NAV engine failed (" + type(error).__name__ + "). Check local configuration, RPC and inputs.")
+        print(failure_summary(error))
         raise SystemExit(1) from None

@@ -10,6 +10,16 @@ spec.loader.exec_module(hb)
 
 
 class NavTests(unittest.TestCase):
+    def test_failure_report_never_includes_provider_message_or_credentials(self):
+        error = RuntimeError("https://provider.invalid/private-token request body and signing data")
+        error.response = type("Response", (), {"status_code": 400})()
+        report = hb.failure_summary(error)
+        self.assertIn("RuntimeError", report)
+        self.assertIn("HTTP 400", report)
+        self.assertNotIn("private-token", report)
+        self.assertNotIn("request body", report)
+        self.assertNotIn("provider.invalid", report)
+
     def setUp(self):
         self.holding = {"coupon": "0.06", "maturity": "2029-09-20"}
 
