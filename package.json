@@ -24,7 +24,8 @@
     "e2e": "tsx scripts/e2e.ts",
     "test:ui": "tsx scripts/ui-live.ts",
     "test:transparency": "tsx scripts/ui-transparency.ts",
-    "nav": "uv run --python 3.11 nav_engine/hb.py"
+    "nav": "uv run --python 3.11 nav_engine/hb.py",
+    "test:landing": "tsx scripts/ui-landing.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

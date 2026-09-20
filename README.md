@@ -4,7 +4,7 @@
 
 A testnet reference implementation of subscriptions, redemptions and coupon pass-through for simulated Türkiye USD sovereign-bond fund units.
 
-**[Open the live app](https://hitbite-testnet-v2.vercel.app)** · [Transparency](https://hitbite-testnet-v2.vercel.app/transparency) · [Generated live-test STATUS](STATUS.md) · [Deployment receipts](deployments/arc-testnet.json)
+**[Landing](https://hitbite-testnet-v2.vercel.app)** · **[Open the live app](https://hitbite-testnet-v2.vercel.app/app)** · [Transparency](https://hitbite-testnet-v2.vercel.app/transparency) · [Generated live-test STATUS](STATUS.md) · [Deployment receipts](deployments/arc-testnet.json)
 
 > Testnet. Simulated portfolio. Not an offer of securities.
 
@@ -16,13 +16,13 @@ A testnet reference implementation of subscriptions, redemptions and coupon pass
 4. After verification, the subscription form opens automatically. Enter a small amount such as **1 USDC**, then sign **Approve USDC** and **Subscribe** as each step appears. The first permits that exact amount; the second exchanges it for hbTRS at the NAV in effect when the transaction executes. The UI reserves at least 0.05 USDC for gas.
 5. The **Portfolio** workspace opens automatically with your position and receipts. Coupons are claimable only after an issuer funds a distribution; the app does not fabricate a payout. Choose **Redeem**, use your token balance or a smaller amount, and sign to receive USDC from the vault. Existing accrued coupons remain claimable after redemption.
 
-The home page opens directly into account setup. Connect, verification and first subscription advance automatically, closing completed steps. The header is transparent at the top and softly reveals its glass surface while scrolling; it contains the HitBite logo, Transparency and **Your position** for wallet controls. After a confirmed investment, the account workspace shows balances, holdings, NAV, vault liquidity, coupon payout and transaction history, with subscription/redemption in one order panel. It remains open after full redemption in the same browser; this preference is isolated by wallet, chain and contract, and never replaces on-chain eligibility checks. Approval and subscription remain separate signatures with exact amounts and confirmed receipt links. **Show explanations** in the footer enables extra help. If confirmation is delayed, inspect the pending transaction before retrying.
+The home page is a single-screen public introduction; **Open the testnet** opens account setup at `/app`. Connect, verification and first subscription advance automatically, closing completed steps. The header is transparent at the top and softly reveals its glass surface while scrolling; it contains the HitBite logo, Transparency and **Your position** for wallet controls. After a confirmed investment, the account workspace shows balances, holdings, NAV, vault liquidity, coupon payout and transaction history, with subscription/redemption in one order panel. It remains open after full redemption in the same browser; this preference is isolated by wallet, chain and contract, and never replaces on-chain eligibility checks. Approval and subscription remain separate signatures with exact amounts and confirmed receipt links. **Show explanations** in the footer enables extra help. If confirmation is delayed, inspect the pending transaction before retrying.
 
 **Transparency** uses the same workspace layout: live NAV/supply/liquidity, published NAV observations, signature verification and simulated holdings. Open the detail rows for valuation inputs, fees, yields and the intended production model. Download the original records or inspect/copy contract addresses without connecting a wallet.
 
 Redemptions on the testnet are paid from a vault the admin funds. There is no liquidity guarantee.
 
-The app currently supports injected browser wallets. WalletConnect QR pairing is optional and requires a configured public project ID; it is not represented as tested here. There are three product views: the investor flow at `/` (also available at `/app` for existing links), Transparency and role-restricted Admin. Operators can open Admin from their position popover or visit `/admin` directly.
+The app currently supports injected browser wallets. WalletConnect QR pairing is optional and requires a configured public project ID; it is not represented as tested here. The public landing page is at `/`; the investor flow is at `/app`, with Transparency at `/transparency` and role-restricted Admin at `/admin`. Operators can open Admin from their position popover or visit `/admin` directly.
 
 ## What is simulated
 
@@ -152,10 +152,20 @@ After the founder explicitly confirms their own complete fresh-wallet flow, reco
 
 `pnpm test:transparency` checks the redesigned records page in Chromium without sending transactions: real published data/signatures, responsive layouts, downloads, clipboard, keyboard history and browser-only failure fixtures. Set `UI_BASE_URL` to test a local build; otherwise it uses the configured live URL.
 
-`pnpm smoke` performs no transactions and never edits STATUS. Only `pnpm e2e` writes STATUS. [PROGRESS.md](PROGRESS.md) is the append-only implementation/evidence log; [PLAN.md](PLAN.md) records approved decisions and dated amendments. Founder acceptance is explicitly separate from automated checks. The generated STATUS is a dated acceptance record. The September 20 UX revision removes Overview in favor of direct app entry; its subsequent browser evidence is recorded in PROGRESS without rewriting historical STATUS by hand.
+`pnpm smoke` performs no transactions and never edits STATUS. Only `pnpm e2e` writes STATUS. [PROGRESS.md](PROGRESS.md) is the append-only implementation/evidence log; [PLAN.md](PLAN.md) records approved decisions and dated amendments. Founder acceptance is explicitly separate from automated checks. The generated STATUS is a dated acceptance record. The September 20 landing revision makes `/` the public introduction and keeps the approved investor workspace at `/app`; subsequent browser evidence is recorded in PROGRESS without rewriting historical STATUS by hand.
 
 ## Preserved v1
 
 The original Base Sepolia implementation remains on [`v1-base-sepolia`](https://github.com/artuntan/hitbite-mvp/tree/v1-base-sepolia) and tag [`v1`](https://github.com/artuntan/hitbite-mvp/tree/v1), at commit `2fc8f9e75229ceca4a7347ffd089e76185030c16`. The v2 app was rebuilt from the supplied [design source](design.md).
 
 Not an offer of securities. Testnet only.
+
+## Public landing and launch settings
+
+`/` is statically generated and uses the founder-supplied landing copy. Wallet providers and platform CSS live in the `(platform)` route group and are not loaded by the landing. NAV fetches after mount from `/data/nav.json`; absent, invalid, future-dated or over-48-hour data stays hidden. No wallet connection, analytics, third-party scripts or cookies are required. `next/font/local` serves local fonts; optimized/subset assets preserve their included font licenses. Next's `inlineCss` option removes the initial stylesheet round trip, at the cost of inlining styles into each document.
+
+- `NEXT_PUBLIC_APP_LIVE` defaults to `true`. Set it to `false` and rebuild to replace the primary CTA with Request access, hide the header testnet link and hide NAV. It is a landing presentation switch, not an on-chain pause or route access control.
+- `NEXT_PUBLIC_SITE_URL` controls canonical metadata, share-image URLs, robots and sitemap. It currently defaults to the Vercel production origin. The founder deferred custom-domain work and selected **hitbite.markets** as the future domain; no DNS changes were made. On activation, configure apex/www in Vercel, set both `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_APP_URL` to `https://hitbite.markets`, update the daily NAV workflow's public app URL and rebuild. A permanent www-to-apex redirect and HTTPS HSTS header are prepared.
+- The brief's `hello@hitbite.com` remains the contact address until a replacement mailbox is supplied. The source links use the existing private GitHub repository; external reviewers need repository access. Repository visibility was not changed.
+- `UI_BASE_URL=http://localhost:3000 pnpm test:landing` checks exact copy, viewports, live/missing/stale NAV, reduced motion, launch behavior, navigation and share metadata/images. For a build made with `NEXT_PUBLIC_APP_LIVE=false`, add `LANDING_EXPECT_LIVE=false`. Test the optimized server with `pnpm start`; stop it before rebuilding with another flag.
+- OG/Twitter images are generated with `next/og`; `robots.txt` allows the landing and Transparency and excludes Admin/API. The sitemap lists landing, app and Transparency. Bot-response tests validate metadata and image bytes; actual X/Slack account previews are separate from these checks.

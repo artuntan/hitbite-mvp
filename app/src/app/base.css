@@ -1,0 +1,12 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+}
+img,
+svg {
+  -webkit-user-drag: none;
+  user-select: none;
+}

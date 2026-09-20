@@ -183,7 +183,7 @@ export function Header() {
     <header className="shell-header" ref={header}>
       <Link
         className="wordmark"
-        href="/"
+        href="/app"
         aria-label="HitBite app"
         draggable={false}
       >

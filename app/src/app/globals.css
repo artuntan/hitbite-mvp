@@ -11,8 +11,8 @@
   --color-accent-blue: var(--brand);
   --color-accent-orange: #ff6b00;
   --color-accent-green: #16804a;
-  --font-sans: "Inter Variable", Inter, system-ui, sans-serif;
-  --font-mono: "Inconsolata Variable", ui-monospace, monospace;
+  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
+  --font-mono: var(--font-inconsolata), ui-monospace, monospace;
   --radius-sm: 4px;
   --radius-md: 8px;
 }

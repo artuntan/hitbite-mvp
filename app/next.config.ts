@@ -9,18 +9,43 @@ readPublicConfig({
   NEXT_PUBLIC_CHAIN: process.env.NEXT_PUBLIC_CHAIN,
   NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
   NEXT_PUBLIC_ATTESTOR_ADDRESS: process.env.NEXT_PUBLIC_ATTESTOR_ADDRESS,
 });
 
-const workspaceRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
+const workspaceRoot = resolve(
+  fileURLToPath(new URL(".", import.meta.url)),
+  "..",
+);
 
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: { inlineCss: true },
   transpilePackages: ["@hitbite/config"],
   turbopack: { root: workspaceRoot },
   outputFileTracingRoot: workspaceRoot,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=31536000" },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.hitbite.markets" }],
+        destination: "https://hitbite.markets/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default config;

@@ -461,3 +461,9 @@ Live verification exposed an RPC head response one block older than a successful
 ## 2026-09-20 amendment — hbTRS identity and image interaction
 
 Use the founder-supplied square hbTRS PNG for the instrument in setup and Portfolio, preserving the original image and delivering optimized display sizes. Disable native mouse dragging for all site images, including images inserted later or in wallet portals, while preserving normal links, text selection and unrelated drag behavior. Verify desktop/mobile layouts and image interactions without new wallet transactions.
+
+## 2026-09-20 amendment — Public landing entry
+
+The founder supplies the Landing Page Brief: `/` becomes a static single-screen introduction with the exact headline/body/footer copy, one primary testnet CTA to `/app`, quiet source/access links and a client-fetched NAV line that hides absent or stale data. Preserve the already-approved investor setup/account UX at `/app` and the Transparency workspace. The brief's references to the former overview chart/five-step strip refer to the superseded original v2 layout; they do not restore that removed overview into the approved app. Use the supplied wordmark, the founder's blue brand direction and self-hosted fonts; isolate wallet providers from the landing. Add accessible reduced-motion entrance, generated sharing images/favicon, indexing metadata, launch flag and browser/performance evidence.
+
+The founder explicitly defers DNS/custom-domain work: use the current Vercel origin now, and prepare **hitbite.markets** as the future domain (replacing the brief's hitbite.com). Keep the brief's contact email pending a replacement. Do not change the existing private repository's visibility. Historical generated STATUS remains unchanged; append evidence/screenshots to PROGRESS.

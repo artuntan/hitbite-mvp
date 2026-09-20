@@ -1,0 +1,5 @@
+# Landing assets
+
+The original founder wordmark remains at `public/brand/hitbite.avif`. `hitbite-wordmark.png` is a lossless format conversion for `next/og`, which consumes a PNG data URL. The landing's `hitbite-280.avif` is a 280px display derivative; root `icon.png` and `apple-icon.png` use the 151px square mark at the left of the original artwork. The full wordmark is not cropped on the page.
+
+Fonts derive from the pinned `@fontsource-variable/inter` and `@fontsource-variable/inconsolata` packages. Their OFL licenses are included here. `Inter-400.ttf` and `Inter-600.ttf` are static instances of the Latin Inter source for `next/og`. `landing-inter.woff2` is a 400–600-weight subset containing the exact landing copy and live-number characters. `landing-inconsolata.woff2` is a 400-weight subset for the NAV line. FontTools instancing/subsetting produced these assets; expand the subsets if new copy adds characters. The full platform fonts still come directly from the packages via `next/font/local`.

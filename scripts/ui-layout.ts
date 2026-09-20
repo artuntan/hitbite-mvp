@@ -27,6 +27,13 @@ try {
   });
   await page.goto(baseUrl);
   await expect(
+    page.getByRole("heading", { name: "Türkiye's sovereign bonds, on-chain." }),
+  ).toBeVisible();
+  await page
+    .locator("main")
+    .getByRole("link", { name: "Open the testnet", exact: true })
+    .click();
+  await expect(
     page.getByRole("heading", { name: "Connect your wallet." }),
   ).toBeVisible();
   await expect(page.getByTestId("app-nav")).not.toContainText("—", {
@@ -84,7 +91,7 @@ try {
     });
   }
   results.push(
-    "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+    "Landing CTA opens app; only Transparency and position in platform header; 1440/768/390/320px without overflow",
   );
   results.push(
     "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
@@ -165,7 +172,7 @@ try {
     baseUrl,
   );
   investor.page.on("pageerror", (e) => errors.push(e.message));
-  await investor.page.goto(baseUrl);
+  await investor.page.goto(baseUrl + "/app");
   await investor.page.evaluate((contract) => {
     localStorage.setItem(
       `hitbite.workspace.5042002.${contract.toLowerCase()}.0x0000000000000000000000000000000000000001`,
