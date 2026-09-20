@@ -15,10 +15,18 @@ test("secret checks detect new files and forced tracked env files without leakin
     writeFileSync(join(directory, ".gitignore"), ".env*\n!.env.example\n");
     writeFileSync(join(directory, ".env"), `PRIVATE_KEY=${fakeSecret}\n`);
     writeFileSync(join(directory, ".env.example"), "PRIVATE_KEY=\n");
-    const scan = () => spawnSync("python3", [scanner], { cwd: directory, encoding: "utf8" });
-    assert.equal(scan().status, 0, "ignored local .env must not be scanned or printed");
+    const scan = () =>
+      spawnSync("python3", [scanner], { cwd: directory, encoding: "utf8" });
+    assert.equal(
+      scan().status,
+      0,
+      "ignored local .env must not be scanned or printed",
+    );
 
-    writeFileSync(join(directory, "new.ts"), `export const PRIVATE_KEY = "${fakeSecret}";\n`);
+    writeFileSync(
+      join(directory, "new.ts"),
+      `export const PRIVATE_KEY = "${fakeSecret}";\n`,
+    );
     const untracked = scan();
     assert.equal(untracked.status, 1);
     assert.match(untracked.stderr, /new.ts:1/);

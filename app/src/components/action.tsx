@@ -1,0 +1,197 @@
+"use client";
+import { useState } from "react";
+import { useAccount, useWalletClient } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  decodeEventLog,
+  encodeFunctionData,
+  erc20Abi,
+  type Abi,
+  type Address,
+  type TransactionReceipt,
+} from "viem";
+import { hBTokenAbi, identityRegistryAbi } from "@hitbite/config/abi";
+import { ARC_MIN_MAX_FEE_PER_GAS } from "@hitbite/config/chains";
+import { client, config, short, txUrl } from "@/lib/chain";
+import { Caption } from "./ui";
+
+export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
+  const names = receipt.logs.flatMap((log) => {
+    for (const abi of [hBTokenAbi, identityRegistryAbi, erc20Abi])
+      try {
+        const event = decodeEventLog({
+          abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        return [event.eventName];
+      } catch {}
+    return [];
+  });
+  return (
+    <div className="receipt" data-testid="receipt">
+      <span className="eyebrow small">
+        Receipt · {receipt.status === "success" ? "Confirmed" : "Reverted"}
+      </span>
+      <a
+        className="mono hash"
+        href={txUrl(receipt.transactionHash)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {receipt.transactionHash} ↗
+      </a>
+      <span className="caption">
+        Block {receipt.blockNumber.toString()} ·{" "}
+        {Array.from(new Set(names)).join(", ") || "No contract events"}
+      </span>
+    </div>
+  );
+}
+export function Action({
+  title,
+  description,
+  contract,
+  fn,
+  address,
+  abi,
+  args = [],
+  disabled,
+  onSuccess,
+  label,
+}: {
+  title: string;
+  description: string;
+  contract: string;
+  fn: string;
+  address: Address;
+  abi: Abi;
+  args?: readonly unknown[];
+  disabled?: string;
+  onSuccess?: (receipt: TransactionReceipt) => void;
+  label?: string;
+}) {
+  const { address: account, chainId } = useAccount();
+  const { data: wallet } = useWalletClient();
+  const query = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [receipt, setReceipt] = useState<TransactionReceipt>();
+  const [error, setError] = useState("");
+  const [pendingHash, setPendingHash] = useState<string>();
+  const reason =
+    disabled ||
+    (!account
+      ? "Connect a wallet to continue."
+      : chainId !== config.chain.id
+        ? `Switch to ${config.chain.name} to continue.`
+        : undefined);
+  async function send() {
+    if (reason || !wallet || !account) return;
+    setBusy(true);
+    setError("");
+    setReceipt(undefined);
+    setPendingHash(undefined);
+    try {
+      if (
+        (await client.getChainId()) !== config.chain.id ||
+        (await wallet.getChainId()) !== config.chain.id
+      )
+        throw new Error("Wrong testnet.");
+      const data = encodeFunctionData({ abi, functionName: fn, args });
+      const estimated = await client.estimateFeesPerGas();
+      const floor =
+        config.chainName === "arc-testnet" ? ARC_MIN_MAX_FEE_PER_GAS : 0n;
+      const fees = {
+        maxFeePerGas:
+          estimated.maxFeePerGas > floor ? estimated.maxFeePerGas : floor,
+        maxPriorityFeePerGas: estimated.maxPriorityFeePerGas,
+      };
+      const gas = await client.estimateGas({
+        account,
+        to: address,
+        data,
+        ...fees,
+      });
+      const hash = await wallet.sendTransaction({
+        account,
+        to: address,
+        data,
+        chain: config.chain,
+        gas: (gas * 12n) / 10n,
+        ...fees,
+      });
+      setPendingHash(hash);
+      const confirmed = await client.waitForTransactionReceipt({
+        hash,
+        timeout: 120000,
+      });
+      setReceipt(confirmed);
+      if (confirmed.status !== "success")
+        throw new Error("Transaction reverted. No action was completed.");
+      await query.invalidateQueries({ queryKey: ["chain"] });
+      await query.invalidateQueries({ queryKey: ["activity"] });
+      onSuccess?.(confirmed);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "";
+      setError(
+        /reject|denied/i.test(message)
+          ? "Signature declined. You can try again."
+          : /insufficient/i.test(message)
+            ? "Insufficient balance or vault liquidity. Keep USDC for gas."
+            : pendingHash
+              ? "Confirmation is delayed. Check the transaction link before trying again."
+              : "The transaction could not complete. Refresh the balances and check your wallet.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="action-card">
+      <div className="action-heading">
+        <h3>{title}</h3>
+        <span className="mono caption">
+          {contract}.{fn}()
+        </span>
+      </div>
+      <span className="eyebrow small">What will happen</span>
+      <p>{description}</p>
+      <Caption>
+        The transaction calls {contract} at {short(address)}. Your wallet asks
+        for approval before anything moves.
+      </Caption>
+      <div className="sign-row">
+        <span className="eyebrow small">Sign</span>
+        <button onClick={send} disabled={Boolean(reason) || busy || !wallet}>
+          {busy ? "Waiting for wallet / confirmation…" : label || title}
+        </button>
+      </div>
+      {reason && <p className="caption muted">{reason}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {pendingHash && !receipt && (
+        <a
+          className="caption"
+          href={txUrl(pendingHash)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          View pending transaction ↗
+        </a>
+      )}
+      {receipt ? (
+        <Receipt receipt={receipt} />
+      ) : (
+        <p className="caption muted receipt-empty">
+          Receipt ·{" "}
+          {busy
+            ? "Awaiting confirmation"
+            : "Appears after a confirmed transaction"}
+        </p>
+      )}
+    </section>
+  );
+}

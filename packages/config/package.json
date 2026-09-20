@@ -8,7 +8,8 @@
     "./env": "./env.ts",
     "./copy": "./copy.ts",
     "./abi": "./abi.ts",
-    "./contracts": "./contracts.ts"
+    "./contracts": "./contracts.ts",
+    "./countries": "./countries.json"
   },
   "dependencies": {
     "viem": "2.56.8"

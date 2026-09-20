@@ -429,3 +429,7 @@ Recheck network/tooling behavior at its implementation checkpoint. Upstream exam
 ### 2026-09-20 — Phase 3 command amendment
 
 Use `pnpm exec tsx scripts/cast-subscribe.ts` for the cast subscription checkpoint. Installed cast does not consume ETH_PRIVATE_KEY; this wrapper keeps keys in memory, uses cast calldata and publishes only the signed public transaction via cast. Earlier cast-send examples are superseded. Confirmed vault seed is 10 USDC; this is faucet liquidity, not the simulated reference portfolio.
+
+### 2026-09-20 — Verification persistence amendment
+
+The live app uses authenticated, wallet-bound five-minute review tickets and the on-chain registry as its canonical durable record, replacing the proposed SQLite/Turso dependency. The server enforces the ten-second minimum and checks the wallet signature, origin, chain and live blocklist. Personal names are hashed and never stored. Existing/revoked country records cannot self-register again, so consumed verification signatures cannot restore revoked access. A warm-instance signer queue avoids local nonce collisions; cross-instance conflicts fail retryably and never report success without a receipt/current registry check. This is a simulated registrar, not a production KYC or abuse-prevention service. No external database account is required.

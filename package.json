@@ -22,13 +22,23 @@
     "verify:contracts": "tsx scripts/verify-contracts.ts"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "22.20.4",
     "dotenv": "17.2.3",
     "dotenv-cli": "11.0.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.5",
+    "prettier": "3.9.8",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
     "viem": "2.56.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "ws@>=8 <8.21.3": "8.21.3",
+      "uuid@<11.1.1": "11.1.1",
+      "decode-uri-component@<=0.4.2": "0.5.0",
+      "valtio>use-sync-external-store": "1.7.0"
+    }
   }
 }
