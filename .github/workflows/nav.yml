@@ -4,36 +4,41 @@ on:
     - cron: '0 7 * * *'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: arc-nav-publisher
   cancel-in-progress: false
 jobs:
   publish:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
     env:
       NEXT_PUBLIC_CHAIN: arc-testnet
-      ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
-      ATTESTOR_PRIVATE_KEY: ${{ secrets.ATTESTOR_PRIVATE_KEY }}
       NEXT_PUBLIC_ATTESTOR_ADDRESS: ${{ vars.NEXT_PUBLIC_ATTESTOR_ADDRESS }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           version: '0.7.21'
       - run: uv run --python 3.11 nav_engine/hb.py nav
       - run: uv run --python 3.11 nav_engine/hb.py push
+        env:
+          ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
       - run: uv run --python 3.11 nav_engine/hb.py attest
-      - name: Commit confirmed snapshots
-        run: |
-          git config user.name 'hitbite-nav[bot]'
-          git config user.email 'hitbite-nav[bot]@users.noreply.github.com'
-          git add app/public/data/nav.json app/public/data/attestation.json
-          if ! git diff --cached --quiet; then
-            git commit -m 'data: publish confirmed simulated NAV and attestation'
-            git push
-          fi
+        env:
+          ATTESTOR_PRIVATE_KEY: ${{ secrets.ATTESTOR_PRIVATE_KEY }}
+      - name: Merge confirmed snapshots through a checked pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish-nav-pr.py
       - name: Deploy and verify the confirmed snapshot
         env:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}

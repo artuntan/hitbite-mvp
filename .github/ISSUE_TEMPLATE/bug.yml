@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible application, contract or accounting problem.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: "For security vulnerabilities, use private reporting instead. Never include private keys, seed phrases or verification names."
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the route, browser/wallet version and network. Public transaction links are useful when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Redact personal information from screenshots and logs.

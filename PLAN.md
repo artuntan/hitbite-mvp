@@ -479,3 +479,8 @@ The founder has connected hitbite.markets in Vercel and requests repair of the n
 ## 2026-09-20 amendment — Always-public testnet entry
 
 The founder confirms the testnet should stay public and questions the misleading Request access link. Remove the access-request CTA and the obsolete launch/access-only presentation switch so both landing actions always open `/app`. Keep contact email as ordinary contact, and preserve the existing self-service verification, country restrictions and contract authorization. Verify anonymous landing-to-app navigation and the absence of access-request UI on desktop/mobile, then publish to hitbite.markets.
+
+
+## 2026-09-20 — Public repository hardening
+
+The founder made the repository public and authorized handling the security and presentation work. Keep the existing MIT license, preserve v1 and dated acceptance evidence, publish a concise evidence-led README and security/operations documentation, enable GitHub security controls and protected-main checks, and rate-limit the public simulated registrar. Move daily NAV delivery from direct main pushes to checked snapshot PRs so branch protection does not disable publication. This work does not claim an independent audit or production readiness.

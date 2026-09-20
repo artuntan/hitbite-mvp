@@ -1,172 +1,91 @@
-# HitBite Testnet v2
+<img src="app/assets/hitbite-wordmark.png" alt="HitBite" width="180">
+
+# HitBite · Arc Testnet
 
 [![CI](https://github.com/artuntan/hitbite-mvp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/artuntan/hitbite-mvp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A testnet reference implementation of subscriptions, redemptions and coupon pass-through for simulated Türkiye USD sovereign-bond fund units.
+An open-source implementation of USDC subscriptions, coupon distributions and redemptions for **hbTRS**, representing simulated Türkiye USD sovereign-bond fund units on Arc Testnet.
 
-**[Landing](https://hitbite.markets)** · **[Open the live app](https://hitbite.markets/app)** · [Transparency](https://hitbite.markets/transparency) · [Generated live-test STATUS](STATUS.md) · [Deployment receipts](deployments/arc-testnet.json)
+**[Open the app](https://hitbite.markets/app)** · **[Transparency](https://hitbite.markets/transparency)** · **[Verify the implementation](docs/verification.md)** · **[Security policy](SECURITY.md)**
 
-> Testnet. Simulated portfolio. Not an offer of securities.
+> **Testnet only.** No real bonds are held and hbTRS provides no claim on a real security. Eligibility review and portfolio valuations are simulated. This implementation has **not received an independent security audit**. Source verification and automated tests are not an audit or a guarantee. Not an offer of securities.
 
-## Try it in five minutes
+## What you can verify
 
-1. Install a browser wallet, or open the app inside your mobile wallet's browser. Request test **USDC** from the [Circle faucet](https://faucet.circle.com): choose **Arc Testnet** and enter your public wallet address. Never enter a private key into the app or faucet.
-2. [Open the app](https://hitbite.markets/app), connect your wallet, then use **Add / switch to Arc Testnet** if needed. Chain ID: **5042002**. RPC: `https://rpc.testnet.arc.io`. Gas on Arc is paid in USDC. Keep a small balance for fees.
-3. The eligibility form opens for a new wallet. Enter your name and country and confirm professional-investor status. Sign the eligibility statement, wait for the ten-second simulated review and the registrar's receipt. This is a simulation, not real KYC. Not available to residents of the United States or Türkiye on this testnet.
-4. After verification, the subscription form opens automatically. Enter a small amount such as **1 USDC**, then sign **Approve USDC** and **Subscribe** as each step appears. The first permits that exact amount; the second exchanges it for hbTRS at the NAV in effect when the transaction executes. The UI reserves at least 0.05 USDC for gas.
-5. The **Portfolio** workspace opens automatically with your position and receipts. Coupons are claimable only after an issuer funds a distribution; the app does not fabricate a payout. Choose **Redeem**, use your token balance or a smaller amount, and sign to receive USDC from the vault. Existing accrued coupons remain claimable after redemption.
+| Capability | Implementation | Public evidence |
+|---|---|---|
+| Wallet eligibility and transfer restrictions | [IdentityRegistry](contracts/src/IdentityRegistry.sol) | [Verified registry source](https://explorer.testnet.arc.io/address/0xd8c5d0473d11de3177a68182b91213171d8e4580#code) |
+| USDC subscription and redemption | [HBToken](contracts/src/HBToken.sol) | [Verified token source](https://explorer.testnet.arc.io/address/0x6d5163d237203af9bce4292562b94e585327927e#code) |
+| Coupon accrual and reserved liquidity | [Contract tests](contracts/test/) | [Dated transaction acceptance](STATUS.md), [receipts](deployments/evidence/e2e.json) |
+| Daily simulated NAV and signed records | [Python engine](nav_engine/hb.py), [model](docs/nav-model.md) | [Published NAV](https://hitbite.markets/data/nav.json), [attestation](https://hitbite.markets/data/attestation.json) |
+| Reproducible builds and checks | [CI workflow](.github/workflows/ci.yml) | [Run history](https://github.com/artuntan/hitbite-mvp/actions/workflows/ci.yml) |
 
-The home page is a single-screen public introduction; **Open the testnet** opens account setup at `/app`. Connect, verification and first subscription advance automatically, closing completed steps. The header is transparent at the top and softly reveals its glass surface while scrolling; it contains the HitBite logo, Transparency and **Your position** for wallet controls. After a confirmed investment, the account workspace shows balances, holdings, NAV, vault liquidity, coupon payout and transaction history, with subscription/redemption in one order panel. It remains open after full redemption in the same browser; this preference is isolated by wallet, chain and contract, and never replaces on-chain eligibility checks. Approval and subscription remain separate signatures with exact amounts and confirmed receipt links. If confirmation is delayed, inspect the pending transaction before retrying.
+Evidence has a date and scope. Historical acceptance records are preserved; they are not presented as fresh tests of every later change. [Verification notes](docs/verification.md) explain reproduction and limitations.
 
-**Transparency** uses the same workspace layout: live NAV/supply/liquidity, published NAV observations, signature verification and simulated holdings. Open the detail rows for valuation inputs, fees, yields and the intended production model. Download the original records or inspect/copy contract addresses without connecting a wallet.
+## Try the public testnet
 
-Redemptions on the testnet are paid from a vault the admin funds. There is no liquidity guarantee.
+1. Request test USDC from the [Circle faucet](https://faucet.circle.com), choosing **Arc Testnet**. Use an injected browser wallet or your wallet's mobile browser.
+2. [Open the app](https://hitbite.markets/app), connect, and switch to Arc Testnet (**5042002**). Keep USDC available for gas.
+3. Complete the eligibility form, sign its statement and wait for the ten-second simulated review. This testnet excludes US and Türkiye residents and requires professional-investor confirmation; this is not real KYC.
+4. Approve an exact USDC amount and subscribe to hbTRS. Coupons become claimable only after an issuer funds a distribution. Redeem from the portfolio workspace when the contract is unpaused and the vault has sufficient liquidity.
 
-The app currently supports injected browser wallets. WalletConnect QR pairing is optional and requires a configured public project ID; it is not represented as tested here. The public landing page is at `/`; the investor flow is at `/app`, with Transparency at `/transparency` and role-restricted Admin at `/admin`. Operators can open Admin from their position popover or visit `/admin` directly.
+Public access requires no invitation. Test tokens have no promised value or guaranteed liquidity. Never enter a private key or seed phrase into the app.
 
-## What is simulated
-
-No real bonds are held, no real investor funds are accepted, and hbTRS has no claim on a real security. The portfolio contains model holdings named TURKEY 6.0% 2029, TURKEY 6.65% 2034 and TURKEY 7.04% 2036, with target weights of 40% / 40% / 20%. Their identifiers, coupon schedules, prices and valuations are explicitly simulated. There are no real ISINs, audit claims or partner endorsements.
-
-The reference basket has 100,000 units. Its dirty prices, retained simulated coupon cash and accrued fees determine a reference price per unit. Holdings are scaled to the **actual on-chain token supply at a recorded block**. Subscriptions therefore cannot mechanically dilute the simulated NAV. Faucet-funded vault cash is reported separately and is never added to the simulated bond value.
-
-- Clean prices are manual inputs with visible source/date fields. They carry forward until revised; daily NAV publication does not make these market quotes fresh.
-- Bond accrued interest uses declared semiannual Actual/Actual periods. Simulated bond coupons received since purchase remain in model cash, preventing a discontinuity at a coupon date.
-- Fees accrue on the fixed reference units at 0.75% management plus 0.30% simulated expenses per year, Actual/365. They are model expenses, not a cash subscription fee; subscription fees are zero.
-- NAV is floored to six USDC decimals. Token quantities use 18 decimals. At zero supply, the reference price remains available but the backing ratio is undefined and the snapshot says `bootstrap`.
-- Simulated yield to maturity is computed from discounted model cash flows. The simulated trailing 30-day distribution yield uses actual funded coupon-index increments divided by current NAV and is **not annualized**. These figures appear only on Transparency.
-- On-chain coupons are independently funded by the issuer. They do not silently reduce NAV. Unpaid coupons, including rounding dust, are reserved from redeemable vault liquidity.
-- Simulated attestor. Replaced by an independent firm in production. An EIP-191 signature authenticates the exact historical JSON payload against the configured public signer; it is not evidence of real custody or independent review.
-
-## Contracts and public records
-
-| Contract | Arc Testnet address |
-|---|---|
-| IdentityRegistry | [0xd8c5d0473d11de3177a68182b91213171d8e4580](https://explorer.testnet.arc.io/address/0xd8c5d0473d11de3177a68182b91213171d8e4580) |
-| HBToken / hbTRS | [0x6d5163d237203af9bce4292562b94e585327927e](https://explorer.testnet.arc.io/address/0x6d5163d237203af9bce4292562b94e585327927e) |
-| Native USDC ERC-20 interface | [0x3600000000000000000000000000000000000000](https://explorer.testnet.arc.io/address/0x3600000000000000000000000000000000000000) |
-
-Both application contracts are explorer-verified. [Standard JSON inputs and compiler metadata](deployments/verification/) are also committed. Deployment block: **63061198**. Initial issuer vault seed: **10 testnet USDC**; its receipt is in [the deployment artifact](deployments/arc-testnet.json). Subsequent balances and distributions are on-chain and visible in Transparency/Admin.
-
-Arc's native gas balance uses 18 decimals, while its USDC ERC-20 interface uses **6**; these are two interfaces to the same asset. The UI shows one USDC balance. Every transaction sets an EIP-1559 maximum fee of at least 20 gwei. There is no MockUSDC on Arc.
-
-## Architecture and ownership
+## How it works
 
 ```mermaid
 flowchart LR
-  Wallet[Investor wallet] --> App[Next.js app]
+  Wallet[Investor wallet] --> App[Next.js application]
   App --> Registry[IdentityRegistry]
-  App --> Token[HBToken and USDC vault]
-  Review[Simulated review API / REGISTRAR] --> Registry
-  Portfolio[Three-file simulated Python engine] --> Oracle[ORACLE / daily NAV]
+  App --> Token[HBToken / USDC vault]
+  API[Simulated review API] --> Registry
+  Engine[Python NAV engine] --> Oracle[Oracle publication]
   Oracle --> Token
-  Portfolio --> Signed[Signed public JSON]
-  Signed --> App
-  Issuer[ISSUER wallet] --> Token
+  Engine --> Records[Signed public records]
+  Records --> App
+  Issuer[Issuer wallet] --> Token
 ```
 
-`IdentityRegistry` enforces the current country blocklist and wallet eligibility. Transfers require both sender and receiver to be verified. Revoked or newly blocked holders can still redeem existing tokens and claim previously earned coupons while unpaused. They cannot receive or subscribe, and the public API cannot restore a revoked record. An authorized registrar must review it.
+Contracts enforce eligibility, accounting and role permissions on-chain. The app reads contract state and signs investor transactions through the user's wallet. The registrar API registers eligible test wallets. The NAV engine values a declared simulated basket and publishes its receipt and attestation through a checked PR.
 
-`HBToken` enforces issuer/oracle roles, a 5% per-update NAV movement rail, subscription/redemption math and indexed coupon accrual. Issuers can explicitly force a NAV update. Pausing blocks subscriptions, redemptions, transfers, claims and coupon distributions. A manual NAV change can make the published JSON differ; rerun the NAV pipeline after review.
-
-The registrar API uses a server-authenticated five-minute challenge bound to the wallet, country, professional consent, origin and chain. It checks a wallet signature and a minimum ten-second review before sending `addVerified`. Names are hashed and not retained or put on-chain. Confirmed registry state is the durable eligibility record. A per-instance signer queue and pending-chain nonce handling make conflicts retriable; production-scale distributed abuse prevention is outside this simulated registrar.
-
-HitBite owns this reference behavior, application and transparency pipeline. The intended production issuance, custody, compliance, fund accounting and audited token implementation are provided through the licensed partner model below. This table describes an intended operating model, not an existing regulated issuance or partnership.
-
-| Layer | Testnet v2 | Production (first issuance) |
-|---|---|---|
-| Legal issuer | none (simulation) | Licensed ADGM fund manager's fund |
-| KYC / whitelist | 10-second simulated review | Partner's KYC vendor writes to the registry |
-| Money | testnet USDC on Arc | Fiat/USDC into the fund's account via the partner |
-| Custody | none | Bonds at broker/Euroclear; tokens with a licensed digital custodian |
-| Token contract | ours | Vendor's audited contract implementing this behaviour |
-| NAV | our Python job | Fund administrator's NAV, published by us |
-| Attestation | simulated signer | Independent firm, monthly |
-| App and transparency | ours | ours, fronting the partner's flow |
+**Operator control is explicit:** the administrator manages roles; the issuer can mint/burn, pause activity and override NAV; the registrar controls eligibility. Deployed roles use individual testnet keys, with no multisig or timelock. [Read the trust model](docs/security-model.md) before interpreting the evidence.
 
 ## Run locally
 
-Requirements: Node 22+, pnpm 10.22.0, Foundry 1.8.1, Python 3.11 and uv. Font assets are self-hosted; no font service is required at runtime.
+Use Node from [`.nvmrc`](.nvmrc), pnpm **10.22.0**, Python **3.11**, uv and Foundry **1.8.1** for contract tests.
 
 ```sh
+git clone --recurse-submodules https://github.com/artuntan/hitbite-mvp.git
+cd hitbite-mvp
 pnpm install --frozen-lockfile
-git submodule update --init --recursive
 cp .env.example .env
 pnpm dev
 ```
 
-The public Arc deployment is the default. Add the **public** attestor address `0x60Be08C7e2dA3b9C1fe2955d237b8833C2D63254` to `NEXT_PUBLIC_ATTESTOR_ADDRESS`. Viewing requires no private keys. Local simulated verification additionally requires an authorized funded `REGISTRAR_PRIVATE_KEY` and a random `VERIFICATION_SECRET` of at least 32 characters. Set `NEXT_PUBLIC_APP_URL` to the exact origin serving the app. Keep all keys in the ignored `.env`; never commit or paste them into chat.
+Viewing the public deployment requires no private keys. Configure the public attestor address using [operations](docs/operations.md) to verify signed records locally. Local verification needs a funded, authorized registrar key and a random ticket secret. Keep them in the ignored `.env`; never use real-fund wallets. Preview deployments intentionally have no registrar credentials.
 
 ```sh
-pnpm check                              # lint, safety checks, types, tests, build
-forge test --root contracts              # unit, fuzz and stateful invariants
+pnpm check                       # lint, security/config tests, types, build
+forge test --root contracts       # unit, fuzz and invariant tests
 uv run --python 3.11 --no-project python -m unittest discover -s tests/nav -v
-uv tool run ruff==0.16.6 check nav_engine/hb.py tests/nav
-pnpm nav nav --dry-run                   # deterministic fixture; no signer/RPC/writes
-pnpm smoke                              # read-only RPC, contracts, live routes, NAV and signature
-pnpm check:secrets                       # requires gitleaks 8.30.1
+python3 -m unittest discover -s tests/automation -v
+pnpm nav nav --dry-run            # deterministic; no RPC, signing or writes
+pnpm check:secrets                # requires gitleaks 8.30.1
+pnpm smoke                       # read-only deployment checks
 ```
 
-`NEXT_PUBLIC_CHAIN` allows only `arc-testnet`, `base-sepolia` or `local`. The configuration, deployment tool and runtime check RPC chain IDs. Selecting a fallback does not manufacture a deployment; deploy it and sync the manifest first. Only Base Sepolia/local may deploy MockUSDC. No mainnet configuration exists.
+## Repository guide
 
-## Operator commands
+| Path | Purpose |
+|---|---|
+| [`app/`](app/) | Next.js app, investor workspace, Transparency and review API |
+| [`contracts/`](contracts/) | Solidity contracts and Foundry tests |
+| [`packages/config/`](packages/config/) | Chain configuration, generated ABIs and addresses |
+| [`nav_engine/`](nav_engine/) | Simulated portfolio inputs, valuation and signing |
+| [`deployments/`](deployments/) | Deployment/compiler records and dated public evidence |
+| [`tests/`](tests/), [`scripts/`](scripts/) | Checks, deployment tools and acceptance runners |
 
-Use funded, separate, testnet-only role keys. `.env.example` documents every setting.
+[Verification](docs/verification.md) · [Security model](docs/security-model.md) · [NAV model](docs/nav-model.md) · [Operations](docs/operations.md) · [Contributing](CONTRIBUTING.md)
 
-```sh
-pnpm run deploy --chain arc-testnet --dry-run
-pnpm run deploy --chain arc-testnet      # refuses to overwrite a confirmed deployment
-pnpm verify:contracts --chain arc-testnet
-pnpm fund:vault --chain arc-testnet --amount 10
-pnpm sync:contracts
-pnpm exec tsx scripts/cast-subscribe.ts  # real 0.5-USDC deployer subscription; not read-only
-
-pnpm nav nav
-pnpm nav push --dry-run
-pnpm nav push
-pnpm nav attest
-```
-
-`pnpm run deploy` uses `run` intentionally: plain `pnpm deploy` is pnpm's own workspace command. The cast wrapper signs only in memory and passes only the public signed transaction to `cast publish`; keys never enter argv. Contract ABIs and the application deployment manifest are generated with `pnpm sync:contracts`.
-
-The [daily NAV workflow](.github/workflows/nav.yml) runs at 07:00 UTC, publishes with the oracle, signs with the simulated attestor and commits confirmed JSON. It needs GitHub secrets `ORACLE_PRIVATE_KEY`, `ATTESTOR_PRIVATE_KEY` and repository variable `NEXT_PUBLIC_ATTESTOR_ADDRESS`. It runs on the default branch. A dedicated `VERCEL_DEPLOY_HOOK` secret and `NEXT_PUBLIC_APP_URL` repository variable trigger a production rebuild and verify that the live site serves the new publication. Manual prices must be reviewed separately. Monthly coupon automation is not enabled; the issuer funds distributions explicitly in Admin.
-
-The Vercel project uses `app/` as its root with parent workspace files included. Build with `pnpm build`, install with `pnpm install --frozen-lockfile`, Node 22. The only server credentials required there are `REGISTRAR_PRIVATE_KEY` and `VERIFICATION_SECRET`; do not upload issuer/oracle/attestor/E2E keys. Set public chain, app URL and expected attestor as documented. `.vercelignore` excludes local credentials and archived work.
-
-## Reproduce the live acceptance run
-
-`pnpm e2e` makes real testnet transactions. Configure two **fresh, distinct** funded wallets in `E2E_WALLET_A_PRIVATE_KEY` and `E2E_WALLET_B_PRIVATE_KEY`, plus the authorized issuer/registrar keys. The default is 1 USDC per subscription and 0.2 USDC total coupon funding. Each investor needs additional USDC for gas. Set `E2E_BASE_URL` to the live app origin.
-
-For browser evidence, configure a separate funded `UI_WALLET_PRIVATE_KEY` and run:
-
-```sh
-pnpm exec playwright install chromium
-pnpm test:ui
-pnpm exec tsx scripts/ui-layout.ts       # read-only layout, navigation and fresh-wallet form checks
-pnpm e2e
-```
-
-The browser test injects a test provider while keeping signing keys in the Node process. It performs actual API and Arc transactions and saves screenshots under `.context/`. It is not a substitute for a founder personally testing a real wallet extension. The E2E runner requires recent browser evidence, recorded founder acceptance and green CI for its exact source commit before touching the fresh investor wallets. It then verifies both wallets through the live API, approves/subscribes, distributes/claims coupons, redeems, checks restrictions, pauses and restores the token. It generates `STATUS.md` and public receipt evidence; failures remain visible. Rerunning a fresh-wallet acceptance run requires new wallet keys/funding.
-
-After the founder explicitly confirms their own complete fresh-wallet flow, record the confirmation in `.context/founder-acceptance.json` with `confirmed: true`, an ISO `timestamp`, the exact `baseUrl`, and the actual `source`, `statement` and `scope`. The current confirmation is preserved in [the public acceptance record](deployments/evidence/founder-acceptance.json); for a repeat run against the same deployment, copy that record to the local path. Do not manufacture a confirmation for a new deployment. The runner copies its provenance into the generated evidence separately from automated test results.
-
-`pnpm test:transparency` checks the redesigned records page in Chromium without sending transactions: real published data/signatures, responsive layouts, downloads, clipboard, keyboard history and browser-only failure fixtures. Set `UI_BASE_URL` to test a local build; otherwise it uses the configured live URL.
-
-`pnpm smoke` performs no transactions and never edits STATUS. Only `pnpm e2e` writes STATUS. [PROGRESS.md](PROGRESS.md) is the append-only implementation/evidence log; [PLAN.md](PLAN.md) records approved decisions and dated amendments. Founder acceptance is explicitly separate from automated checks. The generated STATUS is a dated acceptance record. The September 20 landing revision makes `/` the public introduction and keeps the approved investor workspace at `/app`; subsequent browser evidence is recorded in PROGRESS without rewriting historical STATUS by hand.
-
-## Preserved v1
-
-The original Base Sepolia implementation remains on [`v1-base-sepolia`](https://github.com/artuntan/hitbite-mvp/tree/v1-base-sepolia) and tag [`v1`](https://github.com/artuntan/hitbite-mvp/tree/v1), at commit `2fc8f9e75229ceca4a7347ffd089e76185030c16`. The v2 app was rebuilt from the supplied [design source](design.md).
-
-Not an offer of securities. Testnet only.
-
-## Public landing and launch settings
-
-`/` is statically generated and uses the founder-supplied landing copy. Wallet providers and platform CSS live in the `(platform)` route group and are not loaded by the landing. NAV fetches after mount from `/data/nav.json`; absent, invalid, future-dated or over-48-hour data stays hidden. No wallet connection, analytics, third-party scripts or cookies are required. `next/font/local` serves local fonts; optimized/subset assets preserve their included font licenses. Next's `inlineCss` option removes the initial stylesheet round trip, at the cost of inlining styles into each document.
-
-- The testnet is publicly reachable without an invitation or access request. Both landing actions always open `/app`; the former `NEXT_PUBLIC_APP_LIVE` presentation switch is removed. Transactions still use the existing self-service simulated verification, country restrictions and contract permissions.
-- Production uses **https://hitbite.markets**. Both `NEXT_PUBLIC_SITE_URL` (canonical metadata, share images, robots and sitemap) and `NEXT_PUBLIC_APP_URL` (wallet metadata and verification origin) are configured to this origin in Vercel Production. The daily NAV workflow's `NEXT_PUBLIC_APP_URL` repository variable uses the same address. Rebuild after changing these values. Local development keeps `NEXT_PUBLIC_APP_URL=http://localhost:3000`.
-- Vercel serves the apex domain directly; `www.hitbite.markets` redirects to the apex, matching the existing Next redirect. Never configure the apex to redirect back to www: that creates a redirect loop. DNS remains at the founder's registrar, with Vercel handling HTTPS. The previous Vercel public address redirects to the canonical domain so existing links reach the supported verification origin.
-- The brief's `hello@hitbite.com` remains the contact address until a replacement mailbox is supplied. The landing has no GitHub links; the platform's Source link uses the existing private repository and requires access. Repository visibility was not changed.
-- `UI_BASE_URL=http://localhost:3000 pnpm test:landing` checks exact copy, public entry without access-request links, viewports, live/missing/stale NAV, reduced motion, navigation and share metadata/images. Test the optimized server with `pnpm start`.
-- OG/Twitter images are generated with `next/og`; `robots.txt` allows the landing and Transparency and excludes Admin/API. The sitemap lists landing, app and Transparency. Bot-response tests validate metadata and image bytes; actual X/Slack account previews are separate from these checks.
+The earlier Base Sepolia implementation is preserved at [tag `v1`](https://github.com/artuntan/hitbite-mvp/tree/v1); `main` contains Arc Testnet v2. [PLAN](PLAN.md) and the append-only [PROGRESS](PROGRESS.md) log retain implementation history. Available under the [MIT license](LICENSE).

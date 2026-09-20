@@ -4,6 +4,7 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,13 +20,15 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.11"
       - run: pnpm install --frozen-lockfile
@@ -35,10 +38,11 @@ jobs:
     name: Contracts (unit, fuzz, invariants)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1
         with:
           version: v1.8.1
       - run: forge fmt --check --root contracts
@@ -51,8 +55,11 @@ jobs:
     name: Candidate-tree secret checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.11"
       - name: Install pinned gitleaks with release checksum
@@ -63,16 +70,22 @@ jobs:
           sha256sum --check --ignore-missing checksums.txt
           tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - run: python3 scripts/check-secrets.py --gitleaks
+      - run: python3 -m unittest discover -s tests/security -v
+      - run: python3 scripts/check-secrets.py --gitleaks --history-base "$SCAN_BASE"
+        env:
+          SCAN_BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/main' }}
 
   nav:
     name: NAV (math tests, lint, deterministic dry-run)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           version: '0.7.21'
       - run: uv run --python 3.11 --no-project python -m unittest discover -s tests/nav -v
-      - run: uv tool run ruff==0.16.6 check nav_engine/hb.py tests/nav
+      - run: uv tool run ruff==0.16.6 check nav_engine/hb.py tests/nav scripts/publish-nav-pr.py tests/automation
+      - run: python3 -m unittest discover -s tests/automation -v
       - run: uv run --python 3.11 nav_engine/hb.py nav --dry-run

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import countryData from "@hitbite/config/countries";
 import { copy } from "@hitbite/config/copy";
 import { client, short } from "@/lib/chain";
+import { readVerificationResponse } from "@/lib/verification-http";
 import { type Hex, type TransactionReceipt } from "viem";
 import { Icon } from "./ui";
 import { Receipt } from "./action";
@@ -40,10 +41,12 @@ export function Verify({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        const json = await r.json();
-        if (!r.ok)
-          throw new Error(json.error || "Verification is unavailable.");
-        return json;
+        return readVerificationResponse<{
+          message: string;
+          reviewMs: number;
+          ticket: string;
+          transactionHash?: Hex;
+        }>(r);
       };
       setStage("Preparing your wallet signature…");
       const challenge = await request({
