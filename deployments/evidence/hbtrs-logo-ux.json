@@ -1,0 +1,146 @@
+{
+  "implementationCommit": "efbe1a237f048926a42715e9f1da2d3662d5c54a",
+  "productionMergeCommit": "9d916e91793022e9a46b56b8c97c82b174ae0f5d",
+  "pullRequest": "https://github.com/artuntan/hitbite-mvp/pull/8",
+  "scope": "hbTRS artwork and image drag prevention; read-only verification",
+  "public": {
+    "timestamp": "2026-09-20T13:03:05.122Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "results": [
+      "Setup: images decode, native drag is disabled, mouse dragging creates no accepted drag",
+      "Original token logo preserved; optimized icon delivered in 454 bytes",
+      "Document guard blocks dynamically inserted images while preserving unrelated text dragging",
+      "Transparency: images decode, native drag is disabled, mouse dragging creates no accepted drag",
+      "Home logo remains clickable after image drag protection",
+      "Portfolio: images decode, native drag is disabled, mouse dragging creates no accepted drag"
+    ],
+    "viewports": [
+      {
+        "screen": "Setup",
+        "width": 1440,
+        "iconSize": 40
+      },
+      {
+        "screen": "Setup",
+        "width": 768,
+        "iconSize": 40
+      },
+      {
+        "screen": "Setup",
+        "width": 390,
+        "iconSize": 34
+      },
+      {
+        "screen": "Setup",
+        "width": 320,
+        "iconSize": 34
+      },
+      {
+        "screen": "Portfolio",
+        "width": 1440,
+        "iconSize": 40
+      },
+      {
+        "screen": "Portfolio",
+        "width": 768,
+        "iconSize": 40
+      },
+      {
+        "screen": "Portfolio",
+        "width": 390,
+        "iconSize": 34
+      },
+      {
+        "screen": "Portfolio",
+        "width": 320,
+        "iconSize": 34
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "publicShell": {
+    "timestamp": "2026-09-20T13:03:04.820Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "local": {
+    "timestamp": "2026-09-20T12:59:34.654Z",
+    "baseUrl": "http://localhost:3000",
+    "results": [
+      "Setup: images decode, native drag is disabled, mouse dragging creates no accepted drag",
+      "Original token logo preserved; optimized icon delivered in 454 bytes",
+      "Document guard blocks dynamically inserted images while preserving unrelated text dragging",
+      "Transparency: images decode, native drag is disabled, mouse dragging creates no accepted drag",
+      "Home logo remains clickable after image drag protection",
+      "Portfolio: images decode, native drag is disabled, mouse dragging creates no accepted drag"
+    ],
+    "viewports": [
+      {
+        "screen": "Setup",
+        "width": 1440,
+        "iconSize": 40
+      },
+      {
+        "screen": "Setup",
+        "width": 768,
+        "iconSize": 40
+      },
+      {
+        "screen": "Setup",
+        "width": 390,
+        "iconSize": 34
+      },
+      {
+        "screen": "Setup",
+        "width": 320,
+        "iconSize": 34
+      },
+      {
+        "screen": "Portfolio",
+        "width": 1440,
+        "iconSize": 40
+      },
+      {
+        "screen": "Portfolio",
+        "width": 768,
+        "iconSize": 40
+      },
+      {
+        "screen": "Portfolio",
+        "width": 390,
+        "iconSize": 34
+      },
+      {
+        "screen": "Portfolio",
+        "width": 320,
+        "iconSize": 34
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "localShell": {
+    "timestamp": "2026-09-20T12:59:41.469Z",
+    "baseUrl": "http://localhost:3000",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  }
+}
