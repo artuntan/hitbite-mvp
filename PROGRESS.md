@@ -313,3 +313,8 @@ This entry begins v2. All preceding entries describe v1 and do not establish v2 
 - Re-ran `pnpm check` after the final dependency changes: zero lint warnings, eight passing checks, successful typecheck and production build.
 - `pnpm audit --prod`: zero reported vulnerabilities across the remaining scaffold production dependency tree. This is the package advisory result, not a security audit of the future product.
 - Confirmed the CI-pinned gitleaks checksum release asset exists. Both supplied source files remain byte-identical to the attachments; `STATUS.md` is still absent.
+
+**Remote Phase 1 checkpoint**
+
+- Implementation commit `9186ac8339680ba89f24dd4a243f2b38050e9222` is pushed. [CI run 35500104125](https://github.com/artuntan/hitbite-mvp/actions/runs/35500104125) passed all three jobs (workspace, Foundry scaffold, candidate-tree secret checks).
+- Founder steering received after this checkpoint: continue until the platform is complete without stopping for phase approvals, and minimize interim explanations. This supersedes the earlier per-phase approval stops; evidence, incremental commits and truthful status reporting remain required.
