@@ -84,7 +84,7 @@ try {
   ).toBeEnabled({ timeout: 120000 });
   await page.getByRole("button", { name: "Subscribe", exact: true }).click();
   await expect(
-    page.getByText("Subscribed", { exact: false }).first(),
+    page.getByTestId("receipt").filter({ hasText: "Subscribed" }),
   ).toBeVisible({ timeout: 120000 });
   const subscriptionReceipt = await investor.ctx.client.getTransactionReceipt({
     hash: investor.transactions.at(-1)!,
@@ -120,7 +120,9 @@ try {
   await issuer.page
     .getByRole("button", { name: "Distribute coupon", exact: true })
     .click();
-  await expect(issuer.page.getByText(/CouponDistributed/).first()).toBeVisible({
+  await expect(
+    issuer.page.getByTestId("receipt").filter({ hasText: "CouponDistributed" }),
+  ).toBeVisible({
     timeout: 120000,
   });
   await expect(
@@ -129,7 +131,9 @@ try {
   await page
     .getByRole("button", { name: "Claim coupons", exact: true })
     .click();
-  await expect(page.getByText(/CouponClaimed/).first()).toBeVisible({
+  await expect(
+    page.getByTestId("receipt").filter({ hasText: "CouponClaimed" }),
+  ).toBeVisible({
     timeout: 120000,
   });
   await page.screenshot({ path: ".context/step-4-hold.png", fullPage: true });
@@ -142,7 +146,9 @@ try {
   await page
     .getByRole("button", { name: "Redeem tokens", exact: true })
     .click();
-  await expect(page.getByText(/Redeemed/).first()).toBeVisible({
+  await expect(
+    page.getByTestId("receipt").filter({ hasText: "Redeemed" }),
+  ).toBeVisible({
     timeout: 120000,
   });
   await page.screenshot({ path: ".context/step-5-redeem.png", fullPage: true });
@@ -151,7 +157,17 @@ try {
   await issuer.page
     .getByRole("button", { name: "Transfer USDC to vault", exact: true })
     .click();
-  await expect(issuer.page.getByText(/Transfer/).last()).toBeVisible({
+  await expect(
+    issuer.page
+      .locator("section.card")
+      .filter({
+        has: issuer.page.getByRole("heading", {
+          name: "Fund the vault",
+          exact: true,
+        }),
+      })
+      .getByTestId("receipt"),
+  ).toBeVisible({
     timeout: 120000,
   });
   await issuer.page.screenshot({

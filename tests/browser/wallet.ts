@@ -1,5 +1,5 @@
 import type { Browser } from "@playwright/test";
-import { createWalletClient, type Address, type Hex } from "viem";
+import { createWalletClient, nonceManager, type Address, type Hex } from "viem";
 import { accountFor, context, readDeployment } from "../../scripts/runtime.ts";
 
 /** Test-only injected provider. Keys stay in the Node process; browser receives no key. */
@@ -10,6 +10,7 @@ export async function walletPage(
 ) {
   const ctx = await context();
   const account = accountFor(variable);
+  account.nonceManager = nonceManager;
   const deployment = readDeployment(ctx.name);
   const wallet = createWalletClient({
     account,
