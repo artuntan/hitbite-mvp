@@ -48,7 +48,7 @@
   align-items: center;
   min-height: 44px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .header .headerAction {
   padding: 0 18px;
@@ -98,7 +98,7 @@
   background: #1465d4;
   color: #fff;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.5;
 }
 .landing .primary:hover {
