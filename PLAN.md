@@ -471,3 +471,7 @@ The founder explicitly defers DNS/custom-domain work: use the current Vercel ori
 ## 2026-09-20 amendment — Landing polish and simpler app
 
 The founder removes both GitHub destinations from the landing and the Show explanations option from the platform. Remove the optional walkthrough and its legacy preference handling, while preserving the normal transaction descriptions and testnet disclosures. Use the newly supplied favicon.ico unchanged as the single browser favicon. Replace the diagnostic NAV sentence with a compact hbTRS quote: instrument label, net asset value, USDC denomination and publication age. Keep the real snapshot source and stale-data behavior; the footer still identifies the simulation. Verify responsive layouts, existing app navigation and the legacy preference case, then publish to the existing Vercel origin.
+
+## 2026-09-20 amendment — Activate hitbite.markets
+
+The founder has connected hitbite.markets in Vercel and requests repair of the non-working domain. Resolve the conflicting apex-to-www Vercel redirect and www-to-apex application redirect by serving the apex directly and keeping www-to-apex. Activate production site/verification origins and the NAV workflow's public URL on hitbite.markets, rebuild, and redirect the previous Vercel public address so existing app links reach the accepted verification origin. Preserve registrar DNS, wallet/contract state and secrets. Verify HTTPS, redirect path/query preservation, metadata, application navigation and verification-origin handling on the actual custom domain.

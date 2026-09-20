@@ -557,3 +557,11 @@ Updated public desktop:
 Updated public mobile:
 
 ![HitBite mobile landing with hbTRS quote](deployments/evidence/polish-mobile.png)
+
+## 2026-09-20 — hitbite.markets activated and redirect loop repaired
+
+- The founder connected the custom domain, then reported it did not load. HTTPS requests exposed an infinite 308 loop: Vercel redirected `hitbite.markets` to `www.hitbite.markets`, while the existing application redirected www back to the apex. DNS already reached Vercel and both domains were verified.
+- Removed the Vercel apex redirect and set www to redirect to the apex. After rebuilding with the new origin, the previous `hitbite-testnet-v2.vercel.app` public address also redirects to the apex. Paths and query strings are preserved. Registrar DNS and application/contract code were unchanged.
+- Set Vercel Production `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SITE_URL`, the daily NAV workflow's public URL repository variable, and the local ignored public URL settings to `https://hitbite.markets`. Secrets were not changed. Redeployed source `d0a7928` as `hitbite-testnet-v2-333kivx28-0whitelie1s-projects.vercel.app`; Vercel reported Ready and aliased it to hitbite.markets.
+- Verified HTTPS and redirect chains from HTTP apex, HTTP/HTTPS www, and the old Vercel address. Landing, app, Transparency, favicon and NAV JSON return 200 directly. Canonical/OG/Twitter URLs, robots and sitemap all use hitbite.markets. The verification API accepts the canonical origin (proceeds to input validation) and rejects an untrusted origin; these checks issue no tickets or transactions.
+- All six landing browser groups, six shell groups and seven read-only live smoke checks passed on the new custom domain, including mobile/desktop layouts, client navigation, attestation verification and the eligibility form. No browser errors or wallet transactions occurred. Gitleaks passed; historical generated STATUS is unchanged. Evidence: `deployments/evidence/domain-activation.json`. README and the example canonical setting now describe the active domain.

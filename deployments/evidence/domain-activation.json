@@ -1,0 +1,213 @@
+{
+  "sourceCommit": "d0a7928",
+  "productionDeployment": "https://hitbite-testnet-v2-333kivx28-0whitelie1s-projects.vercel.app",
+  "productionInspect": "https://vercel.com/0whitelie1s-projects/hitbite-testnet-v2/CJ8nCbQ3q7tpzV3hF34rhXeUKWDp",
+  "rootCause": "Vercel apex-to-www 308 conflicted with the application www-to-apex 308, producing an infinite redirect loop.",
+  "configuration": {
+    "production_NEXT_PUBLIC_APP_URL": "https://hitbite.markets",
+    "production_NEXT_PUBLIC_SITE_URL": "https://hitbite.markets",
+    "github_NAV_workflow_NEXT_PUBLIC_APP_URL": "https://hitbite.markets",
+    "registrarDNS": "Unchanged; observed apex A 216.150.1.1 and www CNAME 1100a203ce760b22.vercel-dns-016.com."
+  },
+  "domainVerification": {
+    "timestamp": "2026-09-20T14:05:51.401Z",
+    "origin": "https://hitbite.markets",
+    "redirects": [
+      [
+        {
+          "url": "http://hitbite.markets/app?domain=check",
+          "status": 308
+        },
+        {
+          "url": "https://hitbite.markets/app?domain=check",
+          "status": 200
+        }
+      ],
+      [
+        {
+          "url": "http://www.hitbite.markets/app?domain=check",
+          "status": 308
+        },
+        {
+          "url": "https://www.hitbite.markets/app?domain=check",
+          "status": 308
+        },
+        {
+          "url": "https://hitbite.markets/app?domain=check",
+          "status": 200
+        }
+      ],
+      [
+        {
+          "url": "https://www.hitbite.markets/app?domain=check",
+          "status": 308
+        },
+        {
+          "url": "https://hitbite.markets/app?domain=check",
+          "status": 200
+        }
+      ],
+      [
+        {
+          "url": "https://hitbite-testnet-v2.vercel.app/app?domain=check",
+          "status": 308
+        },
+        {
+          "url": "https://hitbite.markets/app?domain=check",
+          "status": 200
+        }
+      ]
+    ],
+    "routes": [
+      {
+        "path": "/",
+        "status": 200
+      },
+      {
+        "path": "/app",
+        "status": 200
+      },
+      {
+        "path": "/transparency",
+        "status": 200
+      },
+      {
+        "path": "/favicon.ico",
+        "status": 200
+      },
+      {
+        "path": "/data/nav.json",
+        "status": 200
+      }
+    ],
+    "originChecks": [
+      {
+        "origin": "canonical",
+        "status": 400,
+        "error": "A valid wallet address is required."
+      },
+      {
+        "origin": "untrusted",
+        "status": 403,
+        "error": "Verification must start from this app origin."
+      }
+    ],
+    "transactions": 0,
+    "metadata": "Canonical, OG/Twitter, robots and sitemap use hitbite.markets"
+  },
+  "vercelDomains": {
+    "domains": [
+      {
+        "name": "hitbite.markets",
+        "apexName": "hitbite.markets",
+        "projectId": "prj_josb3qZki3jCdk4ZIxlq9YP4KsT6",
+        "redirect": null,
+        "redirectStatusCode": null,
+        "gitBranch": null,
+        "customEnvironmentId": null,
+        "updatedAt": 1789912978715,
+        "createdAt": 1789911137160,
+        "verified": true
+      },
+      {
+        "name": "www.hitbite.markets",
+        "apexName": "hitbite.markets",
+        "projectId": "prj_josb3qZki3jCdk4ZIxlq9YP4KsT6",
+        "redirect": "hitbite.markets",
+        "redirectStatusCode": 308,
+        "gitBranch": null,
+        "customEnvironmentId": null,
+        "updatedAt": 1789913001157,
+        "createdAt": 1789911136798,
+        "verified": true
+      },
+      {
+        "name": "hitbite-testnet-v2.vercel.app",
+        "apexName": "vercel.app",
+        "projectId": "prj_josb3qZki3jCdk4ZIxlq9YP4KsT6",
+        "redirect": "hitbite.markets",
+        "redirectStatusCode": 308,
+        "gitBranch": null,
+        "customEnvironmentId": null,
+        "updatedAt": 1789913122162,
+        "createdAt": 1789896347183,
+        "verified": true
+      }
+    ],
+    "pagination": {
+      "count": 3,
+      "next": null,
+      "prev": 1789911137160
+    }
+  },
+  "landing": {
+    "timestamp": "2026-09-20T14:05:27.628Z",
+    "baseUrl": "https://hitbite.markets",
+    "appLive": true,
+    "results": [
+      "Exact copy, supplied favicon, no GitHub links, responsive single-screen layout; short screens can scroll without clipping",
+      "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+      "Landing fetches only same-origin resources and sets no cookies",
+      "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+      "Primary CTA opens the existing app; browser back returns to an intact landing layout",
+      "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+    ],
+    "layouts": [
+      {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "scrollWidth": 390,
+        "scrollHeight": 844
+      },
+      {
+        "width": 360,
+        "height": 640,
+        "scrollWidth": 360,
+        "scrollHeight": 640
+      },
+      {
+        "width": 768,
+        "height": 768,
+        "scrollWidth": 768,
+        "scrollHeight": 768
+      }
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "shell": {
+    "timestamp": "2026-09-20T14:05:27.901Z",
+    "baseUrl": "https://hitbite.markets",
+    "results": [
+      "Landing CTA opens app; only Transparency and position in platform header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "readOnlySmoke": {
+    "result": "passed",
+    "baseUrl": "https://hitbite.markets",
+    "checks": [
+      "RPC chain allowlist",
+      "deployed contract code",
+      "6-decimal settlement asset",
+      "fresh matching NAV",
+      "attestation trust anchor",
+      "US/TR blocklist",
+      "all four product routes"
+    ]
+  },
+  "transactions": 0,
+  "scope": "Configuration repair and domain activation; no application or contract code changed. Verification API probes used invalid challenge input, proving origin handling without issuing tickets or submitting transactions."
+}
