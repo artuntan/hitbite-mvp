@@ -19,6 +19,7 @@ jobs:
       actions: write
     env:
       NEXT_PUBLIC_CHAIN: arc-testnet
+      RPC_URL: ${{ vars.NAV_RPC_URL }}
       NEXT_PUBLIC_ATTESTOR_ADDRESS: ${{ vars.NEXT_PUBLIC_ATTESTOR_ADDRESS }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
