@@ -13,107 +13,26 @@ permissions:
   contents: read
 
 jobs:
-  contracts:
-    name: contracts (forge fmt, build, test, snapshot)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: contracts
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: v1.8.1
-      - run: forge --version
-      - run: forge fmt --check
-      - run: forge build --sizes
-      - run: forge test -vvv
-        env:
-          FOUNDRY_PROFILE: ci
-      - name: Coverage gate — every file in src/ at 100%
-        run: bash ../scripts/check-coverage.sh
-
-      - name: Gas snapshot regression (>10% fails)
-        if: hashFiles('contracts/.gas-snapshot') != ''
-        run: forge snapshot --check --tolerance 10 --no-match-test "invariant|testFuzz"
-
-  slither:
-    name: contracts (slither static analysis)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: v1.8.1
-      # Findings are triaged in SECURITY.md section 5. The config sets fail_on: high, so this job
-      # fails on a new high-severity finding and prints every finding regardless of severity.
-      # It is NOT a clean run and is not claimed to be: 15 findings are accepted and argued there.
-      - uses: crytic/slither-action@v0.4.1
-        with:
-          target: contracts/
-          slither-config: contracts/slither.config.json
-          fail-on: high
-
-  engine:
-    name: engine (ruff, mypy, pytest)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: engine
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-        with:
-          python-version: "3.11"
-          enable-cache: true
-      - run: uv sync --frozen
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
-      - run: uv run mypy nav_engine
-      - run: uv run pytest
-
   web:
-    name: web (lint, typecheck, unit, build, smoke)
+    name: Workspace (lint, config tests, types, empty app build)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     env:
-      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          package_json_file: web/package.json
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm format:check
-      # The root markdown is canonical (D12); web/content/ is a copy because Vercel's build root is
-      # web/ and cannot read the repository root. Fail if the two have drifted.
-      - run: pnpm sync:docs --check
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
-      - uses: actions/upload-artifact@v4
-        if: failure()
+      - uses: actions/setup-python@v5
         with:
-          name: playwright-report
-          path: web/playwright-report
-          retention-days: 7
+          python-version: "3.11"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
 
-  demo:
-    name: demo (eight-step scenario on Anvil, run twice)
+  contracts:
+    name: Foundry scaffold
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -122,42 +41,30 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.8.1
-      - uses: pnpm/action-setup@v4
-        with:
-          package_json_file: web/package.json
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - name: Start a local Anvil node
-        run: anvil --port 8545 --silent &
-      - name: Deploy and seed
+      - run: forge fmt --check --root contracts
+      - run: forge build --root contracts
+      - name: Report checkpoint scope
         run: |
-          make deploy-local
-          make seed CHAIN=anvil
-      - run: pnpm -C demo install --frozen-lockfile
-      # Twice on purpose: the second run is the idempotency check. It must find the verification and
-      # faucet steps already satisfied, restore the documented starting state, and still assert the
-      # same integers. Do NOT gate on `git diff` of REPORT.md — hashes, blocks and timings change by
-      # design on every run.
-      - name: Run the demo, then run it again
-        run: |
-          make demo CHAIN=anvil
-          make demo CHAIN=anvil
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: demo-report
-          path: demo/REPORT.md
-          retention-days: 14
+          echo 'Phase 1 contains the Foundry configuration and pinned dependencies only.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Contract implementation and the required test suite start in Phase 2.' >> "$GITHUB_STEP_SUMMARY"
 
   secrets:
-    name: secrets (gitleaks + regex)
+    name: Candidate-tree secret checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: bash scripts/check-secrets.sh
+          python-version: "3.11"
+      - name: Install pinned gitleaks with release checksum
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location -o gitleaks_8.30.1_linux_x64.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          curl --fail --silent --show-error --location -o checksums.txt https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_checksums.txt
+          sha256sum --check --ignore-missing checksums.txt
+          tar -xzf gitleaks_8.30.1_linux_x64.tar.gz gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: python3 scripts/check-secrets.py --gitleaks
+
+  # Phase 2 adds actual Foundry tests; Phase 4 adds Python lint/tests and NAV
+  # dry-run plus nav.yml. No placeholder financial run is counted as passing.

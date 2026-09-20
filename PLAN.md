@@ -1,6 +1,8 @@
 # HitBite Testnet v2 — implementation plan
 
-**2026-09-20 · Phase 0 · Awaiting founder approval.**
+**2026-09-20 · Phase 0 plan approved by the founder; Phase 1 authorized.**
+
+Approval record (2026-09-20): the founder approved this plan, including its Next.js 16 amendment, NAV bootstrap model and revoked-holder exit policy. Proposed/pending wording below is retained as the original planning record; approval is also recorded in `PROGRESS.md`. Later phases retain their separate checkpoints.
 
 Scope change: this plan replaces the v1 plan with the attached Arc Testnet v2 brief. [BUILD_PROMPT_V2.md](BUILD_PROMPT_V2.md) defines the product; [design.md](design.md) defines its visual system. Both are byte-for-byte copies of the supplied attachments. The previous plan and implementation remain available at [tag v1](https://github.com/artuntan/hitbite-mvp/tree/v1).
 

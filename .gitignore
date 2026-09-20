@@ -1,32 +1,34 @@
-# Secrets — never commit
-.env
-.env.*
+# Secrets: only the commented, empty-key template is committed.
+.env*
 !.env.example
 *.pem
 *.key
 
-# OS / editors
+# Workspace-local notes, archived v1 artifacts, evidence, screenshots.
+.context/
 .DS_Store
 .idea/
 .vscode/
 *.swp
 
-# Conductor workspace scratch
-.context/
-
-# Node
+# Node / Next.js / test output.
 node_modules/
-web/.next/
-web/out/
-web/.data/
-web/playwright-report/
-web/test-results/
-web/coverage/
-web/next-env.d.ts
-web/.vercel/
-demo/node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
 
-# Python
+# Local verification database; no investor data in git.
+.data/
+*.db
+*.db-shm
+*.db-wal
+
+# Python.
 .venv/
 __pycache__/
 *.pyc
@@ -35,14 +37,10 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
-.ipynb_checkpoints/
 
-# Foundry
+# Foundry outputs; reviewed public deployments live in root deployments/.
 contracts/out/
 contracts/cache/
 contracts/broadcast/
 contracts/lcov.info
 contracts/coverage/
-
-# Local reports (regenerated)
-docs/lighthouse/*.html

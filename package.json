@@ -1,0 +1,28 @@
+{
+  "name": "hitbite-testnet",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "dotenv -e .env -- pnpm --filter @hitbite/app dev",
+    "build": "dotenv -e .env -- pnpm --filter @hitbite/app build",
+    "start": "dotenv -e .env -- pnpm --filter @hitbite/app start",
+    "lint": "eslint app packages tests --max-warnings 0 && python3 scripts/check-secrets.py",
+    "typecheck": "tsc --noEmit && dotenv -e .env -- pnpm --filter @hitbite/app typecheck",
+    "test:config": "tsx --test tests/config/*.test.ts",
+    "check:secrets": "python3 scripts/check-secrets.py --gitleaks",
+    "check": "pnpm lint && pnpm typecheck && pnpm test:config && pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "dotenv-cli": "11.0.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.5",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

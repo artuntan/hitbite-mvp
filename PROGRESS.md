@@ -270,3 +270,46 @@ This entry begins v2. All preceding entries describe v1 and do not establish v2 
 - V2 is planned only. Existing v1 files remain until the approved repository phase. `STATUS.md` contains no v2 claims because it does not yet exist.
 - Credentials, hosted verification store, faucet funding, WalletConnect and Vercel access remain unestablished; the plan lists when each becomes necessary. No secrets were inspected or printed.
 - Next: founder approval, then Phase 1 (repo and safety). Do not advance before approval; commit and push this planning checkpoint first.
+
+## 2026-09-20 — v2 Phase 1: repository and safety checkpoint
+
+**Approval received**
+
+- The founder approved Phase 0 and its proposed decisions: Next.js 16, the disclosed supply-scaled NAV model, and revoked holders being allowed to redeem/claim existing entitlements while unpaused. Later phases retain their individual approval gates.
+
+**Work performed**
+
+- Reconfirmed the remote v1 branch/tag at `2fc8f9e75229ceca4a7347ffd089e76185030c16`. Replaced the v1 working tree with the v2 scaffold on the unchanged workspace branch. Preserved ignored v1 artifacts and local caches in `.context/v1-worktree/`; no history was reset or rewritten.
+- Created the pnpm workspace with `app/`, `packages/config/`, `contracts/`, `nav_engine/`, `scripts/`, `tests/`, and `deployments/`. Kept the MIT licence and exact pinned OpenZeppelin 5.7.0/forge-std 1.11.0 submodule commits. No v1 contract or application implementation is active in the new tree.
+- Added a minimal Next.js 16.3.5/React 19.3.0/Tailwind 4.3.3 shell with the exact testnet banner/footer, strict TypeScript, root commands, and a committed pnpm lockfile. This is not the investor app or final screen design.
+- Centralized the three permitted networks, Arc USDC address/decimal constants, chain-ID guard, validated public environment fields, exact copy blocks, and the production mapping. Production-chain selections, prototype-property names and mismatched RPC chain IDs fail closed.
+- Replaced `.env.example` with commented current/future settings and empty credentials; expanded ignore rules for the new app and local database. Added redacted candidate-tree checks with gitleaks and a regression check for untracked secrets/forced tracked env files. The scanner never prints matched values and does not scan ignored local environments or preserved v1 history.
+- Replaced v1 workflows with Phase 1 CI for workspace checks, Foundry scaffolding, and secret checks. Foundry has no contract sources yet; CI describes this explicitly. NAV jobs/dry-runs arrive in Phase 4 rather than returning a fake success now.
+- Rewrote README as a scaffold guide with exact available commands, the unchanged production mapping, preserved-v1 links, and the future generated STATUS link. `STATUS.md` remains absent.
+
+**Verification**
+
+- `pnpm install --frozen-lockfile`: lockfile installation succeeds.
+- `pnpm check`: ESLint, TypeScript/Next route types, eight configuration/security checks, and optimized Next build pass locally. Lint warnings were corrected and now fail the lint command.
+- Production server: HTTP 200 with the exact banner and footer; under-construction content rendered. The temporary server was stopped after verification.
+- `forge fmt --check --root contracts` / `forge build --root contracts`: empty scaffold recognized (nothing to format/compile), not a claim of contract test coverage.
+- `python3 scripts/check-secrets.py --gitleaks`: candidate files pass with no findings. `git diff --check` and ignored-path checks pass.
+- Remote CI evidence will be appended after the pushed implementation commit runs.
+
+**Implementation findings and limits**
+
+- Next.js's current React/import/accessibility lint plugins reject ESLint 10 and one crashes at runtime. Pinned ESLint 9.39.5 for compatibility; it emits an upstream deprecation warning. This is development tooling, and the limitation remains recorded for upgrade when the plugins support 10.
+- Auditing the unused wagmi/RainbowKit dependency tree found known ws, uuid and decode-uri-component advisories. Deferred wallet packages until their consuming Phase 5 implementation, when SDK compatibility and audit remediation can be verified together. Phase 1 retains only dependencies used by the scaffold; wallet integration is not claimed.
+- Gitleaks initially misread adjacent empty wallet-key assignments as a credential. Added a descriptive comment between those entries; no secret-detection exemption was introduced.
+- System-font fallback and the plain shell are temporary Phase 1 design defaults; approved self-hosted Inter/Inconsolata and product components remain Phase 5 work.
+- No contracts, NAV computation, wallets, real transactions, or deployment were implemented in this checkpoint.
+
+**Questions for the founder / next**
+
+- Once the CI evidence is recorded, approve Phase 2 to implement and test the contracts. No additional product decision is required for that phase.
+
+**Additional Phase 1 verification before push**
+
+- Re-ran `pnpm check` after the final dependency changes: zero lint warnings, eight passing checks, successful typecheck and production build.
+- `pnpm audit --prod`: zero reported vulnerabilities across the remaining scaffold production dependency tree. This is the package advisory result, not a security audit of the future product.
+- Confirmed the CI-pinned gitleaks checksum release asset exists. Both supplied source files remain byte-identical to the attachments; `STATUS.md` is still absent.

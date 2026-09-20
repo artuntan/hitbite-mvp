@@ -1,0 +1,9 @@
+packages:
+  - app
+  - packages/*
+
+# Only these dependencies may execute installation scripts.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - '@tailwindcss/oxide'

@@ -1,6 +1,0 @@
-# Dependencies (also ignored from the repository root; repeated here so `demo/` is self-contained).
-node_modules/
-
-# Never commit a key or an environment file. The runner reads keys from the environment only.
-.env
-.env.*
