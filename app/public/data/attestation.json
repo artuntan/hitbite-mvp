@@ -5,8 +5,8 @@
     "schema": "hitbite.attestation.v2",
     "chain_id": 5042002,
     "token": "0x6D5163D237203Af9bce4292562B94e585327927E",
-    "block_number": 63070227,
-    "timestamp": "2026-09-20T10:10:45Z",
+    "block_number": 63109011,
+    "timestamp": "2026-09-20T15:34:29Z",
     "holdings": [
       {
         "id": "SIM-2029",
@@ -21,8 +21,8 @@
         "accrued_per_100": "0.00",
         "simulated_ytm": "0.06000000000000000000000000000157377750591591855180",
         "reference_value": "40000.00",
-        "scaled_face": "0.600000",
-        "value": "0.60000000",
+        "scaled_face": "5.800000",
+        "value": "5.80000000",
         "price_date": "2026-09-20",
         "price_source": "Manual simulated input; held constant until explicitly revised"
       },
@@ -39,8 +39,8 @@
         "accrued_per_100": "0.0000",
         "simulated_ytm": "0.06650000000000000000000000000027689017773257514370",
         "reference_value": "40000.0000",
-        "scaled_face": "0.600000",
-        "value": "0.6000000000",
+        "scaled_face": "5.800000",
+        "value": "5.8000000000",
         "price_date": "2026-09-20",
         "price_source": "Manual simulated input; held constant until explicitly revised"
       },
@@ -57,8 +57,8 @@
         "accrued_per_100": "0.0000",
         "simulated_ytm": "0.07039999999999999999999999999949875778082256909884",
         "reference_value": "20000.0000",
-        "scaled_face": "0.300000",
-        "value": "0.3000000000",
+        "scaled_face": "2.900000",
+        "value": "2.9000000000",
         "price_date": "2026-09-20",
         "price_source": "Manual simulated input; held constant until explicitly revised"
       }
@@ -66,17 +66,17 @@
     "cash": "0.000000",
     "nav": "1",
     "nav_units": "1000000",
-    "supply": "1.5",
-    "net_assets": "1.5000000000",
+    "supply": "14.5",
+    "net_assets": "14.5000000000",
     "supply_backed_ratio": "1.0000",
-    "vault_cash": "11.909732",
+    "vault_cash": "25.770659",
     "publication": {
-      "transaction_hash": "0x2c20519a0b0c8884f039c0c247ff0773edca6b1b4ed78fed2a3f40435b29fde2",
-      "block_number": 63070227
+      "transaction_hash": "0xcf013667f8e7c87595c407a4df978e2083fdcae17a11b9abd26d50e61d64e4ed",
+      "block_number": 63109011
     }
   },
-  "message": "{\"block_number\":63070227,\"cash\":\"0.000000\",\"chain_id\":5042002,\"holdings\":[{\"accrued_per_100\":\"0.00\",\"clean_price\":\"100\",\"coupon\":\"0.06\",\"dirty_price\":\"100.00\",\"face\":\"40000\",\"id\":\"SIM-2029\",\"maturity\":\"2029-09-20\",\"name\":\"TURKEY 6.0% 2029\",\"price_date\":\"2026-09-20\",\"price_source\":\"Manual simulated input; held constant until explicitly revised\",\"purchase_date\":\"2026-09-20\",\"reference_value\":\"40000.00\",\"scaled_face\":\"0.600000\",\"simulated_ytm\":\"0.06000000000000000000000000000157377750591591855180\",\"value\":\"0.60000000\",\"weight\":\"0.4\"},{\"accrued_per_100\":\"0.0000\",\"clean_price\":\"100\",\"coupon\":\"0.0665\",\"dirty_price\":\"100.0000\",\"face\":\"40000\",\"id\":\"SIM-2034\",\"maturity\":\"2034-09-20\",\"name\":\"TURKEY 6.65% 2034\",\"price_date\":\"2026-09-20\",\"price_source\":\"Manual simulated input; held constant until explicitly revised\",\"purchase_date\":\"2026-09-20\",\"reference_value\":\"40000.0000\",\"scaled_face\":\"0.600000\",\"simulated_ytm\":\"0.06650000000000000000000000000027689017773257514370\",\"value\":\"0.6000000000\",\"weight\":\"0.4\"},{\"accrued_per_100\":\"0.0000\",\"clean_price\":\"100\",\"coupon\":\"0.0704\",\"dirty_price\":\"100.0000\",\"face\":\"20000\",\"id\":\"SIM-2036\",\"maturity\":\"2036-09-20\",\"name\":\"TURKEY 7.04% 2036\",\"price_date\":\"2026-09-20\",\"price_source\":\"Manual simulated input; held constant until explicitly revised\",\"purchase_date\":\"2026-09-20\",\"reference_value\":\"20000.0000\",\"scaled_face\":\"0.300000\",\"simulated_ytm\":\"0.07039999999999999999999999999949875778082256909884\",\"value\":\"0.3000000000\",\"weight\":\"0.2\"}],\"label\":\"Simulated attestor. Replaced by an independent firm in production.\",\"nav\":\"1\",\"nav_units\":\"1000000\",\"net_assets\":\"1.5000000000\",\"publication\":{\"block_number\":63070227,\"transaction_hash\":\"0x2c20519a0b0c8884f039c0c247ff0773edca6b1b4ed78fed2a3f40435b29fde2\"},\"schema\":\"hitbite.attestation.v2\",\"simulated\":true,\"supply\":\"1.5\",\"supply_backed_ratio\":\"1.0000\",\"timestamp\":\"2026-09-20T10:10:45Z\",\"token\":\"0x6D5163D237203Af9bce4292562B94e585327927E\",\"vault_cash\":\"11.909732\"}",
-  "signature": "0xbe1057991f1878e7fde8849523fafd13b7d12a46410f65746af2f584016c27e033e8885a2636ab7af7d9cd85d4639793ab96d71fc06dac1231053a0b991c28721b",
+  "message": "{\"block_number\":63109011,\"cash\":\"0.000000\",\"chain_id\":5042002,\"holdings\":[{\"accrued_per_100\":\"0.00\",\"clean_price\":\"100\",\"coupon\":\"0.06\",\"dirty_price\":\"100.00\",\"face\":\"40000\",\"id\":\"SIM-2029\",\"maturity\":\"2029-09-20\",\"name\":\"TURKEY 6.0% 2029\",\"price_date\":\"2026-09-20\",\"price_source\":\"Manual simulated input; held constant until explicitly revised\",\"purchase_date\":\"2026-09-20\",\"reference_value\":\"40000.00\",\"scaled_face\":\"5.800000\",\"simulated_ytm\":\"0.06000000000000000000000000000157377750591591855180\",\"value\":\"5.80000000\",\"weight\":\"0.4\"},{\"accrued_per_100\":\"0.0000\",\"clean_price\":\"100\",\"coupon\":\"0.0665\",\"dirty_price\":\"100.0000\",\"face\":\"40000\",\"id\":\"SIM-2034\",\"maturity\":\"2034-09-20\",\"name\":\"TURKEY 6.65% 2034\",\"price_date\":\"2026-09-20\",\"price_source\":\"Manual simulated input; held constant until explicitly revised\",\"purchase_date\":\"2026-09-20\",\"reference_value\":\"40000.0000\",\"scaled_face\":\"5.800000\",\"simulated_ytm\":\"0.06650000000000000000000000000027689017773257514370\",\"value\":\"5.8000000000\",\"weight\":\"0.4\"},{\"accrued_per_100\":\"0.0000\",\"clean_price\":\"100\",\"coupon\":\"0.0704\",\"dirty_price\":\"100.0000\",\"face\":\"20000\",\"id\":\"SIM-2036\",\"maturity\":\"2036-09-20\",\"name\":\"TURKEY 7.04% 2036\",\"price_date\":\"2026-09-20\",\"price_source\":\"Manual simulated input; held constant until explicitly revised\",\"purchase_date\":\"2026-09-20\",\"reference_value\":\"20000.0000\",\"scaled_face\":\"2.900000\",\"simulated_ytm\":\"0.07039999999999999999999999999949875778082256909884\",\"value\":\"2.9000000000\",\"weight\":\"0.2\"}],\"label\":\"Simulated attestor. Replaced by an independent firm in production.\",\"nav\":\"1\",\"nav_units\":\"1000000\",\"net_assets\":\"14.5000000000\",\"publication\":{\"block_number\":63109011,\"transaction_hash\":\"0xcf013667f8e7c87595c407a4df978e2083fdcae17a11b9abd26d50e61d64e4ed\"},\"schema\":\"hitbite.attestation.v2\",\"simulated\":true,\"supply\":\"14.5\",\"supply_backed_ratio\":\"1.0000\",\"timestamp\":\"2026-09-20T15:34:29Z\",\"token\":\"0x6D5163D237203Af9bce4292562B94e585327927E\",\"vault_cash\":\"25.770659\"}",
+  "signature": "0x271c91d865f3f004b2b3846b09c92be7fd28bab1602e870013a2c33be0d2970e03188b75282f7053e353fae9b9f19e30430418adc3d3c33a1c23e5aa2234405d1b",
   "signer": "0x60Be08C7e2dA3b9C1fe2955d237b8833C2D63254",
   "public_key": "0x5d276d50daf3a31eff4af5027a39970d684063905e7099d87e50fc1815e59f2263b3165bd1e3290ae2333337ddc161857a080934ad8ff92a1340318fa86c3c6e"
 }
