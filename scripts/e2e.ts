@@ -152,7 +152,7 @@ async function api(body: unknown) {
 try {
   await step(
     "NAV, trust anchor and four live routes",
-    "NAV / transparency",
+    "NAV engine",
     async () => {
       const result = await smoke(baseUrl);
       return {
@@ -163,7 +163,7 @@ try {
   );
   await step(
     "Browser flow and client-side verification evidence",
-    "Web app",
+    "Connect",
     async () => {
       const ui = JSON.parse(readFileSync(".context/ui-evidence.json", "utf8"));
       assert.equal(ui.baseUrl, baseUrl);
@@ -182,6 +182,32 @@ try {
       return {
         detail: `Automated browser test at ${ui.timestamp}; wallet ${ui.wallet}. This is not founder acceptance.`,
       };
+    },
+  );
+  await step(
+    "Overview renders the same NAV as the chain and JSON",
+    "Overview",
+    async () => {
+      const ui = JSON.parse(readFileSync(".context/ui-evidence.json", "utf8"));
+      assert(
+        ui.results.some(
+          (r: { step: string; passed: boolean }) =>
+            r.step === "Overview and Transparency NAV agreement" && r.passed,
+        ),
+      );
+    },
+  );
+  await step(
+    "Transparency verifies its signature client-side",
+    "Transparency",
+    async () => {
+      const ui = JSON.parse(readFileSync(".context/ui-evidence.json", "utf8"));
+      assert(
+        ui.results.some(
+          (r: { step: string; passed: boolean }) =>
+            r.step === "Client-side signature verification" && r.passed,
+        ),
+      );
     },
   );
   await step("CI checks for the source commit", "CI", async () => {
@@ -565,8 +591,10 @@ try {
     "Hold / coupons",
     "Redeem",
     "Admin",
-    "NAV / transparency",
-    "Web app",
+    "NAV engine",
+    "Connect",
+    "Overview",
+    "Transparency",
     "CI",
   ];
   const url = ctx.chain.blockExplorers?.default.url || "";

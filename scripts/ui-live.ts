@@ -1,6 +1,8 @@
 import { chromium, expect } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { walletPage } from "../tests/browser/wallet.ts";
+import { hBTokenAbi } from "../packages/config/abi.ts";
+import { units } from "../app/src/lib/chain.ts";
 import { context, json, safeError } from "./runtime.ts";
 
 const baseUrl =
@@ -145,7 +147,31 @@ try {
     path: ".context/admin-issuer.png",
     fullPage: true,
   });
+  const nav = await investor.ctx.client.readContract({
+    address: investor.deployment.addresses.HBToken,
+    abi: hBTokenAbi,
+    functionName: "navPerToken",
+  });
+  await page.goto(baseUrl + "/");
+  await expect(page.locator(".overview-panel .metric-value")).toContainText(
+    units(nav, 6, 6),
+    { timeout: 30000 },
+  );
   await page.goto(baseUrl + "/transparency");
+  await expect(page.locator(".metrics-grid .metric").first()).toContainText(
+    units(nav, 6, 6),
+    { timeout: 30000 },
+  );
+  const snapshot = await (
+    await page.request.get(baseUrl + "/data/nav.json")
+  ).json();
+  if (snapshot.nav_units !== nav.toString())
+    throw new Error("Published and displayed NAV differ.");
+  results.push({
+    step: "Overview and Transparency NAV agreement",
+    passed: true,
+  });
+
   await page.getByRole("button", { name: "Verify signature" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "Signature verified" }),
