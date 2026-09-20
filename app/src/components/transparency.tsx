@@ -3,7 +3,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { copy, productionMapping } from "@hitbite/config/copy";
 import { config, deployment, addressUrl, units } from "@/lib/chain";
-import { verifyAttestation, type Attestation } from "@/lib/attestation";
+import {
+  canonical,
+  verifyAttestation,
+  type Attestation,
+} from "@/lib/attestation";
 import { useNav, useSnapshot, Metric, Caption } from "./ui";
 function money(value: string | undefined) {
   return value === undefined
@@ -18,6 +22,7 @@ export function Transparency() {
   const { data: live } = useSnapshot();
   const [verification, setVerification] = useState("");
   const [valid, setValid] = useState(false);
+  const [verifiedSnapshot, setVerifiedSnapshot] = useState("");
   const { data: attestation } = useQuery({
     queryKey: ["attestation"],
     queryFn: async () => {
@@ -27,8 +32,12 @@ export function Transparency() {
     },
     refetchInterval: 60000,
   });
+  const fingerprint = attestation
+    ? canonical(attestation) + config.attestorAddress + nav?.nav_units
+    : "";
   async function verify() {
     if (!attestation || !deployment) return;
+    setVerifiedSnapshot(fingerprint);
     try {
       await verifyAttestation(
         attestation,
@@ -339,8 +348,19 @@ export function Transparency() {
           Expected attestor: {config.attestorAddress || "Not configured"}
         </p>
         {verification && (
-          <p role="status" className={valid ? "verification-good" : "error"}>
-            {verification}
+          <p
+            role="status"
+            className={
+              verifiedSnapshot !== fingerprint
+                ? "notice"
+                : valid
+                  ? "verification-good"
+                  : "error"
+            }
+          >
+            {verifiedSnapshot === fingerprint
+              ? verification
+              : "This snapshot changed. Verify its signature again."}
           </p>
         )}
         <details>

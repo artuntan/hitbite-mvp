@@ -58,7 +58,7 @@ export async function snapshot(address?: Address) {
     throw new Error("No confirmed deployment is configured for this testnet.");
   if ((await client.getChainId()) !== config.chain.id)
     throw new Error("RPC chain mismatch.");
-  const blockNumber = await client.getBlockNumber();
+  const blockNumber = await client.getBlockNumber({ cacheTime: 0 });
   const token = {
     address: deployment.addresses.HBToken,
     abi: hBTokenAbi,
