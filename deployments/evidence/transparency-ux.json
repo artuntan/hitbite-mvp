@@ -1,0 +1,61 @@
+{
+  "recordedAt": "2026-09-20T12:09:31.940039+00:00",
+  "implementationCommit": "e719ac0934607e60f39b83cff9273982a5238f22",
+  "productionCommit": "00393b8d46ca489d218748de0f1845be1782a7aa",
+  "pullRequest": "https://github.com/artuntan/hitbite-mvp/pull/4",
+  "liveTransparency": {
+    "timestamp": "2026-09-20T12:08:31.501Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "chainId": 5042002,
+    "results": [
+      "Real NAV and holdings; one-point history has no fabricated trend; 1440/1024/768/390/320px layouts",
+      "Actual signature verifies; displayed/downloaded signed JSON and NAV match sources; contract copy/explorer links work",
+      "Valuation inputs, model fees/yields and all eight production layers remain inspectable without page overflow",
+      "A refreshed mismatching snapshot invalidates the verified state, shows NAV mismatch and fails re-verification",
+      "Synthetic history fixtures: keyboard/buttons select exact observations; flat and empty series render honestly",
+      "Tampered payload is rejected; unavailable NAV disables verification and retry restores valid data",
+      "App/Transparency client navigation and optional explanations remain usable"
+    ],
+    "pageErrors": [],
+    "transactions": 0,
+    "fixtures": "Browser interception only; no published data modified",
+    "publishedSnapshot": "2026-09-20T10:10:45Z"
+  },
+  "liveShell": {
+    "timestamp": "2026-09-20T12:08:30.761Z",
+    "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+    "results": [
+      "Direct app entry; only Transparency and position in header; 1440/768/390/320px without overflow",
+      "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+      "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+      "Transparency attestation still verifies client-side",
+      "Existing /app links still open the investor flow",
+      "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+    ],
+    "pageErrors": [],
+    "walletTransactions": 0
+  },
+  "localProductionBuild": {
+    "timestamp": "2026-09-20T12:04:25.848Z",
+    "baseUrl": "http://localhost:3000",
+    "chainId": 5042002,
+    "results": [
+      "Real NAV and holdings; one-point history has no fabricated trend; 1440/1024/768/390/320px layouts",
+      "Actual signature verifies; displayed/downloaded signed JSON and NAV match sources; contract copy/explorer links work",
+      "Valuation inputs, model fees/yields and all eight production layers remain inspectable without page overflow",
+      "A refreshed mismatching snapshot invalidates the verified state, shows NAV mismatch and fails re-verification",
+      "Synthetic history fixtures: keyboard/buttons select exact observations; flat and empty series render honestly",
+      "Tampered payload is rejected; unavailable NAV disables verification and retry restores valid data",
+      "App/Transparency client navigation and optional explanations remain usable"
+    ],
+    "pageErrors": [],
+    "transactions": 0,
+    "fixtures": "Browser interception only; no published data modified",
+    "publishedSnapshot": "2026-09-20T10:10:45Z"
+  },
+  "notes": [
+    "All checks are read-only. No investor, issuer or registrar transactions were sent for this revision.",
+    "Synthetic history, stale NAV, payload tampering and unavailable responses are browser-only fixtures. Published files and on-chain state were not changed.",
+    "The existing attestation verification function, contracts, original generated STATUS and founder acceptance remain unchanged."
+  ]
+}
