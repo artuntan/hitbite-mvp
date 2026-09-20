@@ -25,6 +25,10 @@ try {
       errors.push(message.text());
   });
   await page.goto(baseUrl + "/");
+  await page
+    .locator("main")
+    .getByRole("link", { name: "Open the testnet", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Connect your wallet." }),
   ).toBeVisible();
@@ -455,7 +459,7 @@ try {
     abi: hBTokenAbi,
     functionName: "navPerToken",
   });
-  await page.goto(baseUrl + "/");
+  await page.goto(baseUrl + "/app");
   await expect(page.getByTestId("app-nav")).toContainText(units(nav, 6, 6), {
     timeout: 120000,
   });

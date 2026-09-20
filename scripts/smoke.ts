@@ -79,7 +79,9 @@ export async function smoke(
     if (
       !page.ok ||
       !(await page.text()).includes(
-        "Testnet. Simulated portfolio. Not an offer of securities.",
+        route === "/"
+          ? "Testnet only. Simulated portfolio. Not an offer of securities."
+          : "Testnet. Simulated portfolio. Not an offer of securities.",
       )
     )
       throw new Error("A product route is unavailable: " + route);
