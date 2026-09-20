@@ -20,6 +20,7 @@ export async function walletPage(
     viewport: { width: 1440, height: 1050 },
   });
   const page = await browserContext.newPage();
+  const transactions: Hex[] = [];
   await page.exposeBinding(
     "testWalletRequest",
     async ({ frame }, input: { method: string; params?: unknown[] }) => {
@@ -67,7 +68,7 @@ export async function walletPage(
             BigInt(tx.value ?? "0") !== 0n
           )
             throw new Error("Test transaction outside the deployed contracts.");
-          return await wallet.sendTransaction({
+          const hash = await wallet.sendTransaction({
             to: tx.to,
             data: tx.data,
             gas: tx.gas ? BigInt(tx.gas) : undefined,
@@ -76,6 +77,8 @@ export async function walletPage(
               ? BigInt(tx.maxPriorityFeePerGas)
               : undefined,
           });
+          transactions.push(hash);
+          return hash;
         }
         case "eth_getBalance":
         case "eth_getCode":
@@ -111,5 +114,5 @@ export async function walletPage(
     })();
   `,
   });
-  return { page, browserContext, account, ctx, deployment };
+  return { page, browserContext, account, ctx, deployment, transactions };
 }

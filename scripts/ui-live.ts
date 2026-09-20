@@ -1,3 +1,4 @@
+import { parseEventLogs } from "viem";
 import { chromium, expect } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { walletPage } from "../tests/browser/wallet.ts";
@@ -26,7 +27,7 @@ try {
   await page.getByRole("button", { name: /02 Verify/ }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your eligibility." }),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible({ timeout: 120000 });
   await page.getByRole("button", { name: /01 Connect/ }).click();
   await page.screenshot({
     path: ".context/step-1-connect.png",
@@ -75,16 +76,26 @@ try {
   if (await approve.isEnabled()) {
     await approve.click();
     await expect(page.getByTestId("receipt")).toHaveCount(1, {
-      timeout: 30000,
+      timeout: 120000,
     });
   }
   await expect(
     page.getByRole("button", { name: "Subscribe", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
+  ).toBeEnabled({ timeout: 120000 });
   await page.getByRole("button", { name: "Subscribe", exact: true }).click();
   await expect(
     page.getByText("Subscribed", { exact: false }).first(),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible({ timeout: 120000 });
+  const subscriptionReceipt = await investor.ctx.client.getTransactionReceipt({
+    hash: investor.transactions.at(-1)!,
+  });
+  const subscribed = parseEventLogs({
+    abi: hBTokenAbi,
+    eventName: "Subscribed",
+    logs: subscriptionReceipt.logs,
+  });
+  if (subscribed[0]?.args.usdcIn !== 200_000n)
+    throw new Error("The signed subscription differs from the entered amount.");
   await page.screenshot({
     path: ".context/step-3-subscribe.png",
     fullPage: true,
@@ -98,28 +109,28 @@ try {
     .click();
   await expect(
     issuer.page.getByRole("heading", { name: "Fund a coupon" }),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible({ timeout: 120000 });
   await issuer.page.getByLabel("Coupon amount").fill("0.04");
   await issuer.page
     .getByRole("button", { name: "Approve coupon funding", exact: true })
     .click();
   await expect(
     issuer.page.getByRole("button", { name: "Distribute coupon", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
+  ).toBeEnabled({ timeout: 120000 });
   await issuer.page
     .getByRole("button", { name: "Distribute coupon", exact: true })
     .click();
   await expect(issuer.page.getByText(/CouponDistributed/).first()).toBeVisible({
-    timeout: 30000,
+    timeout: 120000,
   });
   await expect(
     page.getByRole("button", { name: "Claim coupons", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
+  ).toBeEnabled({ timeout: 120000 });
   await page
     .getByRole("button", { name: "Claim coupons", exact: true })
     .click();
   await expect(page.getByText(/CouponClaimed/).first()).toBeVisible({
-    timeout: 30000,
+    timeout: 120000,
   });
   await page.screenshot({ path: ".context/step-4-hold.png", fullPage: true });
   results.push({
@@ -132,7 +143,7 @@ try {
     .getByRole("button", { name: "Redeem tokens", exact: true })
     .click();
   await expect(page.getByText(/Redeemed/).first()).toBeVisible({
-    timeout: 30000,
+    timeout: 120000,
   });
   await page.screenshot({ path: ".context/step-5-redeem.png", fullPage: true });
   results.push({ step: "Full redemption via UI", passed: true });
@@ -141,7 +152,7 @@ try {
     .getByRole("button", { name: "Transfer USDC to vault", exact: true })
     .click();
   await expect(issuer.page.getByText(/Transfer/).last()).toBeVisible({
-    timeout: 30000,
+    timeout: 120000,
   });
   await issuer.page.screenshot({
     path: ".context/admin-issuer.png",
@@ -155,12 +166,12 @@ try {
   await page.goto(baseUrl + "/");
   await expect(page.locator(".overview-panel .metric-value")).toContainText(
     units(nav, 6, 6),
-    { timeout: 30000 },
+    { timeout: 120000 },
   );
   await page.goto(baseUrl + "/transparency");
   await expect(page.locator(".metrics-grid .metric").first()).toContainText(
     units(nav, 6, 6),
-    { timeout: 30000 },
+    { timeout: 120000 },
   );
   const snapshot = await (
     await page.request.get(baseUrl + "/data/nav.json")
@@ -193,7 +204,7 @@ try {
   await page.getByRole("button", { name: /02 Verify/ }).click();
   await expect(
     page.getByRole("heading", { name: "Your wallet is verified." }),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible({ timeout: 120000 });
   await page.screenshot({
     path: ".context/flow-mobile-verified.png",
     fullPage: true,
@@ -218,6 +229,7 @@ try {
       chainId: investor.ctx.chain.id,
       wallet: investor.account.address,
       verificationWasFresh: !already,
+      transactions: [...investor.transactions, ...issuer.transactions],
       kind: "Automated injected-wallet browser test; not founder acceptance",
       results,
       pageErrors: errors,

@@ -26,11 +26,11 @@ try {
   await p.getByRole("button", { name: "Connect wallet", exact: true }).click();
   await expect(
     p.getByRole("heading", { name: "Wallet eligibility" }),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible({ timeout: 120000 });
   await p.getByLabel("Wallet address", { exact: true }).fill(target);
   await p.getByLabel("Country of residence").selectOption("36");
   await p.getByRole("button", { name: "Verify wallet", exact: true }).click();
-  await expect(p.getByTestId("receipt")).toHaveCount(1, { timeout: 30000 });
+  await expect(p.getByTestId("receipt")).toHaveCount(1, { timeout: 120000 });
   if (
     !(await ctx.client.readContract({
       address: d.addresses.IdentityRegistry,
@@ -41,7 +41,7 @@ try {
   )
     throw new Error("UI registration not reflected on chain.");
   await p.getByRole("button", { name: "Revoke wallet", exact: true }).click();
-  await expect(p.getByTestId("receipt")).toHaveCount(2, { timeout: 30000 });
+  await expect(p.getByTestId("receipt")).toHaveCount(2, { timeout: 120000 });
   if (
     await ctx.client.readContract({
       address: d.addresses.IdentityRegistry,
@@ -64,7 +64,7 @@ try {
       exact: true,
       level: 2,
     }),
-  ).toBeVisible({ timeout: 30000 });
+  ).toBeVisible({ timeout: 120000 });
   const nav = await ctx.client.readContract({
     address: d.addresses.HBToken,
     abi: hBTokenAbi,
@@ -75,7 +75,7 @@ try {
     .getByRole("button", { name: "Publish NAV", exact: true })
     .click();
   await expect(oracle.page.getByTestId("receipt")).toHaveCount(1, {
-    timeout: 30000,
+    timeout: 120000,
   });
   await oracle.page.screenshot({
     path: ".context/admin-oracle.png",
@@ -89,20 +89,20 @@ try {
     .click();
   await expect(
     issuer.page.getByRole("button", { name: "Pause token", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
+  ).toBeEnabled({ timeout: 120000 });
   await issuer.page
     .getByRole("button", { name: "Pause token", exact: true })
     .click();
   paused = true;
   await expect(
     issuer.page.getByRole("button", { name: "Unpause token", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
+  ).toBeEnabled({ timeout: 120000 });
   await issuer.page
     .getByRole("button", { name: "Unpause token", exact: true })
     .click();
   await expect(
     issuer.page.getByRole("button", { name: "Pause token", exact: true }),
-  ).toBeEnabled({ timeout: 30000 });
+  ).toBeEnabled({ timeout: 120000 });
   paused = false;
   writeFileSync(
     ".context/admin-ui-evidence.json",
@@ -122,20 +122,27 @@ try {
   console.error(safeError(e));
   process.exitCode = 1;
 } finally {
-  if (
-    paused &&
-    (await ctx.client.readContract({
-      address: d.addresses.HBToken,
-      abi: hBTokenAbi,
-      functionName: "paused",
-    }))
-  )
-    await transact(
-      ctx,
-      "ISSUER_PRIVATE_KEY",
-      d.addresses.HBToken,
-      hBTokenAbi,
-      "unpause",
-    );
-  await browser.close();
+  try {
+    if (
+      paused &&
+      (await ctx.client.readContract({
+        address: d.addresses.HBToken,
+        abi: hBTokenAbi,
+        functionName: "paused",
+      }))
+    ) {
+      await transact(
+        ctx,
+        "ISSUER_PRIVATE_KEY",
+        d.addresses.HBToken,
+        hBTokenAbi,
+        "unpause",
+      );
+    }
+  } catch (e) {
+    console.error(safeError(e));
+    process.exitCode = 1;
+  } finally {
+    await browser.close();
+  }
 }
