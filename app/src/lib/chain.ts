@@ -1,8 +1,8 @@
+import { rpcTransport } from "@hitbite/config/transport";
 import {
   createPublicClient,
   erc20Abi,
   formatUnits,
-  http,
   keccak256,
   stringToHex,
   type Address,
@@ -22,7 +22,8 @@ export const config = readPublicConfig({
 export const deployment = getDeployment(config.chainName);
 export const client = createPublicClient({
   chain: config.chain,
-  transport: http(config.rpcUrl),
+  transport: rpcTransport(config.chainName, config.rpcUrl),
+  batch: { multicall: { deployless: true, wait: 25, batchSize: 8192 } },
 });
 export const explorer = config.chain.blockExplorers?.default.url;
 export const txUrl = (hash: string) =>

@@ -11,7 +11,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NEXT_PUBLIC_CHAIN: arc-testnet
       ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
@@ -34,3 +34,8 @@ jobs:
             git commit -m 'data: publish confirmed simulated NAV and attestation'
             git push
           fi
+      - name: Deploy and verify the confirmed snapshot
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+        run: python3 scripts/refresh-site.py

@@ -52,6 +52,7 @@ try {
   )
     throw new Error("UI revocation not reflected on chain.");
   await p.screenshot({ path: ".context/admin-registrar.png", fullPage: true });
+  await registrar.browserContext.close();
   const oracle = await walletPage(browser, "ORACLE_PRIVATE_KEY", baseUrl);
   await oracle.page.goto(baseUrl + "/admin");
   await oracle.page
@@ -80,6 +81,7 @@ try {
     path: ".context/admin-oracle.png",
     fullPage: true,
   });
+  await oracle.browserContext.close();
   const issuer = await walletPage(browser, "ISSUER_PRIVATE_KEY", baseUrl);
   await issuer.page.goto(baseUrl + "/admin");
   await issuer.page
@@ -102,15 +104,6 @@ try {
     issuer.page.getByRole("button", { name: "Pause token", exact: true }),
   ).toBeEnabled({ timeout: 30000 });
   paused = false;
-  const hashes = await Promise.all(
-    [p, oracle.page, issuer.page].map((page) =>
-      page
-        .locator(".receipt a")
-        .evaluateAll((links) =>
-          links.map((link) => (link as HTMLAnchorElement).href),
-        ),
-    ),
-  );
   writeFileSync(
     ".context/admin-ui-evidence.json",
     json({
@@ -122,7 +115,6 @@ try {
         "Issuer pause and unpause",
       ],
       target,
-      receipts: hashes.flat(),
     }),
   );
   console.log("All three operator roles exercised through the live UI.");

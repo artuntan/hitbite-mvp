@@ -1,5 +1,5 @@
 import type { Browser } from "@playwright/test";
-import { createWalletClient, http, type Address, type Hex } from "viem";
+import { createWalletClient, type Address, type Hex } from "viem";
 import { accountFor, context, readDeployment } from "../../scripts/runtime.ts";
 
 /** Test-only injected provider. Keys stay in the Node process; browser receives no key. */
@@ -14,7 +14,7 @@ export async function walletPage(
   const wallet = createWalletClient({
     account,
     chain: ctx.chain,
-    transport: http(ctx.rpcUrl),
+    transport: ctx.transport,
   });
   const browserContext = await browser.newContext({
     viewport: { width: 1440, height: 1050 },
@@ -25,7 +25,6 @@ export async function walletPage(
     async ({ frame }, input: { method: string; params?: unknown[] }) => {
       if (new URL(frame.url()).origin !== new URL(baseUrl).origin)
         throw new Error("Untrusted test page origin.");
-      console.log("Test wallet method", input.method);
       const params = input.params ?? [];
       switch (input.method) {
         case "eth_chainId":

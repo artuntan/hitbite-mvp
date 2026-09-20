@@ -9,7 +9,8 @@
     "./copy": "./copy.ts",
     "./abi": "./abi.ts",
     "./contracts": "./contracts.ts",
-    "./countries": "./countries.json"
+    "./countries": "./countries.json",
+    "./transport": "./transport.ts"
   },
   "dependencies": {
     "viem": "2.56.8"

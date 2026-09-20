@@ -54,7 +54,12 @@ try {
       page.getByRole("heading", { name: "Your wallet is verified." }),
     ).toBeVisible({ timeout: 60000 });
   }
-  results.push({ step: "Connect and simulated review via UI", passed: true });
+  results.push({
+    step: already
+      ? "Connect and existing verified registry status"
+      : "Connect and simulated review via UI",
+    passed: true,
+  });
   await page.screenshot({
     path: ".context/step-2-verified.png",
     fullPage: true,
@@ -186,6 +191,7 @@ try {
       baseUrl,
       chainId: investor.ctx.chain.id,
       wallet: investor.account.address,
+      verificationWasFresh: !already,
       kind: "Automated injected-wallet browser test; not founder acceptance",
       results,
       pageErrors: errors,

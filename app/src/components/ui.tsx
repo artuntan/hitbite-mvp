@@ -130,7 +130,7 @@ export function useSnapshot() {
   return useQuery({
     queryKey: ["chain", address],
     queryFn: () => snapshot(address),
-    refetchInterval: 12000,
+    refetchInterval: 20000,
   });
 }
 export function useNav() {

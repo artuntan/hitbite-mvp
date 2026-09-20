@@ -1,10 +1,10 @@
+import { rpcTransport } from "../packages/config/transport.ts";
 import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import {
   createPublicClient,
   createWalletClient,
   encodeFunctionData,
-  http,
   type Abi,
   type Address,
   type Hex,
@@ -26,9 +26,10 @@ export async function context(selected?: string) {
     process.env.RPC_URL ||
     process.env.NEXT_PUBLIC_RPC_URL ||
     chain.rpcUrls.default.http[0];
-  const client = createPublicClient({ chain, transport: http(rpcUrl) });
+  const transport = rpcTransport(name, rpcUrl);
+  const client = createPublicClient({ chain, transport });
   assertChainId(await client.getChainId(), name);
-  return { name, chain, rpcUrl, client };
+  return { name, chain, rpcUrl, client, transport };
 }
 export type Context = Awaited<ReturnType<typeof context>>;
 
@@ -73,7 +74,7 @@ export async function transact(
   const wallet = createWalletClient({
     account,
     chain: ctx.chain,
-    transport: http(ctx.rpcUrl),
+    transport: ctx.transport,
   });
   const hash = await wallet.sendTransaction({
     to: address,

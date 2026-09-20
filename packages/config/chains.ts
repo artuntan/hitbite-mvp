@@ -14,7 +14,11 @@ export const chains = {
     nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
     rpcUrls: {
       default: {
-        http: ["https://rpc.testnet.arc.io"],
+        http: [
+          "https://rpc.testnet.arc.io",
+          "https://rpc.drpc.testnet.arc.io",
+          "https://rpc.quicknode.testnet.arc.io",
+        ],
         webSocket: ["wss://rpc.testnet.arc.io"],
       },
     },
