@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-09-20T10:00:41.995Z",
+  "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+  "chainId": 5042002,
+  "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+  "verificationWasFresh": false,
+  "transactions": [
+    "0xa6c0c46999e74acca5371ba569d0641d555fbf0811f887b5a4551a33c01df006",
+    "0xa3b43bd603f1fcdbbbbe5cc2ef36b702a7088d2645fe1e196a9e93f8e55c37ff",
+    "0x84ece438f8423f62ef5ab853357beb226ada7705e19d1dc9e895b8396f54cb2a",
+    "0xed12d0b9964bb32b08c4d9ae36fed78242e14ebcfdf400b6735de1a150f24bd6",
+    "0xf227b86708e5ed0df44698606cb25d860bf7e35e4b63128366aa72ea0915d17f",
+    "0xf3fb1c84d0a22fb3e3e9a6a10f6c976a6851edd06f9d2f43807b5210b977f69e",
+    "0xeea223085a4b502274b9a4d26d62145bb94e409c099a546bb5834178a669a694"
+  ],
+  "kind": "Automated injected-wallet browser test; not founder acceptance",
+  "results": [
+    {
+      "step": "Connect and existing verified registry status",
+      "passed": true
+    },
+    {
+      "step": "Approve and subscribe via UI",
+      "passed": true
+    },
+    {
+      "step": "Admin coupon distribution and investor claim via UI",
+      "passed": true
+    },
+    {
+      "step": "Full redemption via UI",
+      "passed": true
+    },
+    {
+      "step": "Overview and Transparency NAV agreement",
+      "passed": true
+    },
+    {
+      "step": "Client-side signature verification",
+      "passed": true
+    },
+    {
+      "step": "Mobile layout and persisted walkthrough",
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

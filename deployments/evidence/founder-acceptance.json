@@ -1,0 +1,13 @@
+{
+  "confirmed": true,
+  "timestamp": "2026-09-20T10:00:23.315834+00:00",
+  "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+  "source": "Founder explicitly confirmed the complete fresh-wallet flow in Conductor",
+  "statement": "Evet, akışın tamamını denedim",
+  "scope": [
+    "verification",
+    "subscription",
+    "coupon claim",
+    "redemption"
+  ]
+}

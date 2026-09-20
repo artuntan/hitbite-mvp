@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-09-20T10:01:08.982Z",
+  "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+  "steps": [
+    "Registrar verify and revoke",
+    "Oracle NAV publication",
+    "Issuer pause and unpause"
+  ],
+  "target": "0xD060ca665Ae564d79524b11f56f747EE7D0480b4"
+}
