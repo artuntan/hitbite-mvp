@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
@@ -167,10 +168,15 @@ export function Header() {
   return (
     <header className="shell-header" ref={header}>
       <Link className="wordmark" href="/" aria-label="HitBite app">
-        <span className="brand-mark" aria-hidden="true">
-          h
-        </span>
-        <span>HitBite</span>
+        <Image
+          className="brand-logo"
+          src="/brand/hitbite.avif"
+          alt="HitBite"
+          width={512}
+          height={151}
+          loading="eager"
+          unoptimized
+        />
       </Link>
       <nav aria-label="Main navigation">
         <Link
