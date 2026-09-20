@@ -1,6 +1,18 @@
 [extend]
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "Pinned dependencies; no application-secret exemptions"
 paths = ['''(^|/)pnpm-lock\.yaml$''', '''^contracts/lib/''']
+
+[[allowlists]]
+description = "Public 20-byte EVM addresses cannot be signing keys"
+regexTarget = "secret"
+regexes = ['''^0x[a-fA-F0-9]{40}$''']
+
+[[allowlists]]
+description = "Public creation transaction hashes in confirmed deployment artifacts"
+condition = "AND"
+paths = ['''(^|/)(deployments/arc-testnet|packages/config/deployments)\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"(HBToken|IdentityRegistry)": "0x[a-fA-F0-9]{64}",?$''']

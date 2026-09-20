@@ -6,7 +6,11 @@
   "exports": {
     "./chains": "./chains.ts",
     "./env": "./env.ts",
-    "./copy": "./copy.ts"
+    "./copy": "./copy.ts",
+    "./abi": "./abi.ts",
+    "./contracts": "./contracts.ts"
   },
-  "dependencies": { "viem": "2.56.8" }
+  "dependencies": {
+    "viem": "2.56.8"
+  }
 }

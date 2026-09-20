@@ -329,3 +329,13 @@ This entry begins v2. All preceding entries describe v1 and do not establish v2 
 - Added actual contract tests to CI. Runtime configuration assertions remain active. No deployment or live-product claim is made by this contract checkpoint.
 - Confirmed the founder's faucet transfers: deployer and both independent E2E wallets each have 20 testnet USDC on chain 5042002. Vercel CLI login is available. Private values remain only in ignored `.env` (mode 0600); no private keys are in code or logs.
 - Continuing into Arc deployment under the founder's instruction to finish all phases without further approval stops.
+
+## 2026-09-20 — v2 Phase 3: live Arc deployment
+
+- Phase 2 remote CI passed: https://github.com/artuntan/hitbite-mvp/actions/runs/35500747439.
+- Deployed and verified [IdentityRegistry](https://explorer.testnet.arc.io/address/0xd8c5d0473d11de3177a68182b91213171d8e4580) and [HBToken](https://explorer.testnet.arc.io/address/0x6d5163d237203af9bce4292562b94e585327927e) at block 63061198. Deployment JSON contains confirmed receipts, public roles, metadata and standard JSON verification inputs.
+- Funded the vault with 10 testnet USDC, transaction `0x5913c75485f933148be3eb6ac70d0216f58957b978e6a1deddfe97cd17baeb4f`, block 63061404. Issuer, oracle and registrar have separate funded signers.
+- A real cast-published approval and 0.5-USDC subscription succeeded from the deployer. Subscribe receipt: [0x3de203616b66433d30d9583d59d72b68ea97c72ce2b5ceccd95ae369a772305e](https://explorer.testnet.arc.io/tx/0x3de203616b66433d30d9583d59d72b68ea97c72ce2b5ceccd95ae369a772305e), block 63061601. Both funded E2E wallets remain fresh for the final live runner.
+- The installed cast version does not read ETH_PRIVATE_KEY. `scripts/cast-subscribe.ts` therefore uses cast calldata, viem signing from env/memory, then cast publish with the public signed transaction. No key enters argv. The command is `pnpm exec tsx scripts/cast-subscribe.ts`.
+- `pnpm run deploy` is required because `pnpm deploy` is a built-in workspace command. The Foundry wrapper publishes artifacts only after receipt/code checks. Standard Foundry works with Arc; no custom fork was needed.
+- Local script lint and type checks pass. On-chain actions use a minimum 20-gwei max fee. Continuing to NAV and the application; STATUS remains reserved for the live E2E generator.

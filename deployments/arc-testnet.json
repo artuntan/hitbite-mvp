@@ -1,0 +1,34 @@
+{
+  "status": "confirmed",
+  "chainId": 5042002,
+  "addresses": {
+    "IdentityRegistry": "0xd8c5d0473d11de3177a68182b91213171d8e4580",
+    "HBToken": "0x6d5163d237203af9bce4292562b94e585327927e",
+    "USDC": "0x3600000000000000000000000000000000000000"
+  },
+  "blockNumber": 63061198,
+  "deployer": "0xb1F0BF19ECf335a329Dabe07805Ed85b153025bC",
+  "timestamp": "2026-09-20T08:55:22.000Z",
+  "roles": {
+    "admin": "0xb1F0BF19ECf335a329Dabe07805Ed85b153025bC",
+    "issuer": "0x3360a13444E3A7aCA76b42D55d03D2855f08Bb3d",
+    "oracle": "0xC5FED8A4b30598643de0663E428a833B2937B32e",
+    "registrar": "0x6174455E8E3767932d22e0A6333189b2e9e8450c"
+  },
+  "transactions": {
+    "IdentityRegistry": "0x6f28f212808635acaa09cfc83467cb320ae091e65ef6c84e42b92ac8e358df76",
+    "HBToken": "0xb3d87cf4f6a83ad926f2a93c43fce3465deed1e1d269ad0c07e6ae0dcac45c8f"
+  },
+  "vaultFunding": [
+    {
+      "amount": "10000000",
+      "transactionHash": "0x5913c75485f933148be3eb6ac70d0216f58957b978e6a1deddfe97cd17baeb4f",
+      "blockNumber": 63061404
+    }
+  ],
+  "explorer": "https://explorer.testnet.arc.io",
+  "verification": {
+    "IdentityRegistry": "verified",
+    "HBToken": "verified"
+  }
+}

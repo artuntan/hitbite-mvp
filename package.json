@@ -11,11 +11,15 @@
     "dev": "dotenv -e .env -- pnpm --filter @hitbite/app dev",
     "build": "dotenv -e .env -- pnpm --filter @hitbite/app build",
     "start": "dotenv -e .env -- pnpm --filter @hitbite/app start",
-    "lint": "eslint app packages tests --max-warnings 0 && python3 scripts/check-secrets.py",
+    "lint": "eslint app packages scripts tests --max-warnings 0 && python3 scripts/check-secrets.py",
     "typecheck": "tsc --noEmit && dotenv -e .env -- pnpm --filter @hitbite/app typecheck",
     "test:config": "tsx --test tests/config/*.test.ts",
     "check:secrets": "python3 scripts/check-secrets.py --gitleaks",
-    "check": "pnpm lint && pnpm typecheck && pnpm test:config && pnpm build"
+    "check": "pnpm lint && pnpm typecheck && pnpm test:config && pnpm build",
+    "deploy": "tsx scripts/deploy.ts",
+    "sync:contracts": "tsx scripts/sync-contracts.ts",
+    "fund:vault": "tsx scripts/fund-vault.ts",
+    "verify:contracts": "tsx scripts/verify-contracts.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.4",

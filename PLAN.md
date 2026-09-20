@@ -323,8 +323,8 @@ forge test --root contracts
 forge coverage --root contracts
 
 # Phase 3: fund required addresses through the Circle faucet first
-pnpm deploy --chain arc-testnet --dry-run
-pnpm deploy --chain arc-testnet
+pnpm run deploy --chain arc-testnet --dry-run
+pnpm run deploy --chain arc-testnet
 pnpm verify:contracts --chain arc-testnet
 pnpm fund:vault --amount 20
 pnpm sync:contracts
@@ -425,3 +425,7 @@ The provided design is a generic visual system, so component placements beyond t
 - [Next.js support policy](https://nextjs.org/support-policy): version amendment rationale.
 
 Recheck network/tooling behavior at its implementation checkpoint. Upstream examples do not override the testnet-only allowlist, decimals discipline, secret handling, or the founder's product scope.
+
+### 2026-09-20 — Phase 3 command amendment
+
+Use `pnpm exec tsx scripts/cast-subscribe.ts` for the cast subscription checkpoint. Installed cast does not consume ETH_PRIVATE_KEY; this wrapper keeps keys in memory, uses cast calldata and publishes only the signed public transaction via cast. Earlier cast-send examples are superseded. Confirmed vault seed is 10 USDC; this is faucet liquidity, not the simulated reference portfolio.
