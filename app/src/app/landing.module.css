@@ -105,20 +105,6 @@
   background: #1055b6;
   border-color: #1055b6;
 }
-.quietLinks {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 8px;
-  color: #526178;
-  font-size: 13px;
-}
-.quietLinks a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
 .liveSlot {
   min-height: 48px;
   margin-top: 26px;

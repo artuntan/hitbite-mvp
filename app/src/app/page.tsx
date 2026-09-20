@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { landingFont, landingMono } from "@/lib/landing-font";
 import { LandingNav } from "@/components/landing-nav";
-import { accessEmail, accessUrl, appLive, landingCopy } from "@/lib/site";
+import { contactEmail, landingCopy } from "@/lib/site";
 import styles from "./landing.module.css";
 
 export const metadata: Metadata = {
@@ -50,31 +50,22 @@ export default function LandingPage() {
           />
         </a>
         <nav aria-label="Main navigation">
-          {appLive && (
-            <a href="/app" className={styles.headerAction}>
-              Open the testnet
-            </a>
-          )}
+          <a href="/app" className={styles.headerAction}>
+            Open the testnet
+          </a>
         </nav>
       </header>
       <main className={styles.main}>
         <h1 className={styles.headline}>{landingCopy.headline}</h1>
         <p className={styles.description}>{landingCopy.paragraph}</p>
         <div className={styles.actions}>
-          {appLive ? (
-            <a href="/app" className={styles.primary}>
-              Open the testnet
-            </a>
-          ) : (
-            <a href={accessUrl} className={styles.primary}>
-              Request access
-            </a>
-          )}
-          <div className={styles.quietLinks}>
-            <a href={accessUrl}>Request access</a>
-          </div>
+          <a href="/app" className={styles.primary}>
+            Open the testnet
+          </a>
         </div>
-        <div className={styles.liveSlot}>{appLive && <LandingNav />}</div>
+        <div className={styles.liveSlot}>
+          <LandingNav />
+        </div>
       </main>
       <footer className={styles.footer}>
         <p>{landingCopy.disclaimer}</p>
@@ -83,7 +74,7 @@ export default function LandingPage() {
           <span aria-hidden="true">·</span>
           <a href="https://x.com/hitbiterwa">X</a>
           <span aria-hidden="true">·</span>
-          <a href={`mailto:${accessEmail}`}>{accessEmail}</a>
+          <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
         </div>
       </footer>
     </div>

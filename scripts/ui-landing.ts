@@ -3,7 +3,6 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium, expect } from "@playwright/test";
 import { landingCopy } from "../app/src/lib/site.ts";
 const baseUrl = process.env.UI_BASE_URL || "http://localhost:3000";
-const live = process.env.LANDING_EXPECT_LIVE !== "false";
 const browser = await chromium.launch();
 const errors: string[] = [];
 const results: string[] = [];
@@ -30,6 +29,12 @@ try {
     "HitBite — Türkiye's sovereign bonds, on-chain",
   );
   assert.equal(await page.locator("h1").count(), 1);
+  await expect(page.getByText("Request access", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("link", { name: "Open the testnet", exact: true }),
+  ).toHaveCount(2);
   await expect(page.locator('a[href*="github.com"]')).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Read the code" })).toHaveCount(
     0,
@@ -66,41 +71,30 @@ try {
     ),
     false,
   );
-  if (live) {
-    const data = await (
-      await page.request.get(baseUrl + "/data/nav.json")
-    ).json();
-    await expect(page.getByTestId("landing-nav-value")).toHaveText(
-      Number(data.nav_per_token).toLocaleString("en-US", {
-        minimumFractionDigits: 4,
-        maximumFractionDigits: 6,
-      }),
-    );
-    await expect(page.getByTestId("landing-nav").locator("dt")).toHaveText(
-      "hbTRSNet asset value",
-    );
-    await expect(
-      page.getByTestId("landing-nav").locator("time"),
-    ).toHaveAttribute("datetime", data.timestamp);
-    await expect(page.getByTestId("landing-nav")).not.toContainText(
-      "Arc Testnet",
-    );
-    await expect(
-      page
-        .locator("main")
-        .getByRole("link", { name: "Open the testnet", exact: true }),
-    ).toHaveAttribute("href", "/app");
-  } else {
-    await expect(
-      page.getByRole("link", { name: "Open the testnet", exact: true }),
-    ).toHaveCount(0);
-    await expect(page.getByTestId("landing-nav")).toHaveCount(0);
-    await expect(page.locator("main a").first()).toHaveText("Request access");
-    await expect(page.locator("main a").first()).toHaveAttribute(
-      "href",
-      "mailto:hello@hitbite.com?subject=HitBite%20access%20request",
-    );
-  }
+  const data = await (
+    await page.request.get(baseUrl + "/data/nav.json")
+  ).json();
+  await expect(page.getByTestId("landing-nav-value")).toHaveText(
+    Number(data.nav_per_token).toLocaleString("en-US", {
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 6,
+    }),
+  );
+  await expect(page.getByTestId("landing-nav").locator("dt")).toHaveText(
+    "hbTRSNet asset value",
+  );
+  await expect(page.getByTestId("landing-nav").locator("time")).toHaveAttribute(
+    "datetime",
+    data.timestamp,
+  );
+  await expect(page.getByTestId("landing-nav")).not.toContainText(
+    "Arc Testnet",
+  );
+  await expect(
+    page
+      .locator("main")
+      .getByRole("link", { name: "Open the testnet", exact: true }),
+  ).toHaveAttribute("href", "/app");
   for (const [width, height] of [
     [1440, 900],
     [390, 844],
@@ -132,7 +126,7 @@ try {
     );
     layouts.push(bounds);
     await page.screenshot({
-      path: `.context/landing-${live ? "live" : "access"}-${width}.png`,
+      path: `.context/landing-live-${width}.png`,
       fullPage: true,
       caret: "initial",
     });
@@ -168,76 +162,71 @@ try {
   results.push(
     "Landing fetches only same-origin resources and sets no cookies",
   );
-  if (live) {
-    for (const fixture of ["missing", "stale", "malformed"] as const) {
-      await page.route("**/data/nav.json", (route) =>
-        route.fulfill({
-          status: fixture === "missing" ? 404 : 200,
-          contentType: "application/json",
-          body: JSON.stringify(
-            fixture === "stale"
-              ? {
-                  nav_per_token: "1.0038",
-                  timestamp: new Date(Date.now() - 49 * 3600_000).toISOString(),
-                }
-              : {},
-          ),
-        }),
-      );
-      await page.reload();
-      await page.waitForLoadState("networkidle");
-      await expect(page.locator("h1")).toBeVisible();
-      await expect(page.getByTestId("landing-nav")).toHaveCount(0);
-      await page.unroute("**/data/nav.json");
-    }
-    let release: (() => void) | undefined;
-    await page.route("**/data/nav.json", async (route) => {
-      await new Promise<void>((resolve) => {
-        release = resolve;
-      });
-      await route.fulfill({ status: 404, body: "" });
-    });
-    await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  for (const fixture of ["missing", "stale", "malformed"] as const) {
+    await page.route("**/data/nav.json", (route) =>
+      route.fulfill({
+        status: fixture === "missing" ? 404 : 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          fixture === "stale"
+            ? {
+                nav_per_token: "1.0038",
+                timestamp: new Date(Date.now() - 49 * 3600_000).toISOString(),
+              }
+            : {},
+        ),
+      }),
+    );
+    await page.reload();
+    await page.waitForLoadState("networkidle");
     await expect(page.locator("h1")).toBeVisible();
-    await expect(
-      page
-        .locator("main")
-        .getByRole("link", { name: "Open the testnet", exact: true }),
-    ).toBeVisible();
-    await expect.poll(() => Boolean(release)).toBe(true);
-    const released = page.waitForResponse((response) =>
-      response.url().endsWith("/data/nav.json"),
-    );
-    release!();
-    await released;
+    await expect(page.getByTestId("landing-nav")).toHaveCount(0);
     await page.unroute("**/data/nav.json");
-    results.push(
-      "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
-    );
-    await page
+  }
+  let release: (() => void) | undefined;
+  await page.route("**/data/nav.json", async (route) => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await route.fulfill({ status: 404, body: "" });
+  });
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  await expect(page.locator("h1")).toBeVisible();
+  await expect(
+    page
       .locator("main")
-      .getByRole("link", { name: "Open the testnet", exact: true })
-      .click();
-    await expect(page).toHaveURL(baseUrl + "/app");
-    await expect(
-      page.getByRole("heading", { name: "Connect your wallet." }),
-    ).toBeVisible();
-    await page.goBack();
-    await expect(page.locator("h1")).toHaveText(landingCopy.headline);
-    await page.setViewportSize({ width: 390, height: 844 });
-    assert.equal(
-      await page.evaluate(
-        () => document.documentElement.scrollHeight > innerHeight,
-      ),
-      false,
-    );
-    results.push(
-      "Primary CTA opens the existing app; browser back returns to an intact landing layout",
-    );
-  } else
-    results.push(
-      "Launch switch hides both testnet links and NAV and changes primary CTA to email access",
-    );
+      .getByRole("link", { name: "Open the testnet", exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => Boolean(release)).toBe(true);
+  const released = page.waitForResponse((response) =>
+    response.url().endsWith("/data/nav.json"),
+  );
+  release!();
+  await released;
+  await page.unroute("**/data/nav.json");
+  results.push(
+    "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+  );
+  await page
+    .locator("main")
+    .getByRole("link", { name: "Open the testnet", exact: true })
+    .click();
+  await expect(page).toHaveURL(baseUrl + "/app");
+  await expect(
+    page.getByRole("heading", { name: "Connect your wallet." }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page.locator("h1")).toHaveText(landingCopy.headline);
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollHeight > innerHeight,
+    ),
+    false,
+  );
+  results.push(
+    "Public CTA opens the app without an invitation or login; browser back returns to an intact landing layout",
+  );
   const robots = await (await page.request.get(baseUrl + "/robots.txt")).text();
   assert.match(robots, /Allow: \/transparency/);
   assert.match(robots, /Disallow: \/admin/);
@@ -280,14 +269,14 @@ try {
   const evidence = {
     timestamp: new Date().toISOString(),
     baseUrl,
-    appLive: live,
+    publicEntry: true,
     results,
     layouts,
     pageErrors: errors,
     walletTransactions: 0,
   };
   writeFileSync(
-    `.context/landing-${live ? "live" : "access"}-evidence.json`,
+    `.context/landing-live-evidence.json`,
     JSON.stringify(evidence, null, 2) + "\n",
   );
   console.log(JSON.stringify(evidence, null, 2));
