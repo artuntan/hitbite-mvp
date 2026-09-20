@@ -1,4 +1,4 @@
-import { Overview } from "@/components/overview";
+import { Flow } from "@/components/flow";
 export default function Page() {
-  return <Overview />;
+  return <Flow />;
 }

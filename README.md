@@ -4,23 +4,23 @@
 
 A testnet reference implementation of subscriptions, redemptions and coupon pass-through for simulated Türkiye USD sovereign-bond fund units.
 
-**[Open the live app](https://hitbite-testnet-v2.vercel.app/app)** · [Transparency](https://hitbite-testnet-v2.vercel.app/transparency) · [Generated live-test STATUS](STATUS.md) · [Deployment receipts](deployments/arc-testnet.json)
+**[Open the live app](https://hitbite-testnet-v2.vercel.app)** · [Transparency](https://hitbite-testnet-v2.vercel.app/transparency) · [Generated live-test STATUS](STATUS.md) · [Deployment receipts](deployments/arc-testnet.json)
 
 > Testnet. Simulated portfolio. Not an offer of securities.
 
 ## Try it in five minutes
 
 1. Install a browser wallet, or open the app inside your mobile wallet's browser. Request test **USDC** from the [Circle faucet](https://faucet.circle.com): choose **Arc Testnet** and enter your public wallet address. Never enter a private key into the app or faucet.
-2. [Open the app](https://hitbite-testnet-v2.vercel.app/app), connect your wallet, then use **Add / switch to Arc Testnet** if needed. Chain ID: **5042002**. RPC: `https://rpc.testnet.arc.io`. Gas on Arc is paid in USDC. Keep a small balance for fees.
+2. [Open the app](https://hitbite-testnet-v2.vercel.app), connect your wallet, then use **Add / switch to Arc Testnet** if needed. Chain ID: **5042002**. RPC: `https://rpc.testnet.arc.io`. Gas on Arc is paid in USDC. Keep a small balance for fees.
 3. Choose **Verify**. Enter your name and country and confirm professional-investor status. Sign the eligibility statement, wait for the ten-second simulated review and the registrar's receipt. This is a simulation, not real KYC. Not available to residents of the United States or Türkiye on this testnet.
-4. Choose **Subscribe**, enter a small amount such as **1 USDC**, then sign **Approve USDC** and **Subscribe** separately. The first permits that exact amount; the second exchanges it for hbTRS at the NAV in effect when the transaction executes. The UI reserves at least 0.05 USDC for gas.
+4. Choose **Subscribe**, enter a small amount such as **1 USDC**, then sign **Approve USDC** and **Subscribe** as each step appears. The first permits that exact amount; the second exchanges it for hbTRS at the NAV in effect when the transaction executes. The UI reserves at least 0.05 USDC for gas.
 5. Choose **Hold** to inspect your position and receipts. Coupons are claimable only after an issuer funds a distribution; the app does not fabricate a payout. Choose **Redeem**, use your token balance or a smaller amount, and sign to receive USDC from the vault. Existing accrued coupons remain claimable after redemption.
 
-Turn on **Walkthrough** in the header for plain-language explanations. It is off initially and remembered in your browser. Each write shows **What will happen → Sign → Receipt**, including the transaction hash, block and emitted events. If confirmation is delayed, inspect the pending transaction before retrying.
+The home page opens directly into the investor flow. The fixed glass header contains the HitBite logo, Transparency and **Your position**; open the position summary for balances, verification and wallet controls. Each step has one primary action. Subscription approval and the subscription itself appear in sequence, followed by a confirmation with its transaction link, block and events. Price/fee details and recent activity expand on demand. **Show explanations** in the footer enables extra help and remembers your preference. If confirmation is delayed, inspect the pending transaction before retrying.
 
 Redemptions on the testnet are paid from a vault the admin funds. There is no liquidity guarantee.
 
-The app currently supports injected browser wallets. WalletConnect QR pairing is optional and requires a configured public project ID; it is not represented as tested here. The app contains only four product routes: Overview, the five-step app, Transparency and role-restricted Admin.
+The app currently supports injected browser wallets. WalletConnect QR pairing is optional and requires a configured public project ID; it is not represented as tested here. There are three product views: the investor flow at `/` (also available at `/app` for existing links), Transparency and role-restricted Admin. Operators can open Admin from their position popover or visit `/admin` directly.
 
 ## What is simulated
 
@@ -140,6 +140,7 @@ For browser evidence, configure a separate funded `UI_WALLET_PRIVATE_KEY` and ru
 ```sh
 pnpm exec playwright install chromium
 pnpm test:ui
+pnpm exec tsx scripts/ui-layout.ts       # read-only layout, navigation and fresh-wallet form checks
 pnpm e2e
 ```
 
@@ -147,7 +148,7 @@ The browser test injects a test provider while keeping signing keys in the Node 
 
 After the founder explicitly confirms their own complete fresh-wallet flow, record the confirmation in `.context/founder-acceptance.json` with `confirmed: true`, an ISO `timestamp`, the exact `baseUrl`, and the actual `source`, `statement` and `scope`. The current confirmation is preserved in [the public acceptance record](deployments/evidence/founder-acceptance.json); for a repeat run against the same deployment, copy that record to the local path. Do not manufacture a confirmation for a new deployment. The runner copies its provenance into the generated evidence separately from automated test results.
 
-`pnpm smoke` performs no transactions and never edits STATUS. Only `pnpm e2e` writes STATUS. [PROGRESS.md](PROGRESS.md) is the append-only implementation/evidence log; [PLAN.md](PLAN.md) records approved decisions and dated amendments. Founder acceptance is explicitly separate from automated checks.
+`pnpm smoke` performs no transactions and never edits STATUS. Only `pnpm e2e` writes STATUS. [PROGRESS.md](PROGRESS.md) is the append-only implementation/evidence log; [PLAN.md](PLAN.md) records approved decisions and dated amendments. Founder acceptance is explicitly separate from automated checks. The generated STATUS is a dated acceptance record. The September 20 UX revision removes Overview in favor of direct app entry; its subsequent browser evidence is recorded in PROGRESS without rewriting historical STATUS by hand.
 
 ## Preserved v1
 

@@ -13,7 +13,7 @@ import {
 import { hBTokenAbi, identityRegistryAbi } from "@hitbite/config/abi";
 import { ARC_MIN_MAX_FEE_PER_GAS } from "@hitbite/config/chains";
 import { client, config, short, txUrl } from "@/lib/chain";
-import { Caption } from "./ui";
+import { Caption, Icon } from "./ui";
 
 export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
   const names = receipt.logs.flatMap((log) => {
@@ -30,8 +30,9 @@ export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
   });
   return (
     <div className="receipt" data-testid="receipt">
-      <span className="eyebrow small">
-        Receipt · {receipt.status === "success" ? "Confirmed" : "Reverted"}
+      <span className="receipt-state">
+        <Icon name="check" />
+        {receipt.status === "success" ? "Confirmed" : "Reverted"}
       </span>
       <a
         className="mono hash"
@@ -39,7 +40,7 @@ export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
         target="_blank"
         rel="noreferrer"
       >
-        {receipt.transactionHash} ↗
+        {short(receipt.transactionHash)} ↗
       </a>
       <span className="caption">
         Block {receipt.blockNumber.toString()} ·{" "}
@@ -59,6 +60,8 @@ export function Action({
   disabled,
   onSuccess,
   label,
+  compact = false,
+  secondary = false,
 }: {
   title: string;
   description: string;
@@ -70,6 +73,8 @@ export function Action({
   disabled?: string;
   onSuccess?: (receipt: TransactionReceipt) => void;
   label?: string;
+  compact?: boolean;
+  secondary?: boolean;
 }) {
   const { address: account, chainId } = useAccount();
   const { data: wallet } = useWalletClient();
@@ -91,6 +96,7 @@ export function Action({
     setError("");
     setReceipt(undefined);
     setPendingHash(undefined);
+    let submittedHash: string | undefined;
     try {
       if (
         (await client.getChainId()) !== config.chain.id ||
@@ -120,6 +126,7 @@ export function Action({
         gas: (gas * 12n) / 10n,
         ...fees,
       });
+      submittedHash = hash;
       setPendingHash(hash);
       const confirmed = await client.waitForTransactionReceipt({
         hash,
@@ -138,7 +145,7 @@ export function Action({
           ? "Signature declined. You can try again."
           : /insufficient/i.test(message)
             ? "Insufficient balance or vault liquidity. Keep USDC for gas."
-            : pendingHash
+            : submittedHash
               ? "Confirmation is delayed. Check the transaction link before trying again."
               : "The transaction could not complete. Refresh the balances and check your wallet.",
       );
@@ -147,26 +154,29 @@ export function Action({
     }
   }
   return (
-    <section className="action-card">
-      <div className="action-heading">
-        <h3>{title}</h3>
-        <span className="mono caption">
-          {contract}.{fn}()
-        </span>
-      </div>
-      <span className="eyebrow small">What will happen</span>
-      <p>{description}</p>
+    <section className={`action-card${compact ? " action-compact" : ""}`}>
+      {!compact && <h3>{title}</h3>}
+      <p className="action-description">{description}</p>
       <Caption>
-        The transaction calls {contract} at {short(address)}. Your wallet asks
-        for approval before anything moves.
+        Calls {contract}.{fn}() at {short(address)}. You approve it in your
+        wallet.
       </Caption>
-      <div className="sign-row">
-        <span className="eyebrow small">Sign</span>
-        <button onClick={send} disabled={Boolean(reason) || busy || !wallet}>
-          {busy ? "Waiting for wallet / confirmation…" : label || title}
-        </button>
-      </div>
-      {reason && <p className="caption muted">{reason}</p>}
+      <button
+        className={secondary ? "secondary" : undefined}
+        onClick={send}
+        disabled={Boolean(reason) || busy || !wallet}
+      >
+        {busy
+          ? receipt?.status === "success"
+            ? "Confirmed"
+            : pendingHash
+              ? "Confirming…"
+              : "Check your wallet…"
+          : label || title}
+      </button>
+      {reason && !receipt && (
+        <p className="caption muted action-reason">{reason}</p>
+      )}
       {error && (
         <p className="error" role="alert">
           {error}
@@ -174,7 +184,7 @@ export function Action({
       )}
       {pendingHash && !receipt && (
         <a
-          className="caption"
+          className="pending-link caption"
           href={txUrl(pendingHash)}
           target="_blank"
           rel="noreferrer"
@@ -182,16 +192,7 @@ export function Action({
           View pending transaction ↗
         </a>
       )}
-      {receipt ? (
-        <Receipt receipt={receipt} />
-      ) : (
-        <p className="caption muted receipt-empty">
-          Receipt ·{" "}
-          {busy
-            ? "Awaiting confirmation"
-            : "Appears after a confirmed transaction"}
-        </p>
-      )}
+      {receipt && <Receipt receipt={receipt} />}
     </section>
   );
 }
