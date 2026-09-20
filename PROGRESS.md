@@ -542,3 +542,18 @@ Mobile, final public release:
 - Removed Show explanations and the optional walkthrough captions/preferences throughout the platform. An old enabled browser preference no longer restores hidden explanatory text. Normal action descriptions, consent, transaction controls and testnet disclosures remain available.
 - Installed the founder-supplied multi-resolution favicon.ico byte-for-byte and removed the competing browser PNG icon. The Apple touch icon and page wordmarks remain the approved artwork.
 - Local optimized-build verification passed: lint, types, all 14 configuration/security tests, production build and gitleaks; six landing groups, six shell groups and seven Transparency groups. Desktop/tablet/mobile layouts fit, the actual favicon bytes are served, the legacy preference case passes and no browser errors or wallet transactions occurred. New NAV text is covered by the existing font subsets. Evidence is `.context/polish-local-evidence.json`; public verification follows. Historical STATUS is unchanged.
+
+### Presentation polish: production verification
+
+- PR #11 merged after all CI and Vercel checks passed: https://github.com/artuntan/hitbite-mvp/pull/11. Implementation `3c5962c`, production merge `4964baf`. Source main CI passed: https://github.com/artuntan/hitbite-mvp/actions/runs/35515025325.
+- The public Vercel release passed all six landing, six shell and seven Transparency browser groups, including the supplied favicon bytes, no landing GitHub links, refreshed NAV presentation and the removed explanations with a legacy enabled preference. No page errors or wallet transactions occurred. Local server is stopped.
+- Public Lighthouse 13.5.0 with real DevTools 4G throttling scored **100 / 100 / 100 / 100**, with **1,504 ms LCP** and **151,875 non-font transfer bytes**. This single run is narrowly above the earlier strict 1,500 ms / 150,000-byte targets; the new supplied multi-resolution favicon accounts for 2,626 transfer bytes and is preserved unchanged. These measurements are recorded without claiming the earlier strict budgets still pass.
+- Public and separately labelled local evidence are in `deployments/evidence/presentation-polish.json`; full Lighthouse reports are under `.context/`. Updated the browser-flow report label to describe the removed walkthrough control. Historical generated STATUS and transaction acceptance are unchanged.
+
+Updated public desktop:
+
+![HitBite landing with hbTRS quote](deployments/evidence/polish-desktop.png)
+
+Updated public mobile:
+
+![HitBite mobile landing with hbTRS quote](deployments/evidence/polish-mobile.png)

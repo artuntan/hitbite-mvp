@@ -1,0 +1,201 @@
+{
+  "productionUrl": "https://hitbite-testnet-v2.vercel.app",
+  "pullRequest": "https://github.com/artuntan/hitbite-mvp/pull/11",
+  "implementationCommit": "3c5962c",
+  "productionMerge": "4964baf5a1aa5cb849f29625e86f2c7714b0f1fb",
+  "sourceCI": {
+    "url": "https://github.com/artuntan/hitbite-mvp/actions/runs/35515025325",
+    "result": "success"
+  },
+  "production": {
+    "landing": {
+      "timestamp": "2026-09-20T13:58:57.195Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "appLive": true,
+      "results": [
+        "Exact copy, supplied favicon, no GitHub links, responsive single-screen layout; short screens can scroll without clipping",
+        "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+        "Landing fetches only same-origin resources and sets no cookies",
+        "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+        "Primary CTA opens the existing app; browser back returns to an intact landing layout",
+        "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+      ],
+      "layouts": [
+        {
+          "width": 1440,
+          "height": 900,
+          "scrollWidth": 1440,
+          "scrollHeight": 900
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844
+        },
+        {
+          "width": 360,
+          "height": 640,
+          "scrollWidth": 360,
+          "scrollHeight": 640
+        },
+        {
+          "width": 768,
+          "height": 768,
+          "scrollWidth": 768,
+          "scrollHeight": 768
+        }
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    },
+    "shell": {
+      "timestamp": "2026-09-20T13:58:57.002Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "results": [
+        "Landing CTA opens app; only Transparency and position in platform header; 1440/768/390/320px without overflow",
+        "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+        "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+        "Transparency attestation still verifies client-side",
+        "Existing /app links still open the investor flow",
+        "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    },
+    "transparency": {
+      "timestamp": "2026-09-20T13:58:58.515Z",
+      "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+      "chainId": 5042002,
+      "results": [
+        "Real NAV and holdings; one-point history has no fabricated trend; 1440/1024/768/390/320px layouts",
+        "Actual signature verifies; displayed/downloaded signed JSON and NAV match sources; contract copy/explorer links work",
+        "Valuation inputs, model fees/yields and all eight production layers remain inspectable without page overflow",
+        "A refreshed mismatching snapshot invalidates the verified state, shows NAV mismatch and fails re-verification",
+        "Synthetic history fixtures: keyboard/buttons select exact observations; flat and empty series render honestly",
+        "Tampered payload is rejected; unavailable NAV disables verification and retry restores valid data",
+        "App/Transparency navigation works; removed explanations stay absent even with the legacy preference enabled"
+      ],
+      "pageErrors": [],
+      "transactions": 0,
+      "fixtures": "Browser interception only; no published data modified",
+      "publishedSnapshot": "2026-09-20T10:10:45Z"
+    }
+  },
+  "lighthouseReal4G": {
+    "lighthouseVersion": "13.5.0",
+    "timestamp": "2026-09-20T13:59:18.318Z",
+    "method": "devtools",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    },
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "lcpMs": 1504.389,
+    "nonFontTransferBytes": 151875,
+    "faviconTransferBytes": 2626,
+    "historicalStrictBudgets": {
+      "lcpUnder1500Ms": false,
+      "nonFontUnder150000Bytes": false
+    },
+    "note": "The supplied multi-resolution favicon remains byte-identical. All Lighthouse categories score 100; this run narrowly exceeds the earlier strict LCP and transfer targets. No claim of meeting those two targets is made for this release."
+  },
+  "local": {
+    "scope": "Landing source links, hbTRS quote, supplied favicon, removal of optional platform explanations",
+    "environment": "Local optimized production build",
+    "landing": {
+      "timestamp": "2026-09-20T13:55:01.810Z",
+      "baseUrl": "http://localhost:3000",
+      "appLive": true,
+      "results": [
+        "Exact copy, supplied favicon, no GitHub links, responsive single-screen layout; short screens can scroll without clipping",
+        "Reduced motion disables all entrance motion; keyboard focus and image drag protection work",
+        "Landing fetches only same-origin resources and sets no cookies",
+        "Real NAV renders; missing, stale and malformed NAV stay hidden; first paint is independent of NAV",
+        "Primary CTA opens the existing app; browser back returns to an intact landing layout",
+        "Indexing, sitemap, HSTS, Twitterbot/Slackbot metadata and both generated 1200\u00d7630 share images verified"
+      ],
+      "layouts": [
+        {
+          "width": 1440,
+          "height": 900,
+          "scrollWidth": 1440,
+          "scrollHeight": 900
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "scrollWidth": 390,
+          "scrollHeight": 844
+        },
+        {
+          "width": 360,
+          "height": 640,
+          "scrollWidth": 360,
+          "scrollHeight": 640
+        },
+        {
+          "width": 768,
+          "height": 768,
+          "scrollWidth": 768,
+          "scrollHeight": 768
+        }
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    },
+    "shell": {
+      "timestamp": "2026-09-20T13:55:03.700Z",
+      "baseUrl": "http://localhost:3000",
+      "results": [
+        "Landing CTA opens app; only Transparency and position in platform header; 1440/768/390/320px without overflow",
+        "Position popover fits all viewports, dismisses with Escape and returns keyboard focus",
+        "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
+        "Transparency attestation still verifies client-side",
+        "Existing /app links still open the investor flow",
+        "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile"
+      ],
+      "pageErrors": [],
+      "walletTransactions": 0
+    },
+    "transparency": {
+      "timestamp": "2026-09-20T13:55:03.416Z",
+      "baseUrl": "http://localhost:3000",
+      "chainId": 5042002,
+      "results": [
+        "Real NAV and holdings; one-point history has no fabricated trend; 1440/1024/768/390/320px layouts",
+        "Actual signature verifies; displayed/downloaded signed JSON and NAV match sources; contract copy/explorer links work",
+        "Valuation inputs, model fees/yields and all eight production layers remain inspectable without page overflow",
+        "A refreshed mismatching snapshot invalidates the verified state, shows NAV mismatch and fails re-verification",
+        "Synthetic history fixtures: keyboard/buttons select exact observations; flat and empty series render honestly",
+        "Tampered payload is rejected; unavailable NAV disables verification and retry restores valid data",
+        "App/Transparency navigation works; removed explanations stay absent even with the legacy preference enabled"
+      ],
+      "pageErrors": [],
+      "transactions": 0,
+      "fixtures": "Browser interception only; no published data modified",
+      "publishedSnapshot": "2026-09-20T10:10:45Z"
+    },
+    "favicon": "Byte-identical to supplied 15,406-byte ICO; one browser icon declaration",
+    "checks": [
+      "pnpm check: lint, types, 14 configuration/security tests, production build",
+      "pnpm check:secrets with gitleaks",
+      "Font subsets contain all new NAV label characters"
+    ],
+    "walletTransactions": 0
+  },
+  "walletTransactions": 0,
+  "limitations": [
+    "Historical transaction acceptance was not rerun for these presentation changes.",
+    "Future hitbite.markets DNS activation remains deferred by the founder."
+  ]
+}

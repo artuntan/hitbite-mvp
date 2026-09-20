@@ -513,7 +513,7 @@ try {
   if (errors.length)
     throw new Error("Browser runtime errors: " + errors.length);
   results.push({
-    step: "Mobile layout and persisted walkthrough",
+    step: "Mobile layout and removed walkthrough control",
     passed: true,
   });
   writeFileSync(
