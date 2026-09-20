@@ -59,6 +59,7 @@ export function Action({
   args = [],
   disabled,
   onSuccess,
+  onBusyChange,
   label,
   compact = false,
   secondary = false,
@@ -72,6 +73,7 @@ export function Action({
   args?: readonly unknown[];
   disabled?: string;
   onSuccess?: (receipt: TransactionReceipt) => void;
+  onBusyChange?: (busy: boolean) => void;
   label?: string;
   compact?: boolean;
   secondary?: boolean;
@@ -93,6 +95,7 @@ export function Action({
   async function send() {
     if (reason || !wallet || !account) return;
     setBusy(true);
+    onBusyChange?.(true);
     setError("");
     setReceipt(undefined);
     setPendingHash(undefined);
@@ -151,6 +154,7 @@ export function Action({
       );
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
   return (

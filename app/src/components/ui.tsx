@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useQuery } from "@tanstack/react-query";
@@ -139,6 +139,24 @@ export function Icon({
 }
 export function Header() {
   const path = usePathname();
+  const header = useRef<HTMLElement>(null);
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const reveal = Math.min(1, Math.max(0, (window.scrollY - 8) / 72));
+      header.current?.style.setProperty("--header-reveal", String(reveal));
+    };
+    const scroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", scroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", scroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [path]);
   const { address, chainId } = useAccount();
   const { data, error } = useSnapshot();
   const connected = !!address && chainId === config.chain.id;
@@ -147,7 +165,7 @@ export function Header() {
       ? (data.tokens * data.nav) / 10n ** 18n
       : undefined;
   return (
-    <header className="shell-header">
+    <header className="shell-header" ref={header}>
       <Link className="wordmark" href="/" aria-label="HitBite app">
         <span className="brand-mark" aria-hidden="true">
           h
