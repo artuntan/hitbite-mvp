@@ -13,6 +13,8 @@ import calendar
 import csv
 import json
 import os
+import time
+import traceback
 from datetime import date, datetime, timedelta, timezone
 from decimal import ROUND_DOWN, Decimal, getcontext
 from pathlib import Path
@@ -25,6 +27,20 @@ CHAINS = {"arc-testnet": (5042002, "https://rpc.testnet.arc.io"),
           "base-sepolia": (84532, "https://sepolia.base.org"),
           "local": (31337, "http://127.0.0.1:8545")}
 LABEL = "Simulated attestor. Replaced by an independent firm in production."
+
+
+def failure_summary(error):
+    """Log only error type, local source location and numeric HTTP status."""
+    parts = [type(error).__name__]
+    # Use the deepest engine frame, without exception text, locals or RPC URLs.
+    locations = [f"{f.name}:{f.lineno}" for f in traceback.extract_tb(error.__traceback__)
+                 if Path(f.filename).resolve() == Path(__file__).resolve()]
+    if locations:
+        parts.append(locations[-1])
+    status = getattr(getattr(error, "response", None), "status_code", None)
+    if isinstance(status, int) and 100 <= status <= 599:
+        parts.append(f"HTTP {status}")
+    return "NAV engine failed (" + ", ".join(parts) + "). Check configuration, RPC and inputs."
 
 
 def decimal_text(value):
@@ -221,6 +237,22 @@ def save_nav(result):
     write(path, result)
 
 
+def confirmed_nav(block_number):
+    # A receipt can reach one RPC backend before its historical state/logs reach
+    # another. Retry only pinned reads; never sign or submit a second transaction.
+    for attempt in range(8):
+        try:
+            return live_nav(block_number)
+        except Exception as error:
+            status = getattr(getattr(error, "response", None), "status_code", None)
+            retryable = status in {400, 408, 429, 500, 502, 503, 504} or type(error).__name__ in {
+                "ReadTimeout", "ConnectTimeout", "ConnectionError", "BlockNotFound"
+            }
+            if not retryable or attempt == 7:
+                raise
+            time.sleep(min(2 * (attempt + 1), 8))
+
+
 def canonical(payload):
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
@@ -273,6 +305,9 @@ def push(dry_run=False):
         print(json.dumps({"dry_run": True, "function": "setNAV(uint256)", "nav_units": str(value)}))
         return
     account = Account.from_key(os.environ["ORACLE_PRIVATE_KEY"])
+    if not token.functions.hasRole(token.functions.ORACLE_ROLE().call(), account.address).call():
+        raise ValueError("Configured NAV signer lacks ORACLE_ROLE.")
+    print("NAV signer role verified:", account.address, flush=True)
     priority = w3.eth.max_priority_fee
     maximum = max(20_000_000_000 if w3.eth.chain_id == 5042002 else 0, latest["baseFeePerGas"] * 2 + priority)
     call = token.get_function_by_signature("setNAV(uint256)")(value)
@@ -283,7 +318,8 @@ def push(dry_run=False):
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
     if receipt["status"] != 1:
         raise ValueError("NAV transaction reverted.")
-    refreshed = live_nav(receipt["blockNumber"])
+    print("NAV transaction confirmed:", tx_hash.to_0x_hex(), flush=True)
+    refreshed = confirmed_nav(receipt["blockNumber"])
     if refreshed["nav_units"] != str(value) or refreshed["onchain_nav_units"] != str(value):
         raise ValueError("Snapshot or date changed during publication; rerun NAV.")
     refreshed["publication"] = {"transaction_hash": tx_hash.to_0x_hex(), "block_number": receipt["blockNumber"]}
@@ -319,5 +355,5 @@ if __name__ == "__main__":
         main()
     except Exception as error:
         # Provider and signer exceptions can contain request data. Keep all values local.
-        print("NAV engine failed (" + type(error).__name__ + "). Check local configuration, RPC and inputs.")
+        print(failure_summary(error))
         raise SystemExit(1) from None
