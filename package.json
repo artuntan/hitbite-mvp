@@ -19,7 +19,11 @@
     "deploy": "tsx scripts/deploy.ts",
     "sync:contracts": "tsx scripts/sync-contracts.ts",
     "fund:vault": "tsx scripts/fund-vault.ts",
-    "verify:contracts": "tsx scripts/verify-contracts.ts"
+    "verify:contracts": "tsx scripts/verify-contracts.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "e2e": "tsx scripts/e2e.ts",
+    "test:ui": "tsx scripts/ui-live.ts",
+    "nav": "uv run --python 3.11 nav_engine/hb.py"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

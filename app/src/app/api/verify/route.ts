@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createWalletClient, encodeFunctionData, http, type Hex } from "viem";
+import {
+  erc20Abi,
+  createWalletClient,
+  encodeFunctionData,
+  http,
+  type Hex,
+} from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { identityRegistryAbi } from "@hitbite/config/abi";
 import { copy } from "@hitbite/config/copy";
@@ -71,6 +77,20 @@ export async function POST(request: NextRequest) {
               "This wallet already has a registry record. Refresh its status; a registrar must review any revoked record.",
           },
           409,
+        );
+      const funds = await client.readContract({
+        address: deployment.addresses.USDC,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [input.address],
+      });
+      if (funds < 50_000n)
+        return response(
+          {
+            error:
+              "Add at least 0.05 test USDC from the faucet before starting verification.",
+          },
+          400,
         );
       return response(issue(input, config.chain.id, origin, secret));
     }

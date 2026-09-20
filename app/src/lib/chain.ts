@@ -34,7 +34,7 @@ export const short = (value: string) =>
 export function units(value: bigint | undefined, decimals = 6, places = 2) {
   if (value === undefined) return "—";
   const [whole, fraction = ""] = formatUnits(value, decimals).split(".");
-  return `${Number(whole).toLocaleString("en-US")}${places ? "." + fraction.padEnd(places, "0").slice(0, places) : ""}`;
+  return `${BigInt(whole!).toLocaleString("en-US")}${places ? "." + fraction.padEnd(places, "0").slice(0, places) : ""}`;
 }
 export function amount(value: string, decimals = 6): bigint | null {
   if (

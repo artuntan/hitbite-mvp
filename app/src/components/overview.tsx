@@ -144,7 +144,7 @@ export function Overview() {
               target="_blank"
               rel="noreferrer"
             >
-              Latest NAV publication ↗
+              Snapshot NAV publication ↗
             </a>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { publicKeyToAddress } from "viem/accounts";
 import { isAddress, verifyMessage, type Address, type Hex } from "viem";
 export function canonical(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -43,6 +44,15 @@ export async function verifyAttestation(
     throw new Error("The displayed payload differs from the signed message.");
   if (a.signer.toLowerCase() !== expected.toLowerCase())
     throw new Error("The signer differs from the configured trust anchor.");
+  const publicKey =
+    a.public_key.length === 130
+      ? (`0x04${a.public_key.slice(2)}` as Hex)
+      : a.public_key;
+  if (publicKeyToAddress(publicKey).toLowerCase() !== expected.toLowerCase()) {
+    throw new Error(
+      "The displayed public key does not match the trusted signer.",
+    );
+  }
   if (navUnits && a.payload.nav_units !== navUnits)
     throw new Error("The attestation NAV differs from the displayed snapshot.");
   if (
