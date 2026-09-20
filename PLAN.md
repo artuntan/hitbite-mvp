@@ -1,210 +1,423 @@
-# HitBite MVP — PLAN.md
+# HitBite Testnet v2 — implementation plan
 
-Working plan for the engineering agent. Source of truth for scope is `BUILD_PROMPT.md`; product spec is `SPEC.md`.
-Progress is logged in `PROGRESS.md`. Decisions below are numbered (D1…) and referenced from code and docs.
+**2026-09-20 · Phase 0 · Awaiting founder approval.**
 
-## 1. Environment findings (2026-09-08)
+Scope change: this plan replaces the v1 plan with the attached Arc Testnet v2 brief. [BUILD_PROMPT_V2.md](BUILD_PROMPT_V2.md) defines the product; [design.md](design.md) defines its visual system. Both are byte-for-byte copies of the supplied attachments. The previous plan and implementation remain available at [tag v1](https://github.com/artuntan/hitbite-mvp/tree/v1).
 
-| Item | Found | Consequence |
-|---|---|---|
-| Git repo | `artuntan/hitbite-mvp` (private), branch `plan-and-build-from-build-prompt`, Actions enabled | Repo root = the `mvp/` root of Section 3 (D1) |
-| Node / pnpm | Node 25.2, pnpm 10.22 | CI pins Node 22; `engines` ≥ 20 (D17) |
-| Python | 3.11.15 + `uv` 0.7 | Engine managed with `uv` (D2) |
-| Foundry / Slither | not installed | Installed via `foundryup`; Slither via `uv tool` |
-| Network | GitHub, npm, PyPI, `https://sepolia.base.org` (chain 84532) reachable | Public RPC usable read-only; rate-limited |
-| Credentials | none: no deployer/oracle/registrar keys, no Basescan, Vercel, WalletConnect | Testnet deploy, Vercel deploy and on-chain demo need founder keys (Section 5). Every checkpoint also has a local Anvil path. |
+No v2 application code is included in Phase 0. Each subsequent phase ends with evidence in `PROGRESS.md`, a descriptive commit, a push, and founder approval before the next phase. `STATUS.md` is generated only by `pnpm e2e`; it does not exist yet and will not be created manually. Older entries in `PROGRESS.md` describe v1, not v2.
 
-## 2. Stack decisions (where BUILD_PROMPT leaves a choice)
+## 1. Repository baseline and preservation
 
-- **Contracts:** Foundry, Solidity 0.8.26, OpenZeppelin Contracts v5 as a git submodule in `contracts/lib` (D2). Custom errors everywhere. `forge fmt`, `forge snapshot --tolerance 10`, Slither in CI (`crytic/slither-action`).
-- **Engine:** Python 3.11, `uv` + PEP 621 `pyproject.toml`, `pandas`, `numpy`, `pydantic` v2, `web3` v7, `eth-account`, `pyyaml`, `pytest`, `ruff`, `mypy` (lenient). Money math in `decimal.Decimal`; outputs carry both display strings and 6-decimal integer USDC (D22).
-- **Web:** Next.js 15 App Router, TypeScript strict, Tailwind v4, shadcn/ui, `next-themes`, `wagmi` v2 + `viem` + RainbowKit 2, Recharts, `zod`, IBM Plex Sans/Mono via `next/font`. Vitest for unit tests, Playwright (chromium) for smoke + screenshots, Lighthouse CLI locally.
-- **Persistence:** `@libsql/client` — `file:` URL locally/CI/docker, `libsql://` (Turso) on Vercel (D7).
-- **Demo runner:** TypeScript + viem (`tsx`), chain-agnostic via `contracts/deployments/<chain>.json` (D11).
-- **CI:** GitHub Actions `ci.yml` (jobs `contracts`, `engine`, `web`, `secrets`), `nav-daily.yml` (scheduled engine run → PR), `oracle-push.yml` (`workflow_dispatch`, protected environment `oracle`).
-- **Secret scan:** `gitleaks/gitleaks-action@v2` in CI plus `scripts/check-secrets.sh` (regex) used by `make check-secrets` and a pre-commit hook (D18).
+- Workspace branch: `plan-and-build-from-build-prompt`; keep its name and work in this workspace.
+- V1 snapshot: `2fc8f9e75229ceca4a7347ffd089e76185030c16`.
+- Created and pushed `v1-base-sepolia` and annotated tag `v1` at that snapshot before changing files. Verified the remote branch and peeled tag resolve to the same commit.
+- `origin/main` currently contains only `.gitkeep` at `42da28add1beb83d328924f3e2740ecf33922e57`. The v1 application has not been merged there.
+- Build the fresh v2 tree on the existing workspace branch and integrate it into `main` through review. Do not rename the workspace branch, reset history, force-push, or replace the preserved v1 refs. This reconciles the brief's fresh-main destination with the workspace instruction to retain its branch.
+- Phase 1 removes superseded v1 application directories and workflows from the v2 working tree after preservation; v1 remains fully recoverable from its refs. Retain applicable MIT licensing and dependency attribution. Contracts are reused only after a requirements review and passing v2 tests; the UI is rewritten.
+- Node, pnpm, Python 3.11, uv, forge, cast, and gh are available. `.env*` is already ignored except the documented `.env.example`; `.context/` is ignored. No credentials were inspected or printed.
 
-## 3. Decisions (ambiguities resolved; ask founders only where flagged)
+## 2. Scope and decisions proposed for approval
 
-- **D1 Repo root.** This git repo is the `mvp/` root. `BUILD_PROMPT.md` and `SPEC.md` are committed here; `SPEC.md` is kept byte-identical to `../HitBite-MVP-SPEC.md` (`make sync-spec`).
-- **D2 Package managers.** pnpm (web), uv (engine), forge submodules (contracts). Lockfiles committed.
-- **D3 Pause semantics.** `pause()` blocks transfer, mint, burn, subscribe, redeem, distributeCoupon and claimCoupon. Issuer burns are *not* exempt: unpause, correct, re-pause. Simpler and auditable. `setNAV` and registry changes keep working while paused.
-- **D4 Burns and `canHold(from)`.** `_update` requires `canHold(to)` for every mint/transfer and `canHold(from)` for transfers, but **not** for burns. A de-verified holder can still redeem (exit to cash) and the issuer can force-burn for corrections. Receiving is the restriction that matters; trapping funds is never desirable. Coupon claims are likewise allowed for de-verified holders.
-- **D5 NAV rail.** `setNAV(uint256 newNav, uint256 reportedAUM, bool force)`. `force=false` → `ORACLE_ROLE`, revert `NavMoveExceedsRail(old,new,maxBps)` if |Δ| > `maxNavMoveBps` (default 500). `force=true` → `DEFAULT_ADMIN_ROLE` only, emits `NAVForced`. `newNav == 0` reverts.
-- **D6 Redemption liquidity.** Coupon money is never used for redemptions: `couponReserve = totalDistributed − totalClaimed`; `availableLiquidity() = usdc.balanceOf(this) − couponReserve`; `redeem` reverts `InsufficientLiquidity(available, requested)` against *available* liquidity. This is what makes the invariant `usdc.balanceOf(token) ≥ Σ accrued` hold.
-- **D7 Verification store.** `@libsql/client` behind a `Store` interface. Default `DATABASE_URL=file:./.data/hitbite.db`. On Vercel the file store is per-instance and ephemeral; founders set a Turso URL for persistence (documented, non-blocking).
-- **D8 Registrar worker.** `POST /api/verify` stores the request. `POST /api/verify/process` is the worker: approves pending, non-blocked requests older than `AUTO_APPROVE_DELAY_MS` (default 10 000) by calling `addVerified` with `REGISTRAR_PRIVATE_KEY` (testnet-only server key). The client calls it after the countdown; admins can approve/reject earlier from `/admin`; a cron may call it. No long-running process, works on serverless.
-- **D9 Attestation signature.** secp256k1 key, EIP-191 `personal_sign` over `keccak256(canonical JSON)`; publish signature, attestor address and uncompressed public key. Browser verification uses viem `verifyMessage` (no new dependency). Labelled *Simulated attestor — an independent firm signs in production.*
-- **D10 Event cache.** Server-side `viem.getLogs` from `deployBlock`, chunked (10k blocks), in-memory cache with 60 s TTL, `Cache-Control: s-maxage=60`. No database for events.
-- **D11 Demo runner.** TypeScript/viem in `demo/`, reads keys from env, `CHAIN=anvil|base-sepolia`, idempotent (skips verify/faucet steps already satisfied, uses fresh amounts each run), writes `demo/REPORT.md`.
-- **D12 Docs.** Root markdown (`COMPLIANCE_RULES.md`, `RISKS.md`) is canonical; `pnpm sync:docs` copies into `web/content/`; CI fails if out of sync (Vercel root is `web/`).
-- **D13 Subscription minimum.** `minSubscription` default 100 USDC, admin-settable; `subscribe` reverts `BelowMinimum(min, given)`.
-- **D14 MockUSDC faucet.** `faucet(to, amount)`: `amount ≤ 10_000e6` per call and `≤ 10_000e6` per `to` per fixed 24 h window anchored at first use (`windowStart`/`mintedInWindow` maps; BUILD_PROMPT's "simple timestamp map"). Anyone may call for any address: on a testnet the cap is a convenience, not an economic bound. Name `MockUSDC (Testnet)`, symbol `mUSDC`.
-- **D15 Deployment files.** `deployments/anvil.json` is committed (deterministic on a fresh Anvil); `deployments/base-sepolia.json` is written by the founders' deploy run and committed then.
-- **D16 Vercel / Lighthouse.** No Vercel token here. Ship `vercel.json` + env docs; run Lighthouse locally against `next build && next start` and record scores in `PROGRESS.md`. Founders link the project (Section 5).
-- **D17 Node.** CI uses Node 22; `package.json` `engines.node >= 20`. No native Node modules except libsql prebuilt bindings.
-- **D18 Secret scan.** gitleaks action + regex script (`0x[0-9a-fA-F]{64}` outside test fixtures, `PRIVATE_KEY=` with a value, mnemonic phrases). Anvil's public default keys are allow-listed only in `deployments/anvil.json`-adjacent docs, never assigned to real roles on Sepolia.
-- **D19 Reference-unit NAV (data model; founders please confirm).** The literal formula `NAV_total / tokens_outstanding` divides a fixed 1,000,000-face book by a small on-chain supply and yields a NAV of hundreds of USDC, breaking the 1.00 start and the 5 % rail. Instead `portfolio.json` is a **reference book**: `reference_units = NAV_total on inception day` so unit NAV = 1.000000 at inception; `nav_per_token = (Σ mv + cash − fees_payable) / reference_units`. Because subscriptions settle at NAV, 1 token ≡ 1 reference unit, so on-chain `totalSupply` scales the book for reporting: `reportedAUM = nav × supply`, `holdings.json` shows reference faces and supply-scaled faces. Distributions reduce reference cash pro-rata (read from `CouponDistributed` events, fixture-driven in tests). Mirrors how unit-trust NAV is computed in practice; engine-only, cheap to reverse.
-- **D20 `supplyBackedRatio()`.** On-chain: `(availableLiquidity() + reportedAUM) × 1e18 / (totalSupply × nav / 1e18)`; `1e18` when liabilities round to zero. The coupon reserve is owed to holders and is not counted as backing. Labelled illustrative: on testnet subscription USDC sits in the vault while the portfolio is simulated.
-- **D21 Investor type.** Only `investorType == 1` (professional) can be verified; `2` (retail) reverts `RetailNotAllowed()`. Field kept for later.
-- **D22 Number consistency.** Engine emits `nav_usdc_6dec` (integer) next to the display value; chain stores the same integer; UI formats from the integer. Tests compare integers, not floats.
-- **D23 Country list.** Full ISO 3166-1 numeric list generated once into `web/lib/countries.json` (`pnpm gen:countries` from `i18n-iso-countries`), blocked codes disabled with an explanation.
-- **D25 Phase 1/2 split.** `IHBToken` couples coupon settlement into `_update`, so `HBToken` is implemented in full (including coupons) with unit tests in Phase 1; Phase 2 adds the proof layer: 70/30 and no-double-count tests, fuzz, invariants, gas snapshot, Slither. No untested coupon code lands in the Phase 1 commit.
-- **D26 Ex-distribution NAV drop.** `distributeCoupon` lowers `nav` by the per-token amount it distributes (and `reportedAUM` by the USDC pulled), emitting `NAVUpdated`, exactly as a fund's NAV drops on the ex-distribution date. Without it a verified wallet could subscribe just before a distribution, claim, and redeem at an unchanged NAV, capturing the coupon from existing holders (review finding security-002). The engine (D19) reduces reference cash by the same per-unit amount, so on-chain and computed NAV stay aligned; the rail anchor is reduced too so distributions never consume the oracle's rail budget. Deviation from the literal BUILD_PROMPT 5.2 (which is silent on NAV at distribution); flagged to founders.
-- **D27 NAV rail window.** The rail is enforced against `railAnchorNav`, the NAV at the start of the current 24 h window, not against the previous call. Chained in-rail updates therefore cannot compound past `maxNavMoveBps` within a day (review finding security-001). A forced admin update restarts the window at the new NAV. `NavMoveExceedsRail(anchorNav, newNav, maxBps)` reports the anchor.
-- **D28 Input bounds.** Every amount, NAV and reported-AUM input is bounded by `MAX_INPUT = type(uint128).max` and rejected with `AmountTooLarge`/`InvalidNav`; all intermediate products then fit in `uint256`, so the contract never reverts with a `Panic`. Constructors reject zero addresses; the registry rejects country `0` and codes above 999.
-- **D29 Distribution accounting.** `distributeCoupon` reverts `DistributionTooSmall` when the index increment would truncate to zero (the whole amount would otherwise be locked) and `DistributionExceedsNav` when the per-token amount is not below NAV. `totalAllocated` (increment × supply / 1e18) is tracked separately from `totalDistributed` (USDC pulled); the coupon reserve uses `totalAllocated`, so the truncation remainder becomes ordinary vault liquidity instead of a permanently locked reserve. Per-holder settlement dust (< 1 micro-USDC per holder per distribution) remains in the reserve and is documented.
-- **D30 Oracle push idempotency.** A day counts as already pushed when on-chain `nav()` equals `nav.json`'s `nav.usdc_6dec` *and* `navUpdatedAt`'s UTC date is on or after the document's `as_of`. A *different* value for the same day is a revision, not a repeat, and is pushed (the rail still applies). `--force` overrides both the rail and the skip and requires `--reason`.
-- **D31 Rail pre-check headroom.** `push` reads `maxNavMoveBps` and `railAnchorNav` from the deployed contract, never from `config.yaml`, so the client check cannot drift from D5/D27. Within 120 s of the 24 h window rolling, the move must clear *both* the current anchor and the post-roll anchor: the operator cannot know which block mines the transaction, and a check that passes against only one of the two is a coin flip. Extends D27 on the client side; the contract is unchanged.
-- **D32 Mainnet refusal in the engine.** `push` refuses known mainnet chain ids (1, 10, 56, 100, 137, 324, 8453, 42161, 43114, 59144, 534352) before it builds a transaction, and warns on an unrecognised id. `script/Config.s.sol` makes the same refusal on the contracts side. BUILD_PROMPT Section 2 forbids mainnet configuration; a guard in the tool beats a guard in the runbook.
-- **D33 Attestation canonical form.** The payload is built from the *published* `nav.json` / `holdings.json` decimals, so attested strings equal rendered strings by construction. Canonical JSON is sorted keys, `(",", ":")` separators, `ensure_ascii=False`, UTF-8, floats rejected outright. The exact signed string is published as `signature.message` so a browser verifying with viem never has to re-canonicalise and cannot disagree about byte length — the payload contains `Türkiye` and an em dash, so byte-vs-character length is a real trap and is pinned by a test that rebuilds the EIP-191 digest by hand. The public key is published SEC1 uncompressed.
-- **D34 `attestation.json` is not committed.** Signing needs the real `ATTESTOR_PRIVATE_KEY`; publishing a signature from a throwaway key would put a meaningless signature in the repository that looks meaningful. The file is generated by `make attest` before `/transparency` needs it, and the transparency page states plainly when no attestation is present.
-- **D35 Day count variant.** The engine implements 30/360 **US (NASD/SIA, "Bond Basis")** in full, including both February end-of-month rules, applied in the canonical order: both ends last-of-February → D2 = 30; D1 last-of-February → D1 = 30; D2 = 31 and D1 ≥ 30 → D2 = 30; D1 = 31 → D1 = 30. European 30E/360 is explicitly not implemented. The previous partial implementation measured a 183-day semi-annual leg on an end-of-month schedule, which let accrued interest exceed a whole coupon and made NAV *fall* on a coupon date. A day count either implements its variant or it is a different convention wearing its name. The rule order is load-bearing; the fixture oracle keeps the simplified form and `FIXTURE.md` conventions 1 and 3 say exactly why that is still exact for the shipped book.
-- **D36 Accrued denominator.** `accrued = coupon × days(prev_coupon, on) / days(prev_coupon, next_coupon)`, using the live coupon period rather than the constant `360 / frequency`. `360 / frequency` is the period length only when both coupon dates fall on days 1–28. Accrued is therefore always inside `[0, one coupon]`.
-- **D37 Yield solver contract.** `solve_ytm` brackets the root inside the domain `1 + y/frequency > 0`, then runs Newton safeguarded by bisection: any step that leaves the bracket, stalls, or meets a zero or non-finite derivative is replaced by a bisection step, and the best iterate is never discarded. It stops on the price residual, with a relative component, rather than on an absolute step in yield units — near maturity the smallest representable step is larger than the old `1e-14` tolerance, so the solver threw away a converged answer and killed the whole NAV run. No iterate can make the discount base negative, so no path returns a complex number or overflows.
-- **D38 Absurd prices are data errors.** A clean price implying a yield above 1e6, a non-positive price, a price at or below the flows due today, or a schedule where every remaining flow falls on the valuation date, is rejected with a `DataError` naming the price. `prices.csv` is maintained by hand, so a decimal-point slip is a realistic input; publishing an arithmetically real but meaningless yield into `holdings.json` and the market-value-weighted portfolio yield is worse than refusing.
-- **D39 Maturity redeems into cash.** On a position's maturity date the engine credits `face_usd` to cash alongside the final coupon; on and after that date the line has no price, accrual, market value, yield, duration or convexity, and is reported as matured. The fund is buy-and-hold, so redemption into cash is the only economically neutral rule. BUILD_PROMPT 6.2, 16.3 and `FIXTURE.md` are all silent on maturity, and without this the engine raised on the first maturity date and produced no NAV for that day or any later one.
-- **D40 One price row per bond per pricing day.** A repeated `(name, date)` in `prices.csv` is rejected with a `DataError` naming the bond, the date, both line numbers and the price already stored, rather than letting the last row win. The published NAV moved by roughly 20 % depending on row order, with no error or warning. Carry-forward still fills gaps; it never resolves conflicts.
-- **D41 A distribution may not exceed the NAV it is deducted from.** The daily loop checks the day's per-token distribution against that day's pre-distribution unit NAV and raises a `DataError` citing `DistributionExceedsNav`. `HBToken.distributeCoupon` reverts on exactly this input, so applying one would produce a NAV the chain can never hold, breaking the D26 alignment.
-- **D42 The chain cache is best-effort and scoped.** A cache-write failure never invalidates a successful RPC read: the fresh snapshot is returned with a warning naming the cache path. A cached snapshot is reused only when both the token address and the chain id match, and the published warning states the cache's age, so a reader of `nav.json` can tell a five-minute-old cache from a five-week-old one.
-- **D43 Naive datetimes are UTC.** Every timestamp in the engine normalises a naive datetime to UTC before converting. `save_chain_cache` previously read as local wall clock the same value the rest of the engine treats as UTC, so `cached_at` and `generated_at` disagreed by the machine's offset.
-- **D44 Quantisation sizes its own context.** `money.quantize` runs in a local decimal context sized to the value and floored at 40 digits, covering the D28 `uint128` bound, so it never depends on the caller's ambient context. Pydantic serialises outside the engine's context, where the 28-digit default raised an uncaught `InvalidOperation` for any supply at or above 1e10 tokens and stopped the engine publishing NAV.
-- **D45 Deploy is two steps, and `--slow` is not optional.** A transaction hash does not exist until `run()` returns, so `Deploy.run()` deploys and `Deploy.record()` writes `deployments/<chain>.json` in a second, non-broadcasting invocation. `forge script --broadcast` *without* `--slow` writes `transactions[].hash` mis-associated — the hash stored against the `HBToken` creation was in fact a later `grantRole` call, confirmed against the node with `cast tx` and `cast receipt`, and the scrambling differs between `--private-key` and `--unlocked` runs. `make deploy` therefore passes `--slow` and then re-checks every recorded hash with `cast receipt <hash> contractAddress`, failing the target on a mismatch. `record()` also refuses to write when an address holds no code on the connected chain, or when `HBToken.registry()` and `usdc()` disagree with the addresses recorded beside them, which is what stops a stale broadcast from an earlier Anvil being committed as live.
-- **D46 Admin role at deployment.** The deployer is the constructor admin, because it must grant the other roles in the same batch. If `ADMIN_ADDRESS` is unset the deployer keeps `DEFAULT_ADMIN_ROLE`, and the README roles table says so. If `ADMIN_ADDRESS` is set and differs, the script grants it on both contracts and the deployer renounces on both, verified on Anvil.
-- **D47 No private key in the local flow.** Anvil keeps its accounts unlocked, so the Makefile deploys with `--unlocked --sender <address>`. No Anvil private key appears in the Makefile, the scripts, `.env.example` or the docs; the README states only that Anvil prints them and that they are public test values never to be used on Base Sepolia (D18). `CHAIN=base-sepolia` never falls back to `--unlocked` and hard-requires `DEPLOYER_PRIVATE_KEY`.
-- **D48 `SEED_NAV`.** New environment variable, default `1000000` (1.00 USDC). Without it the seed's NAV step is a permanent no-op, since the constructor already opens at 1.000000. `DEMO_WALLET_A_ADDRESS` and `DEMO_WALLET_B_ADDRESS` exist so the seed never has to hold a demo private key; they default to Anvil accounts on chain 31337 only and are required elsewhere.
-- **D49 Navigation lists only routes that exist.** `NAV_ITEMS` holds the built routes; everything else in BUILD_PROMPT 7.2 sits in `PLANNED_ROUTES` tagged with the phase that delivers it. A 404 from the header is worse than a missing link, and "no dead links" is an explicit review item (BUILD_PROMPT 16.5). When a page lands, its entry moves in the same commit that adds the page. The Overview call to action renders `/verify` and `/subscribe` as focusable, announced-unavailable controls with their phase beside them rather than as links that would 404.
-- **D50 Mainnet is unconstructible in the web layer, not merely discouraged.** `SupportedChainId` is the literal union `84532 | 31337`; a module-load check throws if a mainnet id is ever added to the supported set; and the RPC helper calls `eth_chainId` and refuses to read from a node whose chain disagrees with the configured one. Three independent mechanisms, because a convention is not a guarantee.
-- **D51 An absent attestation is a state, not an error.** `/api/attestation` answers 200 with `status: "not_published"` carrying the reason, the command that would publish one, the expected path and the simulated-attestor note. A 404 or a null would let a caller treat absence as a transport failure; a discriminated union makes the absent case impossible to ignore. `/transparency` renders it as an explanation, with no disabled verify button to imply something is nearly there.
-- **D52 The UI reproduces the contract's arithmetic exactly.** `previewSubscribeTokens` and `previewRedeemUsdc` use integer division on bigints, matching the truncation in `HBToken`, and user input is truncated downward with a `truncated` flag rather than rounded. The interface must never quote a number the chain would disagree with. Dates are formatted from UTC components by hand rather than through `Intl`, so a server and a browser in different locales render the same string.
-- **D53 Charts are an ordered scale, and every chart also ships a table.** The only categories charted are bond positions ordered by maturity, so they take a single-hue ordinal ramp derived from the placeholder accent rather than categorical hues. `ChartFigure` requires a `table` prop: the composition table doubles as the legend, the ladder table sits beneath it, and the NAV history table is behind a `details`. Each chart is one `role="img"` with a label, and the table is the accessible channel, so Recharts' own keyboard layer is turned off rather than left to fight the table for focus.
-- **D54 The NAV check has three states and never claims a pass it cannot defend.** The chain read returns ok, no-deployment or unreachable, and the page renders a different sentence for each. With only one side of the comparison it prints "Not checked" and says in as many words to read it as not checked rather than as a pass. This is the one number on the page that a third party can independently verify, so overstating it would undermine everything else.
-- **D55 `/api/events` ships its own limitations.** One bounded `eth_getLogs` over a 10,000-block window, newest first, with a `limitations` array in every response naming what is missing and `window_truncated` / `results_truncated` flags. The real indexer is Phase 8 (D10). `/api/stats` returns `holders: null` for the same reason. A minimal endpoint that documents its own gaps beats one that looks complete.
-- **D56 Generated ABIs and addresses are committed.** `pnpm sync:contracts` writes `web/lib/generated/{abis,addresses}.ts` from `contracts/out` and `contracts/deployments`, and the output is committed because Vercel's build root is `web/` and cannot run forge. The generator fails with an actionable message when `contracts/out` is missing rather than emitting an empty file that type-checks and breaks at runtime, and it stamps deployment tx hashes with the `allow-secret` marker the secret scan needs.
-- **D57 The blocklist is an `eth_call`, not a constant.** Every country decision reads `isCountryBlocked` from the deployed registry. `COMPLIANCE_RULES.md` says the admin can change it with `setCountryBlocked`, so a hard-coded list would drift from the contract. The seeded codes in `countries.json` are used only to disable options in the UI and as a floor when the chain is unreachable or disagrees: erring toward the stricter answer can only refuse something the contract might have allowed, whereas the reverse queues a request that `addVerified` would revert.
-- **D58 A malformed request is a 400; a refused one is a recorded 200.** A bad address, a non-ISO country or an absent declaration is a client bug: HTTP 400, nothing stored. A blocked country, retail, or a declaration answered `false` is a legitimate outcome: HTTP 200 with a stored row whose status is blocked or rejected and a reason fit to render. Follows D51. Absent and false are different answers and are treated differently.
-- **D59 No name, no personal data.** BUILD_PROMPT 7.2 lists a name field on the form. The form does not collect one and the route drops any it is sent. A testnet demonstration holding people's names is a liability with no benefit, and the registry stores no name either. `/verify` says so where the field would have been, and tells the reader not to type real personal data.
-- **D60 A worker claims a row before it signs.** `POST /api/verify/process` is serverless and can run twice at once — a page countdown and a cron. Two `addVerified` transactions from one key in the same instant collide on the nonce, so the worker takes a 60-second lease with a conditional update, re-checks, then signs. The lease expires, so a killed invocation strands a row for a minute rather than for ever. A test fires two concurrent workers and asserts exactly one transaction.
-- **D61 An unconfirmed transaction is never reported as approved.** `addVerified` is simulated, sent, then awaited for a receipt with a bound. No receipt leaves the row pending with the hash recorded; the next call reads `identityOf`, finds the address verified and closes the row without sending anything. Claiming an approval nobody saw land would be a number the chain disagrees with, and the reconciliation read makes the honest path the cheap one too.
-- **D62 Verification routes are `no-store` and same-origin.** The public documents are cached for 60 seconds, which is right for NAV and wrong for a status a reviewer is watching count down. The verification routes reuse the same envelope with `Cache-Control: no-store` and no CORS header, and `/api/verify/process` is gated by `REGISTRAR_WORKER_SECRET` and rate-limited.
-- **D63 The wallet layer has no barrel, and revert reasons come from a simulation.** Every wallet symbol is imported from its exact file, so no server page can pull the bundle in transitively — the Phase 6 Lighthouse scores depend on it, and the route sizes show it held. `useTx` simulates with `eth_call` before asking for a signature, so the failure a user reads is the real reason rather than a replayed guess, and error walking is duck-typed over the `cause` chain rather than `instanceof` against viem's classes.
-- **D64 Four `@x402/*` modules are aliased to `false` in `next.config.ts`.** RainbowKit's entry imports `wagmi/connectors`, whose barrel reaches `@base-org/account` and then `@coinbase/cdp-sdk`, which statically imports packages it declares as *optional* peers. pnpm does not install them, so webpack cannot resolve them and the build fails on any route importing the wallet layer. Nothing here uses those payment paths and the Base Account connector is not configured. The reason is written out in the config rather than left as a bare alias.
-- **D65 On `/subscribe` the chain is the authority, and silence is relabelled rather than hidden.** `nav()`, `navUpdatedAt()`, `minSubscription()` and `paused()` are read from the deployed token, never from a constant or from `config.yaml`. Where the active chain has no deployment or the RPC will not answer, the actions are disabled and the quote is labelled as coming from the published document instead of the chain. Every gate is a sentence naming the contract rule it comes from, in the order the contract checks them.
-- **D66 The success card reads the `Subscribed` event, not the quote.** On confirmation the receipt's log is decoded and the card shows the amount, the tokens and the NAV the chain actually recorded. When no log can be decoded it says so. A success card that echoes the quote would be a screenshot of what we hoped happened.
-- **D67 A log is identified by block, log index and transaction hash, and the index is rebuilt whole.** Deduplication keys on the block-and-log-index slot, drops exact repeats, and counts a slot holding a *different* transaction as a reorg conflict rather than silently overwriting. The cache is never appended to, so a reorg cannot leave a stale tail behind.
-- **D68 A range that cannot be read is a reported gap, not a short list.** Each chunk is retried with deterministic backoff and split in half on a size error; a range that still fails becomes a named gap in the response's `coverage`, with the reason. A public RPC truncates silently, and a short list that looks complete is worse than an honest hole. Any RPC URL is stripped from anything that reaches a response.
-- **D69 The cursor is a position carrying its chain id.** `chainId:blockNumber:logIndex`, exclusive, interpreted in the requested order, so events arriving at the head never shift the pages behind them the way an offset would. A cursor minted against another chain is a 400 rather than a silent misread.
-- **D70 Holders fold from `Transfer` alone, and the zero address is never one.** Mints and burns are the zero-address sides of `Transfer`, so one fold covers all three. The count is strictly positive balances, and it is published as a floor with `complete: false` whenever index coverage is incomplete rather than as an exact number.
-- **D71 A failed rebuild serves the previous index, labelled.** `coverage.stale` is set with the reason and the cache age, and a limitation sentence says so, for up to ten minutes. Past that the route reports unavailable. Serving yesterday's answer silently is the failure mode this avoids.
-- **D72 Cost basis is average cost, and the page says what it excludes.** Basis is the covered tokens times total USDC in over total tokens out, in one integer division. Tokens that arrived by transfer have no cost this app can know, so they are excluded from the covered amount and the page states that. Inventing a basis for them would be inventing a number.
-- **D73 No eligibility gate anywhere on the exit path.** The redeem gates are wallet, network, deployment, pause, amount, balance and liquidity — deliberately no verification check — and claim ignores `canHold` likewise. The contract lets a de-verified holder exit (D4); a UI gate would trap money the chain does not trap. A test enforces the absence.
-- **D74 `previewRedeem` is read from the contract and cross-checked locally.** The chain's answer is what the page shows; the local reproduction of the same truncating arithmetic exists to catch a disagreement, not to replace the call.
-- **D75 "Distributions to date" means the USDC paid into the vault.** The headline figure is `CouponDistributed.usdcAmount`, labelled as such, with the allocated amount and the D29 truncation remainder shown beside it. The phrase is ambiguous, so the page resolves it explicitly instead of letting a reader guess.
-- **D76 `/stats` reads the indexer in-process, not its own HTTP endpoint.** The page calls the same functions `/api/stats` calls rather than fetching itself over the network, which removes a hop and a way for the two to disagree. It is a public page and imports nothing from the wallet layer.
-- **D77 The admin console's back end lives under `/admin`, not `/api`.** `/api/*` is the published, cacheable, cross-origin surface a partner integrates against and that the OpenAPI document describes. The console's queue read and rejection write are none of those — same-origin, never cached, not part of the documented contract — so they sit beside the page they serve and the public contract stays untouched.
-- **D78 Approve goes through the registrar worker; reject is signature-gated.** Approving posts to the existing worker, inheriting D8, D60 and D61 for free: the country is re-read against the registry immediately before signing, retail is refused, an already-verified address is closed with no transaction, and the row is leased so two operators cannot collide on the nonce. Rejecting is the one console action with no contract behind it, so the route requires an EIP-191 signature over a message carrying the chain id, registry, request address, reason and issue time, recovers the signer and checks `REGISTRAR_ROLE` before writing. An unauthenticated endpoint that closes other people's verification requests would be a real hole.
-- **D79 Calldata renders even with no deployment.** `encodeCall` returns the selector, arguments and full calldata with a null destination rather than refusing. Calldata is a function of the ABI and its arguments; the address is only where it would be sent. A reviewer on a fresh clone is the most likely visitor, and replacing every panel with "no address recorded" would teach them nothing. Nothing can be signed in that state regardless.
-- **D80 The role gate is a convenience and the page says so.** The console reads `hasRole` and shows what the connected wallet can actually do, folding the rest into a disclosure naming the role each needs. The contract is the security boundary; implying the interface is one would be a lie a reviewer could catch in a minute.
-- **D81 No markdown library: a small parser to a typed tree.** `lib/content.ts` parses the CommonMark and GitHub-flavoured subset the two canonical documents actually use and renders through React elements, so raw HTML in the source cannot inject. Adding a dependency to render two files the repository controls is a larger surface than parsing the subset they use, and the parser is unit-tested against fixtures covering tables, nested lists, inline code, links, emphasis and blockquotes.
-- **D82 The canonical copies are byte-identical and Prettier is kept off them.** `pnpm sync:docs` copies the root markdown into `web/content/` unchanged; `--check` compares bytes and names the first differing line, and runs in CI. A formatter rewriting a copy would make the check fail for a reason that is not drift.
-- **D83 The OpenAPI schemas are generated from the zod schemas.** 68 schemas are registered and emitted as JSON Schema rather than transcribed. Drift between a published description and the thing it describes is the whole risk with an API document, so the derivation removes the possibility rather than guarding against it. The document is validated against the official 3.1 meta-schema in a test, and the bytes the route serves are round-tripped and walked for dangling references.
-- **D84 The three verification routes are not in the public description, and the exclusion is published.** They are same-origin, uncached and not part of the partner contract (D62, D77). Each carries a written reason rendered on `/developers`, so a reader learns they were left out deliberately rather than wondering whether the document is incomplete.
-- **D85 The demo restores its starting state rather than loosening its assertions.** A preflight claims any unclaimed coupon, redeems any tokens the demo wallets hold, and resets NAV to the opening 1.000000, recording each action and its reason. BUILD_PROMPT section 9's numbers are only exact from a known state: 1,000 and 500 USDC at NAV 1.00 give exactly 1,000 and 500 tokens, which is what makes the 12.00 USDC coupon split into exactly 8.000000 and 4.000000. Without restoration the second run would start mid-scenario and the headline assertion would have to become a ratio with rounding, which is a weaker proof artefact. The runner also refuses to continue if a third party holds tokens, rather than asserting against a supply it does not control.
-- **D86 Deliberate reverts are proved twice, and a failing run still writes the report.** `expectRevert` simulates first to decode the custom error by name and arguments, asserts it, then broadcasts and asserts the receipt reverted. A failed assertion stops the run, prints expected against actual, exits non-zero and still writes `REPORT.md` marked FAILED with the failing row named — proved by a drill. A demo that silently passes is worthless as a proof artefact.
-- **D87 The notebook imports the engine and re-derives nothing.** Every figure and table comes from `nav_engine`; the as-of date is read from the published `nav.json` rather than the clock; and a cell asserts the whole-document tie-out, so a drift fails the run instead of producing a plausible figure. Output is byte-reproducible across clean-kernel runs, with nbconvert's per-cell timing stamps disabled — without that every re-run is a diff and the committed artefact stops being reviewable.
-- **D88 Screenshots are generated, not tested.** `e2e/screenshots.spec.ts` is excluded from the test suite and run with `make screenshots`: a missing picture is not a broken app, and mixing the two makes a red suite ambiguous. The set is compressed with pngquant where it is available, which takes it from 17 MB to under 5 MB, and the target says so and continues when it is not.
-- **D24 Coupons while paused / distribution ID.** `distributionId` is a monotonically increasing counter; distributions blocked while paused (D3).
+| Decision | Proposed implementation |
+| --- | --- |
+| Four product routes | `/`, `/app`, `/transparency`, `/admin`. One verification API route is infrastructure, not another product screen. No v1 marketing, rules, developer, or risk routes carry forward. |
+| Framework version | The brief requests Next.js 14. Its [official support policy](https://nextjs.org/support-policy), checked 2026-09-20, lists 14 as unsupported and 16 as Active LTS. Propose Next.js 16 App Router, TypeScript, Tailwind, wagmi, viem, RainbowKit; pin compatible stable versions in Phase 1. This is an explicit proposed scope amendment, pending approval. |
+| Client-side attestation verification | Core: required by §5.3 and definition of done §11, despite its duplicate placement under Excellence. |
+| Chain switch | Core configuration supports Arc Testnet, Base Sepolia, and local Anvil. An actual Base Sepolia deployment remains Excellence. |
+| Font | Use the design's permitted Inter substitute, self-hosted, weights 400–600; Inconsolata for technical captions. No proprietary font files were supplied. |
+| NAV update interface | Preserve `setNAV(uint256)` for normal oracle writes; add `setNAV(uint256,bool)` for an explicit issuer-only forced update. A normal update checks the previous NAV, not v1's rolling 24-hour anchor. |
+| Coupon liquidity | Reserve unpaid coupon funds so redemptions cannot consume another holder's entitlement. Report both total vault cash and spendable redemption cash. |
+| Coupon accounting | The issuer funds testnet distributions externally as specified. `distributeCoupon` does not silently change NAV. Simulated bond coupon cash and externally funded on-chain coupon payments are identified separately; the NAV engine must not count the same cash twice. |
+| Revoked holders | Transfers and mint/subscription require current eligibility. Propose allowing a revoked holder to redeem existing tokens and claim earned coupons while unpaused; no receiving new tokens. This exit policy is not specified in v2 and needs approval before Phase 2. |
+| NAV bootstrap | Propose a disclosed reference basket scaled to actual on-chain supply, with separate simulated assets and real testnet vault liquidity. See §6. This avoids dividing a large fixed simulated book by a tiny testnet supply. The model needs approval before Phase 4. |
+| Evidence | A transaction runner proves transaction behavior. Browser evidence is separately collected and consumed by the runner; missing UI evidence cannot become a green UI row in `STATUS.md`. |
 
-## 4. Phases
+Core includes every behavior in brief §§5.1–5.4, documentation, CI, Arc deployment, funded liquidity, and all six definition-of-done items. Excellence starts only after Core is green with a day available. Showcase is deferred; any later extra page would need an explicit amendment to the four-route limit.
 
-Each phase ends with: tests green, lint clean, build ok, `PROGRESS.md` entry, Conventional Commit(s). Order strict through Phase 8.
+## 3. Intended file tree
 
-### Phase 0 — Scaffolding, Makefile, CI skeleton, secret scan
-- Files: `PLAN.md`, `PROGRESS.md`, `README.md` (skeleton), `LICENSE` (MIT), `CHANGELOG.md`, `CONTRIBUTING.md`, `.gitignore`, `.editorconfig`, `.nvmrc`, `.env.example`, `Makefile`, `scripts/check-secrets.sh`, `.gitleaks.toml`, `.github/workflows/ci.yml`, `.github/workflows/nav-daily.yml` (skeleton), `contracts/` (foundry init, OZ v5 submodule, `foundry.toml`, `remappings.txt`, placeholder test), `engine/` (`pyproject.toml`, `uv.lock`, `nav_engine/__init__.py`, placeholder test), `web/` (create-next-app, ESLint, Prettier, Vitest, Playwright, placeholder test).
-- Checkpoint: `make test` and `make lint` pass locally on the empty build; branch pushed; CI green (`gh run watch`).
+Paths below are planned outputs, not claims that these files already exist. `app/` is the pnpm package; `app/src/app/` is its Next.js route directory. The brief's `public/data/` is `app/public/data/` in this workspace.
 
-### Phase 1 — IdentityRegistry + HBToken core
-- `contracts/src/interfaces/IIdentityRegistry.sol`, `contracts/src/IdentityRegistry.sol` (roles, `Identity` struct, blocklist 840/792, events, custom errors, D21).
-- `contracts/src/HBToken.sol`: roles, immutables, `nav`/`reportedAUM`/`maxNavMoveBps`, `setNAV` (D5), `_update` restrictions (D3, D4), `subscribe` (D13), `redeem` (D6 without coupons yet), `mint`/`burn`, `pause`/`unpause`, views (`previewSubscribe`, `previewRedeem`, `vaultBalance`, `availableLiquidity`, `supplyBackedRatio`).
-- `contracts/src/MockUSDC.sol` (needed by tests; D14).
-- Tests: `contracts/test/utils/BaseTest.sol`, `IdentityRegistry.t.sol`, `HBToken.t.sol` (subscribe at three NAVs, redeem math, insufficient liquidity, restrictions both sides, pause, roles, rail, force), `MockUSDC.t.sol`.
-- Checkpoint: `forge test` green; every custom error hit by at least one test (`forge coverage` report in PROGRESS).
+```text
+BUILD_PROMPT_V2.md              # unmodified founder brief
+design.md                      # unmodified supplied design
+PLAN.md
+PROGRESS.md                    # append-only checkpoint evidence/questions
+STATUS.md                      # generated later, only by pnpm e2e
+README.md                      # five-minute guide + production mapping
+LICENSE
+.gitignore
+.env.example                   # every supported variable documented
+.nvmrc
+package.json                   # root command interface
+pnpm-workspace.yaml
+pnpm-lock.yaml
+tsconfig.json
+.github/workflows/
+  ci.yml
+  nav.yml                      # 07:00 UTC, nav -> push -> attest -> commit
+  coupon.yml                   # Excellence only
+contracts/
+  foundry.toml
+  lib/                         # pinned OpenZeppelin 5 + forge-std
+  src/{IdentityRegistry,HBToken,MockUSDC}.sol
+  src/interfaces/{IIdentityRegistry,IHBToken}.sol
+  script/Deploy.s.sol
+  test/{IdentityRegistry,HBToken,HBTokenCoupon,MockUSDC}.t.sol
+  test/HBTokenRoundTrip.fuzz.t.sol
+  test/invariant/CouponReserve.t.sol
+deployments/
+  arc-testnet.json              # real receipts only, never placeholders
+  local.json
+  verification/                # standard JSON input, metadata, constructor args
+packages/config/
+  package.json
+  chains.ts                    # only 5042002, 84532, 31337
+  env.ts                       # public/server validation boundaries
+  contracts.ts                 # typed ABI + deployment artifact validation
+  copy.ts                      # exact copy blocks + production mapping
+nav_engine/
+  portfolio.json
+  prices.csv
+  hb.py                        # PEP 723 pinned deps; nav | push | attest
+app/
+  package.json
+  next.config.ts
+  tsconfig.json
+  postcss.config.mjs
+  public/fonts/                # permitted open-source fonts + licences
+  public/data/{nav,attestation}.json
+  src/app/
+    layout.tsx
+    globals.css
+    page.tsx
+    app/page.tsx
+    transparency/page.tsx
+    admin/page.tsx
+    api/verify/route.ts
+  src/components/
+    ui/{Button,Card,Input,Select,Checkbox,Badge,Table}.tsx
+    shell/{Header,TestnetBanner,Footer,WalkthroughToggle}.tsx
+    flow/{FlowShell,Stepper,ActionCard,Receipt,Position,ActivityLog}.tsx
+    flow/steps/{Connect,Verify,Subscribe,Hold,Redeem}.tsx
+    transparency/{Holdings,NavHistory,Attestation,ProductionMapping}.tsx
+    admin/{RegistryPanel,NavPanel,CouponPanel,PausePanel,VaultPanel}.tsx
+  src/lib/
+    providers.tsx
+    transactions.ts
+    amounts.ts
+    verification.ts
+    verification-store.ts
+    attestation.ts
+    data.ts
+scripts/
+  deploy.ts                    # env/chain/fee preflight; runs Deploy.s.sol
+  fund-vault.ts
+  verify-contracts.ts
+  sync-contracts.ts
+  e2e.ts                       # only writer of STATUS.md
+  smoke.ts                     # calls same checks read-only
+  check-secrets.sh
+tests/
+  nav/test_hb.py                # keeps runtime nav_engine/ to three files
+  web/                         # focused state, arithmetic, signature tests
+  browser/                     # flow, transparency, admin, screenshot evidence
+.context/
+  evidence/                    # ignored run evidence, tagged by commit/URL
+  screenshots/                 # founder review images
+```
 
-### Phase 2 — Coupon index, fuzz, invariants, gas, Slither
-- `HBToken.sol`: `couponIndex`, `userIndex`, `accrued`, `totalDistributed`, `totalClaimed`, `_settle`, `distributeCoupon`, `claimCoupon`, `pendingCoupon`; `_update` settles both sides; `availableLiquidity` uses the reserve (D6).
-- Tests: `HBTokenCoupon.t.sol` (70/30 split, transfer between distributions no double count, late subscriber gets nothing, claim after burn), `HBToken.fuzz.t.sol` (round-trip never mints value; Σ claims ≤ distributed, dust bounded), `invariant/HBTokenInvariant.t.sol` + `invariant/handlers/HBTokenHandler.sol` (`balance ≥ Σ accrued`, supply = minted − burned).
-- `.gas-snapshot` (unit tests only), `slither.config.json`, `contracts/README.md`, `SECURITY.md` (contract section, triaged findings).
-- Checkpoint: split/no-double-count tests green; snapshot committed; `slither` clean or triaged.
+Avoid a new generic framework, separate backend service, analytics notebook, or another dashboard. Small shared modules are for chain configuration, exact copy, arithmetic, and transaction handling only.
 
-### Phase 3 — Deploy + seed scripts, deployment JSON, explorer verification
-- `contracts/script/Deploy.s.sol` (env-driven roles, blocklist, writes `deployments/<chain>.json` with `chainId, addresses, deployBlock, txHashes, timestamp`), `contracts/script/Seed.s.sol` (verify two demo wallets, faucet, initial NAV), `contracts/script/Config.s.sol` (env helpers).
-- `Makefile`: `anvil`, `deploy-local`, `deploy CHAIN=base-sepolia`, `seed`, `verify`. `deployments/anvil.json` committed (D15).
-- Checkpoint (local): fresh Anvil → deploy → seed → JSON written, addresses match README table. Checkpoint (testnet, founder key): `deployments/base-sepolia.json`, Basescan verified links in README. Until keys arrive this is logged as an open item, not skipped silently.
+## 4. Design and component map
 
-### Phase 4 — NAV engine
-- `engine/data/portfolio.json`, `prices.csv`, `config.yaml`, `distributions.csv`.
-- `engine/nav_engine/`: `schemas.py` (pydantic), `daycount.py` (30/360), `bonds.py` (accrued, dirty, YTM Newton, modified duration, convexity, cash-flow schedule), `portfolio.py` (load, scale, weights), `fees.py`, `nav.py` (D19), `scenarios.py` (±50/100/200 bp, CDS shock mapping), `chain.py` (`totalSupply`, `nav()`, `CouponDistributed` logs, cached fallback + warning), `outputs.py` (`nav.json`, `nav_history.json` append, `holdings.json`, `scenarios.json` with `generated_at`, `source_note`, `simulated: true`), `cli.py` (`nav-engine compute|push|attest`).
-- Tests: `test_daycount.py`, `test_bonds.py` (hand cases, YTM round-trip), `test_nav.py` (ties to `tests/fixtures/nav_fixture.csv` + `FIXTURE.md` hand computation, to the cent), `test_scenarios.py`, `test_outputs.py` (schemas), `test_chain.py` (mocked RPC).
-- Checkpoint: `make nav` writes `web/public/data/*.json`; fixture tie-out to the cent; ruff + mypy clean.
+Implement design tokens once in `globals.css` and expose them through Tailwind. Use white `#ffffff`, primary/ink `#080808`, hairline `#d8d8d8`, body `#363636`, secondary text `#5a5a5a`; use only the supplied semantic/accent colors. Primary buttons stay near-black. Buttons/inputs use 4px radii, cards 8px; no pill CTAs, added gradients, or dark theme.
 
-### Phase 5 — Oracle push, attestation, workflows
-- `engine/nav_engine/push_nav.py` (rail check, `--force --reason`, idempotent per day via on-chain `NAVUpdated` timestamp), `attest.py` (D9), `keys.py`.
-- Tests: `test_attest.py` (sign → verify, tamper fails), `test_push_nav.py` against Anvil (`anvil` spawned in test, skipped if absent).
-- `.github/workflows/nav-daily.yml` (cron 06:00 UTC, PR via `peter-evans/create-pull-request`), `.github/workflows/oracle-push.yml` (`workflow_dispatch`, environment `oracle`).
-- Checkpoint (local Anvil): on-chain `nav()` == `nav.json.nav_usdc_6dec`; attestation verifies with viem and with Python.
+| Product element | Supplied design primitive/tokens | Implementation |
+| --- | --- | --- |
+| Header, four-route navigation | `nav-bar`, `nav-link`; 16px/32px padding | Header with wallet and walkthrough controls; mobile menu |
+| Global testnet notice | `badge-info-soft`, `content-band`, `body-sm` | Persistent text banner; no marketing treatment |
+| Overview introduction | `hero-band`, `display-xxl`, `body-md` | Three factual sentences, live NAV, one primary “Open the app” button |
+| NAV and position cards | `card-feature`, `display-md`, `caption-mono` | NAV/time/block, balances, value, coupons; 32px padding |
+| Portfolio bars, chart | `hairline`, primary + one supplied blue accent | Three labelled simulated holdings; accessible text/table equivalent |
+| Overview how-it-works strip | `content-band`, `ex-app-shell-row`, `body-sm` | Verify → Subscribe → Hold → Coupons → Redeem |
+| Flow stepper | `ex-app-shell-row` | Connect → Verify → Subscribe → Hold → Redeem, near-black active indicator |
+| Action card / receipt | `card-feature`, `button-primary`, `caption-mono` | What will happen → Sign → Receipt, consistent for every write |
+| Inputs, country select, checkbox | `text-input`, `body-md`, `rounded.sm` | Visible labels, plain native controls where design is silent |
+| Verification/status badge | `badge-info-soft`, `caption` | Not verified / Pending / Verified; semantic text + icon |
+| Activity and holdings/admin tables | `ex-data-table-cell` | 12px/16px cells, hairline row borders, text explorer links |
+| Wallet modal | `ex-modal-card`, `button-*` | RainbowKit themed to supplied geometry/type; scope any library limitations |
+| Walkthrough toggle and captions | `body-sm`, `caption`, `text-input` geometry | Off by default; remember in localStorage, keyboard accessible |
+| Footer | `footer`, `body-sm` | Exact disclaimer and repository link |
 
-### Phase 6 — Web scaffold, design system, `/`, `/transparency`, API routes, contract sync
-- `web/scripts/sync-contracts.ts` → `web/lib/generated/{abis,addresses}.ts` from `contracts/out` + `deployments/*.json`.
-- Design system: `app/globals.css` tokens (ink/paper/accent `#2E6BFF` placeholder/semantic), `components/ui/*` (shadcn), `components/layout/{TestnetBanner,Header,Footer,ThemeToggle,WalletButton}`, `components/charts/*` (Recharts, theme-aware), skeleton/empty/error states, tx toasts with explorer links.
-- `lib/{wagmi.ts,chains.ts,format.ts,schemas.ts,data.ts,copy.ts}`; `app/page.tsx` (Section 7.2 Overview incl. T-bill comparison card, parameterised, illustrative), `app/transparency/page.tsx` (holdings, cash, fees, NAV vs on-chain check, ratio, attestation + browser verify, addresses, deploy block).
-- `app/api/{nav,holdings,attestation,stats,events}/route.ts` (zod-validated, `s-maxage=60`).
-- Tests: Vitest `lib/__tests__/format.test.ts`, Playwright `e2e/smoke.spec.ts` (pages render, APIs match zod, transparency check passes on fixtures). `vercel.json`.
-- Checkpoint: `pnpm build` ok; Lighthouse ≥ 90 (perf/a11y/best-practices) on `/` locally; Vercel deploy when founders link the project (D16).
+Desktop ≥992px: stepper on the left, one active step in the middle, position on the right. Tablet 768–991px: two columns with the position after the active task. Mobile <768px: compact step list, active task, then position in document order; no horizontally clipped actions. Use the supplied 479px breakpoint for smaller display typography. Hero type scales through supplied 80/56/32px sizes; weights never exceed 600. Spacing follows the supplied 2/4/8/12/16/20/24/32px tokens.
 
-### Phase 7 — `/verify`, `/subscribe`, faucet, registrar worker
-- `lib/server/{store.ts,registrar.ts,env.ts}`, `app/api/verify/{route.ts,status/route.ts,process/route.ts}` (D7, D8), `lib/countries.json` (D23).
-- `app/verify/page.tsx` (states: not connected / not verified / pending / verified / blocked), `app/subscribe/page.tsx` (amount, preview, fee line, minimum, faucet, approve → subscribe steps, success card), wrong-network switch.
-- Tests: Vitest for store + zod schemas; Playwright for `/verify` blocked-country message and API contract.
-- Checkpoint: fresh wallet completes verify → subscribe on Anvil (documented run) and on Base Sepolia once deployed.
+Design gaps to record in `PROGRESS.md`: no HitBite-specific screen mockups, explicit column widths, disabled/focus/loading/error states, chart/bar style, select/checkbox/toggle primitives, or wallet-modal treatment. Defaults are native controls, white/hairline cards, near-black focus outlines, text errors, existing tokens, and generous whitespace. Muted colors will not be used for essential text that fails contrast. The source's approximate touch-target statement is not an accessibility test; verify actual targets ≥44px, focus, labels, and keyboard navigation.
 
-### Phase 8 — `/portfolio`, claim, redeem, events indexer, `/stats`
-- `lib/server/indexer.ts` (D10), `/api/events` (filters, pagination), `app/portfolio/page.tsx` (balance, value, cost basis from events, pending coupon, claim, redeem with preview + liquidity check, history with filters, CSV export), `app/stats/page.tsx`.
-- Checkpoint: admin distributes coupon; two wallets claim correct shares; history renders; CSV exports.
+All six copy blocks in brief §10 remain verbatim. No real ISINs, partner logos, audit or regulatory claims, incentive mechanics, or return promises. The prohibited yield acronym never renders in the UI. “Simulated yield to maturity” and “Simulated distribution yield” are confined to `/transparency`.
 
-### Phase 9 — `/admin`, `/rules`, `/risks`, `/developers`, OpenAPI
-- `app/admin/*` (role-gated; queue approve/reject; blocklist editor; setNAV with rail warning; distribute; pause/unpause; mint/burn with typed confirmation; encoded calldata shown), `app/rules/page.tsx`, `app/risks/page.tsx` (from `web/content`, D12), `lib/openapi.ts` + `app/api/openapi.json/route.ts`, `app/developers/page.tsx`.
-- Checkpoint: every admin action works on Anvil with confirmations; OpenAPI validates.
+## 5. Contract interfaces and transaction rules
 
-### Phase 10 — Demo script + REPORT, notebook + figures, docs, screenshots
-- `demo/{run.ts,report.ts,steps/*.ts,README.md}` (Section 9 steps 1–8, assertions, timing), `demo/REPORT.md`.
-- `notebooks/portfolio_analytics.ipynb` → `docs/portfolio_analytics.html`, `docs/figures/*.svg|png` (`make notebook`), theme matching web (follow the `dataviz` skill).
-- Docs: `README.md` (Section 11 order), `ARCHITECTURE.md` (Mermaid), `SECURITY.md`, `PARTNER_INTEGRATION.md`, `COMPLIANCE_RULES.md`, `RISKS.md`, `CHANGELOG.md`, `CONTRIBUTING.md`; `docs/screenshots/*` via `web/e2e/screenshots.spec.ts` (light + dark).
-- Checkpoint: `make demo-local` passes all assertions; `make demo` on Base Sepolia with founder keys; README 60-second test; QA checklist in README.
+Use Solidity `^0.8.24` with an exact compiler pinned at implementation, Foundry, and pinned OpenZeppelin 5. No upgradeable proxy. Use `SafeERC20`, checks/effects/interactions, `ReentrancyGuard`, and full-precision `Math.mulDiv` where needed.
 
-### Showcase (only after Definition of Done)
-1 TR toggle (`next-intl`) → 2 `hbTRK` series preview → 3 curator view → 4 notifications → 5 Docker Compose stack → 6 multi-oracle NAV → 7 status JSON + badge. Each fully working or not included.
+### IdentityRegistry
 
-## 5. Founder asks (needed for real-testnet checkpoints; nothing else blocks)
+```solidity
+constructor(address admin, address registrar);
+function addVerified(address account, uint16 countryCode) external;
+function removeVerified(address account) external;
+function isVerified(address account) external view returns (bool);
+function countryOf(address account) external view returns (uint16);
+function setCountryBlocked(uint16 code, bool blocked) external;
+function isCountryBlocked(uint16 code) external view returns (bool);
+event Verified(address indexed account, uint16 country);
+event Revoked(address indexed account);
+event CountryBlocked(uint16 code, bool blocked);
+```
 
-1. **Base Sepolia keys:** one funded deployer/admin key (~0.2 ETH) plus registrar, issuer, oracle keys (can be the same key for MVP; separate is better) — Phase 3, 5.
-2. **Basescan API key** — explorer verification, Phase 3.
-3. **Demo wallets A/B/C** with a little Base Sepolia ETH — Phase 10 `make demo`.
-4. **Vercel project** linked to the repo (root `web/`) with env from `.env.example`; **WalletConnect project id** — Phase 6/7.
-5. **Turso/libSQL URL** for persistent verification requests on Vercel (optional; D7).
-6. **Confirm D19** (reference-unit NAV) and D4 (de-verified holders may redeem).
-7. Brand hex, two one-line team bios, the 90-second recording, Berke's Turkish copy (showcase).
+`REGISTRAR_ROLE` controls verification/revocation and the proposed country-blocklist management. Initialize 840 and 792 as blocked. Validate nonzero accounts and ISO numeric country codes. `isVerified` means currently eligible: blocking a country also affects previously registered residents. Standard AccessControl role administration belongs to `DEFAULT_ADMIN_ROLE`. The UI and API use the same numeric codes.
 
-## 6. Risks
+### HBToken
 
-| Risk | Mitigation |
-|---|---|
-| No testnet keys → Phases 3/5/10 verifiable only on Anvil until founders act | Anvil parity for every checkpoint; exact runbook in `contracts/README.md` and `PROGRESS.md`; nothing marked done that only ran locally |
-| Public RPC limits on `eth_getLogs` / rate limits | Chunked ranges, 60 s cache, optional `ALCHEMY_RPC_URL` |
-| Numbers drifting between engine, chain and UI | D22 integer-first outputs; cross-layer test in `web/e2e` comparing `/api/nav` to `nav()` |
-| Wallet bundle hurts Lighthouse | Wallet provider loaded only on wallet pages; public pages are server-rendered from JSON |
-| Version drift (Next 15 / wagmi 2 / RainbowKit 2 / Tailwind 4 / shadcn) | Pin exact versions; smoke tests; Node 22 in CI |
-| Vercel ephemeral filesystem | libsql remote URL; documented degradation |
-| Fuzz/invariant noise in gas snapshot | Snapshot unit tests only; `--tolerance 10` |
-| Registrar key on the web server | Testnet-only key with no other role; threat-model entry in `SECURITY.md` |
-| D19 disagrees with founders' mental model | Flagged; engine-only change if reversed |
-| Scope creep from showcase items | Not started before DoD checklist passes |
+```solidity
+constructor(address registry, address settlementAsset, address admin,
+            address issuer, address oracle, uint256 initialNAV);
+function setNAV(uint256 navPerToken) external;             // ORACLE_ROLE
+function setNAV(uint256 navPerToken, bool force) external; // force: ISSUER_ROLE
+function subscribe(uint256 usdcAmount) external returns (uint256 tokensOut);
+function redeem(uint256 tokenAmount) external returns (uint256 usdcOut);
+function distributeCoupon(uint256 usdcAmount) external;    // ISSUER_ROLE
+function claimCoupon() external returns (uint256 usdcOut);
+function accruedCoupon(address account) external view returns (uint256);
+function mint(address to, uint256 amount) external;         // ISSUER_ROLE
+function burn(address from, uint256 amount) external;       // ISSUER_ROLE
+function pause() external;                                 // ISSUER_ROLE
+function unpause() external;                               // ISSUER_ROLE
+function settlementAsset() external view returns (address);
+function navPerToken() external view returns (uint256);
+function navUpdatedAt() external view returns (uint256);
+function navUpdatedBlock() external view returns (uint256);
+function couponIndex() external view returns (uint256);
+function couponReserve() external view returns (uint256);
+function availableLiquidity() external view returns (uint256);
+uint256 public constant NAV_RAIL_BPS = 500;
+event NAVUpdated(uint256 nav, uint256 timestamp, uint256 blockNumber);
+event Subscribed(address indexed account, uint256 usdcIn, uint256 tokensOut, uint256 nav);
+event Redeemed(address indexed account, uint256 tokensIn, uint256 usdcOut, uint256 nav);
+event CouponDistributed(uint256 usdcAmount, uint256 index);
+event CouponClaimed(address indexed account, uint256 usdcAmount);
+```
+
+Standard ERC-20 and AccessControl views/events remain available. Name: `HitBite Türkiye Sovereign (Testnet)`; symbol: `hbTRS`; decimals: 18. `force=false` uses the normal oracle rule; `force=true` requires issuer even if the caller also has oracle/admin privileges. Emit an additional `NAVForced` audit event for bypasses. NAV must be positive; compare basis points without rounding the threshold upward.
+
+- USDC amounts/NAV use 6 decimals; `tokensOut = floor(usdcIn * 1e18 / nav)`, `usdcOut = floor(tokensIn * nav / 1e18)`. Reject zero input and zero output.
+- Settle coupon accrual for both sides before transfer and before mint/burn. New tokens receive no historical coupons; transfers preserve the sender's earned coupons; burning cannot erase already earned coupons. Keep fractional accrual remainders to avoid loss from repeated transfers.
+- Distribution pulls issuer USDC and increases the index without holder iteration. Reserve all unpaid distribution cash conservatively, including rounding dust; never allow redemptions to spend it. Reject a distribution with zero supply or a zero index increment.
+- Revert with explicit errors including `NotVerified`, `BlockedCountry`, `InvalidNAV`, `NAVMoveExceedsRail`, `ZeroAmount`, `ZeroOutput`, `InsufficientVaultLiquidity(available,requested)`, `NoSupply`, and `NothingToClaim`, plus standard OpenZeppelin errors.
+- Pause blocks subscription, redemption, transfer, and claim; proposed conservative default also pauses mint, burn, and distribution. Registry and NAV corrections remain possible. Never send USDC to the zero address.
+- Mint checks recipient eligibility; transfers check both parties. No minimum subscription beyond an amount that mints nonzero tokens. Issuer mint/burn is an administrative correction, not the normal investor path.
+
+### MockUSDC and required tests
+
+6-decimal ERC-20 with `faucet()` and a documented per-address amount/cooldown cap. Deployment rejects its use on Arc. Local and fallback tests exercise the same settlement interface.
+
+Foundry tests cover unverified/revoked/blocked sender and receiver, mint restrictions, all roles and pause paths, three NAV values, exact 6→18→6 math, insufficient available cash, rail boundaries and issuer override, two distributions with an intervening transfer, late entry, burn then claim, dust, zero supply, and zero USDC recipient rejection. Fuzz unchanged-NAV subscribe/redeem round trips with loss ≤1 micro-USDC for NAV below `1e18` (the relevant domain where the mathematical bound holds); separately test larger NAV and its generalized rounding bound. Maintain a coupon-reserve solvency invariant. Report actual coverage, not an assumed percentage.
+
+V1's ABI is incompatible: its NAV event/signature, default minimum subscription, rolling rail, coupon-triggered NAV mutation, and `pendingCoupon` naming must not leak into v2 by copying code.
+
+## 6. NAV, attestation, and publication
+
+Keep the runtime engine to `portfolio.json`, `prices.csv`, and `hb.py`. Use Python 3.11, `Decimal`/integer money math, embedded pinned script dependencies, and `uv run --script`. Tests live outside this directory.
+
+Portfolio contains the requested 40/40/20 basket, simulated identifiers, coupon schedules, maturity, face, clean price, purchase date, and `simulated: true`. Exact day/month conventions are disclosed simulation inputs, not claimed real bond terms. Prices have valuation date and truthful source attribution; initial manual fixtures say `manual simulated input`. Implement clean + accrued = dirty price, maturity/coupon-date boundaries, 0.75% management plus 0.30% simulated expenses accrued ACT/365, weighted YTM, and 30-day trailing distribution yield. With no qualifying distribution history, show unavailable/zero as defined by data, never invent an observation or annualize it silently.
+
+**Proposed bootstrap model, requiring approval:** define a fixed reference basket and reference unit count in `portfolio.json`; scale its holdings/cash to the actual supply read at a pinned block. Publish the reference units, scale, actual supply, calculation inputs, and simulated nature. Compute `(scaled simulated assets - scaled fees) / actual supply` when supply is positive. At zero supply publish `nav_per_token: null` with `no supply`; show the separately labelled contract bootstrap NAV (proposed 1.000000 USDC) as the initial subscription price. Do not divide by zero or create a fake positive supply. Ordinary subscriptions/redemptions change the scale, not per-unit valuation. If the founder prefers a fixed-size fund, agree its seeded supply and explicit cash-flow ledger before implementation.
+
+The simulated basket and admin-funded USDC vault are different representations: publish both but do not add them together as if both bought bonds. On-chain distributions are externally funded test distributions; disclose their relationship to simulated coupon cash. `supply_backed_ratio` describes simulated net assets against token NAV liabilities, labelled simulated; separately publish actual redemption liquidity coverage. At zero liabilities use null/not applicable, never a fabricated 100% backing figure.
+
+`nav` reads supply at a pinned block; records block/hash/time, units, fees, prices, holdings, freshness, calculation NAV and append-only history in `app/public/data/nav.json`. Same inputs/date/block produce identical bytes. Live mode fails clearly on RPC failure or stale/missing inputs; CI dry-run uses an explicit fixture mode. No fixture output is represented as live.
+
+`push` checks chain/roles, reads the latest supply/NAV again, rejects a stale or inconsistent calculation, previews the change, and submits the ordinary `setNAV` with fee estimation and the Arc minimum floor. It never forces a rail failure automatically. Wait for a successful receipt and compare on-chain NAV to the intended integer value before recording transaction evidence.
+
+`attest` signs a deterministic canonical UTF-8 payload using EIP-191/secp256k1. It includes holdings, simulated cash, NAV, supply, ratios, timestamp, chain/contract, pinned block, and the exact §10 attestor label. Publish the exact signed message, signature, signer address, and uncompressed public key. The browser checks that the message matches the displayed payload, recovers the signer, and compares it with the configured expected public attestor address. A signature from an arbitrary supplied key is not enough. Changing a value, key, or signature must fail verification. This proves a simulated signer's statement, not real custody.
+
+`nav.yml` runs at `0 7 * * *` with manual dispatch, a concurrency lock, scoped environment secrets, and only the needed repository-write permission. Run `nav` → `push` → `attest`; commit valid JSON only after all succeed and preserve the prior published data on failure. Data publication triggers the live app deployment and must be observable at its URL. If an on-chain update succeeds but a later publication fails, record/reconcile that transaction before retrying; do not silently leave the site reporting synchronized NAV. The page explicitly displays stale or mismatched data. All ledger ordering uses block number/log index, not timestamp alone.
+
+## 7. App behavior and verification API
+
+`/`: three factual introductory sentences, on-chain NAV/time/block with freshness, simulated three-bar basket, next simulated coupon date with schedule status, five explanatory steps, one primary app CTA. Do not imply coupons are automatically scheduled before the optional monthly job is enabled.
+
+`/app`: one guided screen; derive completion from live wallet/chain state. Refresh and wallet/network changes re-read balances, eligibility, NAV, allowances, and coupons. Never preserve another wallet's receipt as the active wallet's result.
+
+1. **Connect:** RainbowKit; one add/switch Arc button; one ERC-20 USDC balance; Circle faucet when needed. Native 18-decimal gas estimates are converted for display, not added as a second balance.
+2. **Verify:** name, ISO country dropdown, professional-investor checkbox. `GET /api/verify` issues a short-lived wallet-bound challenge; signed `POST` validates country, consent, chain, origin and nonce. Enforce the ten-second review server-side, then the registrar writes `addVerified`; status becomes Verified only after a successful receipt. Block US/TR before requesting signatures. No name goes on-chain or into logs. A small durable verification store handles consumed nonces, rate limits, pending receipts, and a registrar nonce lease across server instances; use local SQLite for development and libSQL/Turso on Vercel. Keep the HTTP wait within configured platform duration and allow idempotent receipt polling after a timeout. No real KYC claim.
+3. **Subscribe:** integer-parsed amount, current-NAV token preview, zero subscription fee, gas reserve estimate for both transactions. Separate `USDC.approve` and `HBToken.subscribe` cards/receipts; exact allowance, and an explicit already-approved state on resume. Refresh preview before signing; do not add unlimited approval or v1's minimum investment.
+4. **Hold:** tokens, value at current NAV, coupons, claim card, activity. Include address events plus relevant global coupon distributions, ordered by block/log index. Fetch in bounded RPC block ranges; user-facing pagination is Excellence.
+5. **Redeem:** token input, current-NAV USDC preview, available redemption liquidity preflight, exact vault notice, single redeem receipt. Explain wallet rejection, pause, network mismatch, stale preview, insufficient vault, and RPC failures inline.
+
+Every on-chain action, including admin and verification's registrar action, explains the contract/function, required signature or operator submission, and resulting receipt/events. Wallet connection and network changes are labelled wallet operations rather than fake transactions. No fabricated hashes, balances, or successful states.
+
+`/transparency`: holdings, simulated cash, NAV history, freshness, raw attestation, working client verification, expected signer/public key, contract explorer links, simulated backing ratio and actual liquidity, exact eight-row production mapping from §7 of the brief. Render yields here only with adjacent simulated labels.
+
+`/admin`: read contract roles after wallet connection; registrar sees registry/blocklist controls, oracle sees normal NAV updates, issuer sees force-NAV/coupons/pause and funding status. Hidden UI is not authorization: contracts enforce roles. Registry table is reconstructed from events/current state without adding enumeration to transfer logic. Coupon funding uses its own approval + distribution receipts. Vault funding is a direct nonzero-address USDC transfer with a receipt.
+
+## 8. Chain, deployment, and environment contract
+
+Chain config is centralized in `packages/config/chains.ts`; runtime chain ID must match the selected allowlisted network before reads are trusted or anything is signed. Arc USDC is fixed to `0x3600000000000000000000000000000000000000`, checked for 6 decimals; the deployment script never creates MockUSDC there. Local is 31337; Base Sepolia is 84532. Selecting a chain without a matching deployment fails clearly. Do not copy mainnet examples from upstream docs.
+
+Arc transactions use dynamically estimated EIP-1559 fees with `maxFeePerGas >= 20 gwei` and enough headroom for the current base fee/tip, across browser, registrar, deployer, Python and E2E. Keep USDC available for gas. Contract transfers always use the 6-decimal interface. Read receipts to populate deploy blocks and hashes instead of trusting positional broadcast output.
+
+The explorer documents Blockscout verification with `--verifier blockscout --verifier-url https://explorer.testnet.arc.io/api/`. Use that with the deployment compiler/settings/constructor arguments; store standard JSON input and metadata for reproducibility. If verification is unavailable, record the actual failure and publish those inputs as the brief permits. A JSON file alone does not establish successful explorer verification.
+
+`deployments/arc-testnet.json` records chain ID, addresses, deployed block/hash/time, deployer and role addresses, settlement asset/decimals, verification status/links, and each real vault funding amount/receipt. Proposed initial target is 20 testnet USDC vault liquidity plus a separate 2 USDC coupon budget, adjustable to actual faucet availability; record actual amounts, not targets, as funded. Test accounts and every signing role need separate gas balances.
+
+All configuration below receives a comment in `.env.example`. Private values remain environment-only and never use a `NEXT_PUBLIC_` prefix. Deployment artifacts supply addresses rather than duplicating editable address environment variables.
+
+| Variable | Exposure / use |
+| --- | --- |
+| `NEXT_PUBLIC_CHAIN` | `arc-testnet` default; `base-sepolia` or `local` fallback selector, used consistently by app and tools |
+| `NEXT_PUBLIC_RPC_URL` | Optional browser-safe RPC override for selected chain; no secret provider keys |
+| `RPC_URL` | Optional private server/tool RPC override; otherwise selected chain default |
+| `NEXT_PUBLIC_APP_URL` | Expected app origin and wallet metadata; local default documented |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Public WalletConnect project ID; injected wallets remain usable without it |
+| `NEXT_PUBLIC_ATTESTOR_ADDRESS` | Public expected attestation signer, checked against signatures |
+| `DEPLOYER_PRIVATE_KEY` | Deployment only, funded testnet account |
+| `ADMIN_ADDRESS` | Public deployment role administrator, not a private key |
+| `ISSUER_ADDRESS`, `ORACLE_ADDRESS`, `REGISTRAR_ADDRESS` | Public intended deployment role holders |
+| `ISSUER_PRIVATE_KEY` | E2E coupon/pause/funding and optional scheduled coupon job only |
+| `ORACLE_PRIVATE_KEY` | Python NAV pushes only |
+| `REGISTRAR_PRIVATE_KEY` | Server-only verification writes |
+| `ATTESTOR_PRIVATE_KEY` | NAV job's simulated attestation signing key only |
+| `DATABASE_URL` | Verification store: ignored local SQLite path or hosted libSQL URL |
+| `DATABASE_AUTH_TOKEN` | Hosted verification store credential; absent for local SQLite |
+| `E2E_WALLET_A_PRIVATE_KEY`, `E2E_WALLET_B_PRIVATE_KEY` | Two separately funded test wallets; never documented as literal keys |
+| `E2E_BASE_URL` | Exact live app under test; also used by smoke/browser evidence collection |
+| `E2E_SUBSCRIBE_USDC`, `E2E_COUPON_USDC` | Optional positive decimal test amounts with documented small defaults |
+| `NAV_MAX_AGE_HOURS` | Staleness threshold, proposed 30 hours for the daily job |
+| `BASESCAN_API_KEY` | Optional, only for Excellence fallback verification |
+| `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | Optional CI/CLI publishing; not needed for Git-linked Vercel deployment |
+| `GH_TOKEN` | Optional local CI-evidence reads if no gh session; Actions uses scoped `GITHUB_TOKEN` |
+
+Each process loads only the secrets it needs; never upload the entire root environment to the web runtime. Parse decimal env amounts with strict limits. No keys in command arguments, debug output, public bundles, screenshots, or committed fixtures. Recheck ignored patterns for the new app/build/SQLite paths before Phase 1 commits.
+
+## 9. Exact command interface for the founder
+
+These commands are the implementation contract for future phases; they are not available in the current v1 tree. Pin tool/package versions in Phase 1. Root pnpm scripts load `.env` internally; no shell exporting or printing of keys is required. A missing secret reports its variable name only. Run commands from the repository root.
+
+```sh
+# Phase 1: setup and empty-build checkpoint
+cp -n .env.example .env
+# Edit the local .env using your editor; never paste private keys in chat.
+pnpm install --frozen-lockfile
+git submodule update --init --recursive
+pnpm lint
+pnpm typecheck
+pnpm build
+
+# Phase 2: contract checkpoint
+forge test --root contracts
+forge coverage --root contracts
+
+# Phase 3: fund required addresses through the Circle faucet first
+pnpm deploy --chain arc-testnet --dry-run
+pnpm deploy --chain arc-testnet
+pnpm verify:contracts --chain arc-testnet
+pnpm fund:vault --amount 20
+pnpm sync:contracts
+
+# Phase 4: one engine entrypoint
+pnpm hb nav --dry-run
+pnpm hb nav
+pnpm hb push --dry-run
+pnpm hb push
+pnpm hb attest
+pnpm test:nav
+
+# Phases 5–6: app + evidence
+pnpm dev
+# In a second terminal, with E2E_BASE_URL set to the app being reviewed:
+pnpm test:ui
+pnpm screenshots
+
+# Phase 7: evidence and automated STATUS.md
+pnpm check
+pnpm smoke
+pnpm e2e
+
+# Phase 8: production-mode local build and handover
+pnpm build
+pnpm start
+```
+
+`pnpm hb` invokes `uv run --env-file .env --python 3.11 --script nav_engine/hb.py` with the remaining arguments. `pnpm check` runs Foundry tests, Python lint/tests + an explicitly fixture-backed NAV dry-run, secret checks, TypeScript checking, focused web tests and Next build. `pnpm screenshots` saves under `.context/screenshots/`; `pnpm test:ui` writes evidence keyed to the tested deployment and commit. Deployment/funding commands honor the selected chain and reject an Arc-only command on another chain.
+
+Phase 3 also records an actual CLI subscription: after preparing a verified funded test account and setting `ETH_PRIVATE_KEY` locally from that account's environment entry, use `cast send` without a key argument:
+
+```sh
+cast send 0x3600000000000000000000000000000000000000 \
+  'approve(address,uint256)' "$HBTOKEN_ADDRESS" 1000000 \
+  --rpc-url https://rpc.testnet.arc.io --gas-price "$ARC_MAX_FEE_WEI"
+cast send "$HBTOKEN_ADDRESS" 'subscribe(uint256)' 1000000 \
+  --rpc-url https://rpc.testnet.arc.io --gas-price "$ARC_MAX_FEE_WEI"
+```
+
+The Phase 3 report fills in the real public `HBTOKEN_ADDRESS` and a current estimated `ARC_MAX_FEE_WEI` ≥20000000000, verifies the installed cast environment-key support, and records both receipts. These shell variables are operator command inputs, not additional persistent application settings. If standard Foundry cannot simulate an Arc-specific behavior, use the documented Arc Foundry toolchain and record the reason; ordinary Anvil tests are never presented as Arc validation.
+
+Vercel uses repository root with workspace build `pnpm --filter @hitbite/app build` and output `app/.next`; verify the exact monorepo project settings in Phase 5. Configure its environment separately, connect the reviewed branch for preview, and use `main` for the eventual live deployment. Credentials/project access are prerequisites, not a reason to claim a deployment exists.
+
+## 10. Checkpoints, deliverables, and acceptance evidence
+
+The brief estimates eight working days. Timing depends on approval, faucet access and deployment credentials; each numbered checkpoint remains mandatory.
+
+| Phase | Deliverable | Evidence required before asking to advance |
+| --- | --- | --- |
+| 0 — Plan | Preserved v1 refs, input copies, this plan, appended progress | Remote ref hashes, matching input bytes, documentation diff; founder approves plan/amendments |
+| 1 — Repo and safety | Fresh pnpm workspace, env/ignore rules, config, MIT licence, README with exact production mapping, CI skeleton | Clean empty Next build/typecheck and green CI link; no stale v1 runtime/workflows |
+| 2 — Contracts | Registry, token, local/fallback mock, deploy script, required tests | `forge test` and coverage report; documented role/rail/coupon/rounding results |
+| 3 — Arc deployment | Real contracts, verification, funded vault, deployment artifact | Explorer links, actual balance and funding receipts, successful cast approve/subscribe |
+| 4 — NAV | Three-file engine, signed outputs, daily workflow | Deterministic fixture, live supply read, JSON/on-chain NAV equality, one-line Python signature verification, workflow publication evidence |
+| 5 — App flow | Five steps on one screen, API verification, receipts, position, walkthrough | Fresh-wallet founder completion, desktop/mobile screenshots for each step, blocked-country/low-gas/insufficient-vault/pause cases |
+| 6 — Other routes | Overview, transparency and minimal role-based admin | NAV agreement to the cent; browser verifies signature and rejects tampering; role gating and production table |
+| 7 — E2E and STATUS | Transaction runner, read-only smoke, generated report | Two independent wallets complete the live Arc flow; receipt links, smoke result, current UI/CI/NAV evidence; all Core rows green |
+| 8 — Handover | README, deployment/STATUS links, ownership/simulation explanation | Stranger follows faucet → network → connect → verify → subscribe; founder confirms; final live URL |
+
+At each checkpoint append date, phase, changes, verification commands/results, evidence links, founder questions, design deviations and known gaps to `PROGRESS.md`; commit and push before requesting the next phase. Do not advance without its approval. Do not label the product working in README/progress from a successful local build: the generated status matrix is authoritative.
+
+Excellence, only after Core: monthly `coupon.yml` (first day of month, idempotent, funded, receipt recorded), activity pagination, `arc-anvil` convenience script, actual Base Sepolia deployment. Showcase, only after Excellence: 90-second recording and architecture diagram; an extra ownership page requires scope approval, while its information is already Core in README/transparency.
+
+## 11. E2E truthfulness and release conditions
+
+`scripts/e2e.ts` is a viem runner, with no browser embedded. It checks chain/address/role/fee prerequisites and both funded test accounts before any write. Run the verify API, approve, subscribe, issuer coupon distribution, each holder's accrual/claim, redeem, pause-enforced subscription failure, and unpause. Test two independent wallets, not two runs using one address. Ensure distinct/fresh input accounts for the definition-of-done run; label later repeat runs honestly. Check decoded amounts/events against balances and expected math, including Arc gas paid from the same USDC balance.
+
+Expected rejection is checked as the correct custom error/failed receipt, not any arbitrary RPC failure. Record successful, failed and skipped steps; flush partial evidence on failure. Restore pause state in cleanup only when this run introduced the pause. Avoid disruptive runs on a concurrent founder review; use a dedicated test window/deployment and do not overwrite someone else's admin state.
+
+The generated matrix covers contracts, deployment, NAV, every flow step, transparency, admin, CI and the overall Core gate. Include UTC time, git SHA, chain, app URL/build identity, wallet addresses, transaction hashes/blocks/explorer links, and evidence source. Green means a passed assertion with matching current evidence; yellow means missing/stale/not exercised; red means a failed assertion. Do not infer UI functionality from a successful contract call or CI success from a local command. Browser checks and human fresh-wallet acceptance remain explicit prerequisites and are linked in the report, never invented. `pnpm e2e` exits nonzero when Core is incomplete or failing, and is the sole writer of `STATUS.md` even on failure.
+
+`pnpm smoke` uses shared checks without signing, sending, or changing `STATUS.md`: chain ID, deployed contract reads, settlement decimals, NAV freshness and JSON/on-chain consistency. RPC outages produce useful failure information. CI cannot replace live Arc evidence; local fixtures stay labelled local. Initial report generation is Phase 7, so earlier phase checkpoints use raw receipts/tests/screenshots in progress without hand-maintained status claims.
+
+The release requires all six brief §11 items: two live wallets; restriction/country tests; cent-level NAV consistency; working client verification; green CI and complete handover with founder walkthrough; and design compliance with deviations recorded.
+
+## 12. Questions for the founder and external prerequisites
+
+Approve the plan before Phase 1. The material decisions are:
+
+1. **Next.js:** approve supported Next.js 16 in place of the brief's unsupported 14. No framework installation/change occurs before approval.
+2. **NAV model:** approve the explicitly labelled supply-scaled reference basket and separate testnet-vault reporting, or specify a fixed fund capitalization model. Resolve before Phase 4.
+3. **Revocation:** approve allowing existing revoked holders to redeem/claim while prohibiting new receipts/transfers, subject to pause. Resolve before Phase 2.
+
+Plan approval also covers the stated ordinary defaults: Inter substitute, client signature verification in Core, exact v2 NAV interfaces, no automatic NAV decrease on externally funded coupon distributions, and building on the current workspace branch for eventual integration into `main`.
+
+Needed before live-dependent checkpoints: env-only testnet role keys and addresses, funded Arc accounts plus two E2E wallets, public expected attestor address, a WalletConnect project ID for connector coverage, a Vercel project/domain and hosted verification store, and GitHub Actions access/secrets. Provide these through local environment or provider settings, not this document or chat. Their current availability has not been established by Phase 0.
+
+The provided design is a generic visual system, so component placements beyond the brief use the documented plain defaults. No new brand assets or marketing copy are required to start. All additional product wording questions go in the append-only progress log with a conservative proposed default.
+
+## 13. Primary references checked during planning
+
+- [Arc connection details](https://docs.arc.io/arc/references/connect-to-arc): testnet chain/RPC/explorer, one USDC balance, wallet setup.
+- [Arc gas and fees](https://docs.arc.io/arc/references/gas-and-fees): EIP-1559 fee floor and native precision.
+- [Arc contract addresses](https://docs.arc.io/arc/references/contract-addresses): 6-decimal USDC ERC-20 interface and no wrapper.
+- [Arc deployment and verification](https://docs.arc.io/arc/tutorials/deploy-on-arc): Arc Foundry and Blockscout verification endpoint.
+- [Arc EVM differences](https://docs.arc.io/arc/references/evm-differences): reference for deployment-time compatibility checks.
+- [Next.js support policy](https://nextjs.org/support-policy): version amendment rationale.
+
+Recheck network/tooling behavior at its implementation checkpoint. Upstream examples do not override the testnet-only allowlist, decimals discipline, secret handling, or the founder's product scope.

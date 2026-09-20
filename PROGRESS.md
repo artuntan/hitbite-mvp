@@ -231,3 +231,42 @@ definition of done passes, and item 2 of that list needs the testnet run above.
 
 **Next**
 - Phase 1: `IdentityRegistry`, `HBToken` core (restrictions, roles, NAV rail, subscribe/redeem), `MockUSDC`, unit tests covering every revert path.
+
+## 2026-09-20 — v2 Phase 0: Arc Testnet plan awaiting approval
+
+This entry begins v2. All preceding entries describe v1 and do not establish v2 functionality. `BUILD_PROMPT_V2.md` and `design.md` now define the requested scope; the root `PLAN.md` has a dated scope-replacement note. No application, contract, workflow, or environment implementation was changed in this phase. `STATUS.md` remains absent because only the future `pnpm e2e` may generate it.
+
+**Work performed**
+
+- Read both supplied attachments fully and copied them unchanged to `BUILD_PROMPT_V2.md` and `design.md`.
+- Before file changes, preserved existing v1 commit `2fc8f9e75229ceca4a7347ffd089e76185030c16` as branch `v1-base-sepolia` and annotated tag `v1`; pushed both to GitHub atomically.
+- Kept workspace branch `plan-and-build-from-build-prompt`. `origin/main` currently contains only `.gitkeep`; the plan proposes developing the fresh v2 tree here and integrating into `main` through review.
+- Replaced the root v1 plan with the v2 plan: file tree, design mapping, interfaces, financial/decimal rules, environment contract, commands, all nine checkpoints, evidence requirements, and founder questions. The original plan and code remain at tag `v1`.
+- Checked official Arc network, gas, USDC and deployment documentation. Arc documents Blockscout verification; plan includes its endpoint plus reproducible verification inputs.
+- Checked the official Next.js support policy. Version 14 is listed as unsupported; the plan proposes version 16, pending founder approval.
+
+**Verification and evidence**
+
+- `git ls-remote origin refs/heads/v1-base-sepolia refs/tags/v1 'refs/tags/v1^{}'` confirms the branch and peeled tag both point to `2fc8f9e75229ceca4a7347ffd089e76185030c16`. The annotated tag object is `0d0d45c21f9cf2cec64c58c324bc78f6edefb680`.
+- [Preserved branch](https://github.com/artuntan/hitbite-mvp/tree/v1-base-sepolia) · [Preserved tag](https://github.com/artuntan/hitbite-mvp/tree/v1).
+- Input copies checked byte-for-byte against attachments; `git diff --check` used for documentation whitespace. Confirmed existing `.env*` exclusions and `.context/` exclusion before the checkpoint commit.
+- No application tests or testnet transactions were run for this documentation-only checkpoint. Network documentation checks are not live deployment evidence.
+- Primary sources: [Arc connection](https://docs.arc.io/arc/references/connect-to-arc), [gas](https://docs.arc.io/arc/references/gas-and-fees), [USDC](https://docs.arc.io/arc/references/contract-addresses), [verification](https://docs.arc.io/arc/tutorials/deploy-on-arc), [Next.js support](https://nextjs.org/support-policy).
+
+**Questions for the founder**
+
+1. Approve `PLAN.md` before Phase 1, including supported Next.js 16 in place of the requested unsupported 14.
+2. NAV bootstrap: approve the disclosed supply-scaled simulated reference basket and separate actual vault reporting, or specify a fixed-capitalization model. Decision needed before Phase 4; a fixed large book divided by tiny testnet supply would create misleading per-token NAV.
+3. Revoked holders: approve redemption and earned-coupon claims for existing holdings while receiving/transferring tokens stays prohibited, subject to pause. Decision needed before Phase 2.
+
+**Design gaps and conservative defaults**
+
+- No proprietary fonts or HitBite screen mockups supplied. Plan uses the design's permitted Inter/Inconsolata substitutes and the brief's screen structure.
+- No explicit stepper widths, mobile flow layout, control states, focus treatment, select/checkbox/toggle, chart styling, or wallet-modal specification. Plan uses native controls, supplied tokens, white/hairline cards, near-black actions, and records any implementation deviation at its checkpoint.
+- Client-side signature verification is Core because the product specification and definition of done require it, despite its duplicate Excellence listing. Chain configuration is also Core; an actual fallback deployment remains Excellence.
+
+**Known gaps and next checkpoint**
+
+- V2 is planned only. Existing v1 files remain until the approved repository phase. `STATUS.md` contains no v2 claims because it does not yet exist.
+- Credentials, hosted verification store, faucet funding, WalletConnect and Vercel access remain unestablished; the plan lists when each becomes necessary. No secrets were inspected or printed.
+- Next: founder approval, then Phase 1 (repo and safety). Do not advance before approval; commit and push this planning checkpoint first.
