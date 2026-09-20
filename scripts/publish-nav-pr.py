@@ -31,6 +31,17 @@ def checked_run(runs, head, started):
     return latest["databaseId"]
 
 
+def own_pr_run(candidate, number, head, branch, repository):
+    return (
+        candidate.get("event") == "pull_request"
+        and candidate.get("head_sha") == head
+        and candidate.get("head_branch") == branch
+        and candidate.get("head_repository", {}).get("full_name") == repository
+        and candidate.get("actor", {}).get("login") == "github-actions[bot]"
+        and any(pr.get("number") == number for pr in candidate.get("pull_requests", []))
+    )
+
+
 def main():
     if os.environ.get("GITHUB_REF") != "refs/heads/main":
         raise RuntimeError("NAV publication only runs from main.")
@@ -54,25 +65,50 @@ def main():
     body.write_text(
         "Publishes the confirmed Arc Testnet NAV receipt and signed simulated attestation.\n\n"
         "Only the two generated JSON records change. The publishing workflow explicitly "
-        "dispatches the normal CI suite and merges this exact commit only after it passes. "
+        "starts the normal PR CI suite and merges this exact commit only after it passes. "
         "Branch protection still applies; a failed or stale publication stays open for review.\n"
     )
+    started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     pr = run("gh", "pr", "create", "--base", "main", "--head", branch,
              "--title", "data: publish confirmed simulated NAV", "--body-file", str(body))
     print(f"Opened {pr}", flush=True)
-    # GITHUB_TOKEN pushes do not trigger push workflows. Dispatch explicitly;
-    # no PAT, pull_request_target, workflow approval or branch bypass is needed.
-    started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    run("gh", "workflow", "run", "ci.yml", "--ref", branch)
+    number = json.loads(run("gh", "pr", "view", pr, "--json", "number"))["number"]
+    repository = os.environ["GITHUB_REPOSITORY"]
+    approved = set()
+    # GitHub creates approval-required PR runs for GITHUB_TOKEN-created PRs.
+    # Approve only this job's own two-file snapshot PR, never an external PR.
+    # A separately dispatched head run does not satisfy that PR's check suite.
     deadline = time.monotonic() + 900
     while time.monotonic() < deadline:
-        runs = json.loads(run("gh", "run", "list", "--workflow", "ci.yml", "--branch", branch,
-                              "--event", "workflow_dispatch", "--limit", "10", "--json",
-                              "databaseId,headSha,createdAt,status,conclusion"))
+        response = json.loads(run("gh", "api", f"repos/{repository}/actions/workflows/ci.yml/runs"
+                                  f"?event=pull_request&head_sha={head}&per_page=10"))
+        runs = []
+        for candidate in response["workflow_runs"]:
+            if not own_pr_run(candidate, number, head, branch, repository):
+                continue
+            if candidate["conclusion"] == "action_required":
+                if candidate["id"] not in approved:
+                    current = json.loads(run("gh", "api", f"repos/{repository}/pulls/{number}"))
+                    if (current["head"]["sha"] != head or current["head"]["repo"]["full_name"] != repository
+                            or current["base"]["ref"] != "main"):
+                        raise RuntimeError("Snapshot PR changed before CI approval.")
+                    files = json.loads(run("gh", "api", f"repos/{repository}/pulls/{number}/files"))
+                    validate_changes([f["filename"] for f in files])
+                    run("gh", "api", "--method", "POST",
+                        f"repos/{repository}/actions/runs/{candidate['id']}/approve")
+                    approved.add(candidate["id"])
+                continue
+            runs.append({"databaseId": candidate["id"], "headSha": candidate["head_sha"],
+                         "createdAt": candidate["created_at"], "status": candidate["status"],
+                         "conclusion": candidate["conclusion"]})
         if checked_run(runs, head, started):
-            run("gh", "pr", "merge", pr, "--merge", "--match-head-commit", head, "--delete-branch")
-            print("Required CI passed and the snapshot PR merged under branch protection.")
-            return
+            state = json.loads(run("gh", "pr", "view", pr, "--json", "mergeStateStatus,headRefOid"))
+            if state["headRefOid"] != head:
+                raise RuntimeError("Snapshot PR changed after CI.")
+            if state["mergeStateStatus"] == "CLEAN":
+                run("gh", "pr", "merge", pr, "--merge", "--match-head-commit", head, "--delete-branch")
+                print("Required CI passed and the snapshot PR merged under branch protection.")
+                return
         time.sleep(15)
     raise RuntimeError("Snapshot CI timed out. The PR remains open; main was not changed.")
 
