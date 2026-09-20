@@ -1,258 +1,221 @@
 "use client";
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { erc20Abi, formatUnits } from "viem";
+import { erc20Abi, formatUnits, type TransactionReceipt } from "viem";
 import { hBTokenAbi } from "@hitbite/config/abi";
 import { copy } from "@hitbite/config/copy";
-import {
-  amount,
-  config,
-  deployment,
-  units,
-  short,
-  type Snapshot,
-} from "@/lib/chain";
-import { Caption, WalletButton, Status, useSnapshot, Alert } from "./ui";
+import { amount, config, deployment, units, type Snapshot } from "@/lib/chain";
+import { Caption, WalletButton, Icon, useSnapshot, Alert } from "./ui";
+import { Action, Receipt } from "./action";
 import { Verify } from "./verify";
-import { Action } from "./action";
 import { Activity } from "./activity";
 
-const steps = [
-  ["Connect", "Your wallet, your access"],
-  ["Verify", "A simulated eligibility check"],
-  ["Subscribe", "Exchange USDC for hbTRS"],
-  ["Hold", "See your tokens and coupons"],
-  ["Redeem", "Return tokens for USDC"],
-] as const;
+const steps = ["Connect", "Verify", "Subscribe", "Hold", "Redeem"];
 export function Flow() {
   const { address, chainId } = useAccount();
-  const { data, error, isPending, refetch } = useSnapshot();
-  const [chosen, setChosen] = useState<number | null>(null);
-  const auto =
-    !address || chainId !== config.chain.id
-      ? 0
-      : !data?.verified
-        ? 1
-        : data.tokens === 0n
-          ? 2
-          : 3;
-  const active = chosen ?? auto;
-  const disconnected = !address || chainId !== config.chain.id;
+  const { data, error, refetch } = useSnapshot();
+  const connected = !!address && chainId === config.chain.id;
+  if (connected && !data)
+    return (
+      <main className="page flow-page">
+        <div className="flow-loading" role="status">
+          <h1>
+            {error ? "Your position is unavailable." : "Loading your position…"}
+          </h1>
+          {error && (
+            <button className="secondary" onClick={() => void refetch()}>
+              Try again
+            </button>
+          )}
+        </div>
+      </main>
+    );
+  return (
+    <InvestorFlow
+      key={`${address || "guest"}-${chainId}`}
+      data={data}
+      connected={connected}
+      error={!!error}
+      retry={() => void refetch()}
+    />
+  );
+}
+function InvestorFlow({
+  data,
+  connected,
+  error,
+  retry,
+}: {
+  data?: Snapshot;
+  connected: boolean;
+  error: boolean;
+  retry: () => void;
+}) {
+  const { address } = useAccount();
+  const [active, setActive] = useState(
+    !connected ? 0 : !data?.verified ? 1 : data.tokens ? 3 : 2,
+  );
+  const [activityOpen, setActivityOpen] = useState(false);
   return (
     <main className="page flow-page">
-      <div className="page-intro compact">
-        <div>
-          <p className="eyebrow">THE APP / {config.chain.name.toUpperCase()}</p>
-          <h1>
-            Your path from
-            <br />
-            USDC to hbTRS.
-          </h1>
+      <h1 className="sr-only">Your HitBite investment</h1>
+      <div className="investment-product">
+        <div className="product-name">
+          <span className="product-symbol" aria-hidden="true">
+            hB
+          </span>
+          <div>
+            <strong>hbTRS</strong>
+            <span>Simulated bond fund</span>
+          </div>
         </div>
-        <WalletButton />
+        <div className="product-nav">
+          <span>Price / token</span>
+          <strong data-testid="app-nav">
+            {units(data?.nav, 6, 6)} <small>USDC</small>
+          </strong>
+        </div>
       </div>
-      <div className="flow-layout">
-        <aside className="stepper" aria-label="Investment steps">
-          {steps.map(([title, description], i) => (
-            <button
-              className={`step ${active === i ? "active" : ""}`}
-              key={title}
-              onClick={() => setChosen(i)}
-              aria-current={active === i ? "step" : undefined}
-            >
-              <span className="step-number">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span>
-                <strong>{title}</strong>
-                <small>{description}</small>
-              </span>
-              {active === i && <span aria-hidden="true">↗</span>}
-            </button>
-          ))}
-          <div className="stepper-note">
-            <span className="eyebrow small">ONE SIMPLE FLOW</span>
-            <p className="caption muted">
-              Every action is yours to review.
-              <br />
-              Every receipt stays on-chain.
-            </p>
-          </div>
-        </aside>
-        <section className="flow-center">
-          <div className="card active-card">
-            <div className="step-topline">
-              <span className="eyebrow small">
-                STEP {String(active + 1).padStart(2, "0")} / 05
-              </span>
-              <span className="mono caption">hbTRS</span>
-            </div>
-            {error && (
-              <Alert>
-                Live balances are unavailable.{" "}
-                <button className="text-button" onClick={() => void refetch()}>
-                  Retry
-                </button>
-              </Alert>
-            )}
-            {active === 0 ? (
-              <ConnectStep data={data} onNext={() => setChosen(1)} />
-            ) : disconnected ? (
-              <>
-                <h2>Connect to continue.</h2>
-                <p>Use a wallet on {config.chain.name} to open this step.</p>
-                <WalletButton />
-              </>
-            ) : isPending ? (
-              <p>Loading your on-chain position…</p>
-            ) : !data ? (
-              <p>Restore the RPC connection to continue.</p>
-            ) : active === 1 ? (
-              <Verify
-                key={address}
-                verified={data.verified ?? false}
-                country={data.country}
-                onNext={() => setChosen(2)}
-              />
-            ) : active === 2 ? (
-              <Subscribe data={data} onNext={() => setChosen(3)} />
-            ) : active === 3 ? (
-              <Hold data={data} onNext={() => setChosen(4)} />
-            ) : (
-              <Redeem data={data} />
-            )}
-          </div>
-          {active === 3 && address && <Activity address={address} />}
-          <p className="flow-disclaimer caption">{copy.vaultNotice}</p>
-        </section>
-        <aside className="card position">
-          <div className="section-heading">
-            <h3>Your position</h3>
-            <span className="position-dot" />
-          </div>
-          <p className="caption muted">
-            {address ? short(address) : "Connect a wallet to begin"}
-          </p>
-          <div className="position-main">
-            <span className="eyebrow small">hbTRS BALANCE</span>
-            <strong>{units(data?.tokens, 18, 4)}</strong>
-            <span className="caption muted">
-              {data?.tokens !== undefined
-                ? `${units((data.tokens * data.nav) / 10n ** 18n)} USDC at current NAV`
-                : "Your tokens will appear here"}
+      <nav className="stepper" aria-label="Investment steps">
+        {steps.map((title, i) => (
+          <button
+            className={`step${active === i ? " active" : ""}`}
+            key={title}
+            onClick={() => setActive(i)}
+            disabled={!connected && i > 0}
+            aria-current={active === i ? "step" : undefined}
+          >
+            <span className="step-number">
+              {String(i + 1).padStart(2, "0")}
             </span>
-          </div>
-          <dl className="data-list">
-            <div>
-              <dt>USDC balance</dt>
-              <dd>{units(data?.usdc)}</dd>
-            </div>
-            <div>
-              <dt>Accrued coupons</dt>
-              <dd>{units(data?.coupon, 6, 6)} USDC</dd>
-            </div>
-            <div>
-              <dt>NAV / token</dt>
-              <dd>{units(data?.nav, 6, 6)} USDC</dd>
-            </div>
-            <div>
-              <dt>Verification</dt>
-              <dd>
-                <Status tone={data?.verified ? "good" : "neutral"}>
-                  {data?.verified ? "Verified" : "Not verified"}
-                </Status>
-              </dd>
-            </div>
-          </dl>
-          <Caption>
-            Your token value changes with the published simulated NAV. Coupons
-            are separate claimable USDC.
-          </Caption>
-          <div className="position-bottom caption">
-            {data ? (
-              <>
-                <span className="live-dot" /> Read at block{" "}
-                {data.blockNumber.toString()}
-              </>
-            ) : (
-              "Reading the testnet…"
-            )}
-          </div>
-        </aside>
-      </div>
+            <span>{title}</span>
+          </button>
+        ))}
+      </nav>
+      <section
+        className="card active-card"
+        aria-label={`${steps[active]} step`}
+      >
+        {error && (
+          <Alert>
+            Live balances are unavailable.{" "}
+            <button className="text-button" onClick={retry}>
+              Retry
+            </button>
+          </Alert>
+        )}
+        {active === 0 ? (
+          <ConnectStep
+            connected={connected}
+            onNext={() => setActive(data?.verified ? 2 : 1)}
+          />
+        ) : !connected || !data ? (
+          <WalletButton />
+        ) : active === 1 ? (
+          <Verify
+            verified={data.verified ?? false}
+            country={data.country}
+            onNext={() => setActive(2)}
+          />
+        ) : active === 2 ? (
+          <Subscribe data={data} onNext={() => setActive(3)} />
+        ) : active === 3 ? (
+          <Hold
+            data={data}
+            onNext={() => setActive(4)}
+            onSubscribe={() => setActive(2)}
+          />
+        ) : (
+          <Redeem data={data} onNext={() => setActive(3)} />
+        )}
+      </section>
+      {connected && address && (
+        <details
+          className="flow-activity"
+          onToggle={(e) => setActivityOpen(e.currentTarget.open)}
+        >
+          <summary>
+            Recent activity <Icon name="chevron" />
+          </summary>
+          {activityOpen && <Activity address={address} />}
+        </details>
+      )}
+      <p className="flow-network">
+        <span className="live-dot" />
+        {config.chain.name}
+        <span aria-hidden="true">·</span>Test funds only
+      </p>
     </main>
   );
 }
 function ConnectStep({
-  data,
+  connected,
   onNext,
 }: {
-  data?: Snapshot;
+  connected: boolean;
   onNext: () => void;
 }) {
-  const { address, chainId } = useAccount();
   return (
-    <>
-      <h2>
-        A wallet is all
-        <br />
-        you need to start.
-      </h2>
-      <p className="muted">
-        Connect a browser wallet, then add a little test USDC. You stay in
-        control of every transaction.
+    <div className="connect-step">
+      <span className={`welcome-icon${connected ? " connected" : ""}`}>
+        <Icon name={connected ? "check" : "wallet"} />
+      </span>
+      <h2>{connected ? "Wallet connected." : "Connect your wallet."}</h2>
+      <p className="step-description">
+        {connected
+          ? "Your next step is ready."
+          : "Subscribe to hbTRS with test USDC on Arc."}
       </p>
       <Caption>
-        Your wallet is your account. Connecting shares your public address and
-        does not move funds.
+        Connecting shares your public address. It does not move funds. Use a
+        browser wallet or your mobile wallet’s browser.
       </Caption>
-      <div className="connect-illustration" aria-hidden="true">
-        <div className="wallet-glyph">
-          <span>↗</span>
-          <span className="mono">USDC</span>
-        </div>
-        <span className="illustration-line" />
-        <div className="token-glyph">
-          hb<span>TRS</span>
-        </div>
-      </div>
-      <WalletButton />
-      {address && chainId === config.chain.id && (
-        <>
-          <dl className="data-list">
-            <div>
-              <dt>Connected wallet</dt>
-              <dd className="mono">{short(address)}</dd>
-            </div>
-            <div>
-              <dt>USDC balance</dt>
-              <dd>{units(data?.usdc, 6, 4)} USDC</dd>
-            </div>
-          </dl>
-          <button onClick={onNext}>Continue to verify →</button>
-        </>
+      {connected ? (
+        <button className="primary-action" onClick={onNext}>
+          Continue <Icon name="arrow" />
+        </button>
+      ) : (
+        <WalletButton />
       )}
-      <div className="notice">
-        <strong>Test funds. Real transactions.</strong>
-        <p>{copy.gasNotice}</p>
+      <p className="connect-faucet">
+        Need test USDC?{" "}
         <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">
-          Get test USDC from the Circle faucet ↗
+          Get funds ↗
         </a>
-        <Caption>
-          Select Arc Testnet, paste your public wallet address and request USDC.
-        </Caption>
-      </div>
-      {!config.walletConnectProjectId && (
-        <p className="caption muted">
-          Use an installed browser wallet or open this app in your mobile
-          wallet&apos;s browser.
-        </p>
-      )}
-    </>
+      </p>
+      <Caption>{copy.gasNotice} Choose Arc Testnet in the faucet.</Caption>
+    </div>
+  );
+}
+function Completion({
+  title,
+  description,
+  receipt,
+  onNext,
+}: {
+  title: string;
+  description: string;
+  receipt: TransactionReceipt;
+  onNext: () => void;
+}) {
+  return (
+    <div className="completion">
+      <span className="completion-icon">
+        <Icon name="check" />
+      </span>
+      <h2>{title}</h2>
+      <p className="step-description">{description}</p>
+      <Receipt receipt={receipt} />
+      <button className="primary-action" onClick={onNext}>
+        View your position <Icon name="arrow" />
+      </button>
+    </div>
   );
 }
 function Subscribe({ data, onNext }: { data: Snapshot; onNext: () => void }) {
   const [input, setInput] = useState("1");
+  const [completed, setCompleted] = useState<TransactionReceipt>();
+  const [approvalReceipt, setApprovalReceipt] = useState<TransactionReceipt>();
   const value = amount(input);
   const preview = value ? (value * 10n ** 18n) / data.nav : 0n;
   const d = deployment!;
@@ -261,32 +224,40 @@ function Subscribe({ data, onNext }: { data: Snapshot; onNext: () => void }) {
     : data.paused
       ? "Subscriptions are paused by the issuer."
       : !value
-        ? "Enter a positive amount with up to 6 decimals."
+        ? "Enter a positive USDC amount."
         : value > (data.usdc ?? 0n) - 50_000n
-          ? "Keep at least 0.05 USDC for gas. Lower the amount or use the faucet."
+          ? "Keep 0.05 USDC for gas. Lower the amount or use the faucet."
           : preview === 0n
-            ? "The amount is too small to mint a token fraction."
+            ? "This amount is too small."
             : undefined;
   const approved = !!value && (data.allowance ?? 0n) >= value;
+  if (completed)
+    return (
+      <Completion
+        title="Subscription complete."
+        description="Your hbTRS tokens are now in your wallet."
+        receipt={completed}
+        onNext={onNext}
+      />
+    );
   return (
     <>
-      <h2>
-        USDC in.
-        <br />
-        hbTRS in your wallet.
-      </h2>
-      <p className="muted">
-        Subscribe at the current published NAV. Approving and subscribing are
-        two separate transactions.
-      </p>
-      <label>
-        Amount to subscribe
+      <h2>Subscribe to hbTRS.</h2>
+      <p className="step-description">Choose how much USDC to invest.</p>
+      <label className="amount-label">
+        <span>
+          Amount
+          <span className="input-balance">
+            Available: {units(data.usdc)} USDC
+          </span>
+        </span>
         <div className="amount-input">
           <input
             inputMode="decimal"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             aria-label="USDC amount"
+            autoComplete="off"
           />
           <span>USDC</span>
         </div>
@@ -294,164 +265,224 @@ function Subscribe({ data, onNext }: { data: Snapshot; onNext: () => void }) {
       <dl className="data-list preview">
         <div>
           <dt>You receive</dt>
-          <dd>{units(preview, 18, 6)} hbTRS</dd>
-        </div>
-        <div>
-          <dt>Current NAV</dt>
-          <dd>{units(data.nav, 6, 6)} USDC</dd>
-        </div>
-        <div>
-          <dt>Subscription fee</dt>
-          <dd>0 USDC</dd>
+          <dd>
+            {units(preview, 18, 6)} <span>hbTRS</span>
+          </dd>
         </div>
       </dl>
-      <p className="caption muted">
-        Estimate only. Execution uses the NAV at inclusion. {copy.gasNotice}
-      </p>
+      <details className="transaction-details">
+        <summary>
+          Price & fees <Icon name="chevron" />
+        </summary>
+        <dl className="data-list">
+          <div>
+            <dt>NAV / token</dt>
+            <dd>{units(data.nav, 6, 6)} USDC</dd>
+          </div>
+          <div>
+            <dt>Subscription fee</dt>
+            <dd>0 USDC</dd>
+          </div>
+        </dl>
+        <p className="caption muted">
+          Estimates use the current NAV. Final amounts use NAV at confirmation.{" "}
+          {copy.gasNotice}
+        </p>
+      </details>
+      <div className="approval-progress" aria-label="Subscription transactions">
+        <span className={approved ? "done" : "current"}>
+          {approved ? <Icon name="check" /> : <span>1</span>} Approve USDC
+        </span>
+        <span className={approved ? "current" : ""}>
+          <span>2</span> Subscribe
+        </span>
+      </div>
       <Action
-        title="1. Approve USDC"
-        contract="USDC"
-        fn="approve"
-        address={d.addresses.USDC}
-        abi={erc20Abi}
-        args={[d.addresses.HBToken, value ?? 0n]}
-        description={`Allow HBToken to spend exactly ${value ? formatUnits(value, 6) : "0"} USDC for your subscription.`}
-        disabled={
-          reason || (approved ? "This amount is already approved." : undefined)
+        key={approved ? "subscribe" : "approve"}
+        compact
+        title={approved ? "Subscribe" : "Approve USDC"}
+        contract={approved ? "HBToken" : "USDC"}
+        fn={approved ? "subscribe" : "approve"}
+        address={approved ? d.addresses.HBToken : d.addresses.USDC}
+        abi={approved ? hBTokenAbi : erc20Abi}
+        args={approved ? [value ?? 0n] : [d.addresses.HBToken, value ?? 0n]}
+        description={
+          approved
+            ? "Confirm to exchange your USDC for hbTRS."
+            : `Allow exactly ${value ? formatUnits(value, 6) : "0"} USDC. This step moves no funds.`
         }
-        label="Approve USDC"
+        disabled={reason}
+        onSuccess={approved ? setCompleted : setApprovalReceipt}
       />
-      <Action
-        title="2. Subscribe"
-        contract="HBToken"
-        fn="subscribe"
-        address={d.addresses.HBToken}
-        abi={hBTokenAbi}
-        args={[value ?? 0n]}
-        description="Transfer the approved USDC to the vault and mint hbTRS to your verified wallet."
-        disabled={
-          reason ||
-          (!approved ? "Complete the USDC approval first." : undefined)
-        }
-        label="Subscribe"
-      />
-      <button className="text-button next-link" onClick={onNext}>
-        View your position →
-      </button>
+      {approved && approvalReceipt && (
+        <details className="transaction-details approval-receipt">
+          <summary>
+            Approval receipt <Icon name="chevron" />
+          </summary>
+          <Receipt receipt={approvalReceipt} />
+        </details>
+      )}
     </>
   );
 }
-function Hold({ data, onNext }: { data: Snapshot; onNext: () => void }) {
+function Hold({
+  data,
+  onNext,
+  onSubscribe,
+}: {
+  data: Snapshot;
+  onNext: () => void;
+  onSubscribe: () => void;
+}) {
+  const hasTokens = !!data.tokens;
   return (
     <>
-      <div className="section-heading">
-        <h2>
-          Your position,
-          <br />
-          in plain sight.
-        </h2>
-        <Status tone="good">On-chain</Status>
-      </div>
+      <h2>Your investment.</h2>
       <div className="hold-balance">
-        <span className="eyebrow small">YOU HOLD</span>
         <strong>
-          {units(data.tokens, 18, 6)} <small>hbTRS</small>
+          {units(((data.tokens ?? 0n) * data.nav) / 10n ** 18n)}{" "}
+          <small>USDC</small>
         </strong>
-        <span className="muted">
-          {units(((data.tokens ?? 0n) * data.nav) / 10n ** 18n)} USDC at current
-          NAV
-        </span>
+        <span>{units(data.tokens, 18, 6)} hbTRS</span>
       </div>
-      <Caption>
-        hbTRS represents simulated fund units. These testnet tokens have no
-        claim on real bonds.
-      </Caption>
+      <dl className="data-list coupon-summary">
+        <div>
+          <dt>Claimable coupons</dt>
+          <dd>{units(data.coupon, 6, 6)} USDC</dd>
+        </div>
+      </dl>
       <Action
+        compact
+        secondary={!data.coupon}
         title="Claim coupons"
         contract="HBToken"
         fn="claimCoupon"
         address={deployment!.addresses.HBToken}
         abi={hBTokenAbi}
-        description={`Receive ${units(data.coupon, 6, 6)} USDC from your accrued share of funded coupon distributions.`}
+        description="Coupons are paid to your wallet in USDC."
         disabled={
           data.paused
             ? "Claims are paused by the issuer."
             : !data.coupon
-              ? "No coupons are available yet. The issuer must fund a distribution."
+              ? "No coupons available. Check back after the next funded distribution."
               : undefined
         }
       />
-      <button className="text-button next-link" onClick={onNext}>
-        Continue to redeem →
-      </button>
+      <div className="position-actions">
+        <button className={hasTokens ? "secondary" : ""} onClick={onSubscribe}>
+          Subscribe
+        </button>
+        <button
+          className={data.coupon ? "secondary" : ""}
+          onClick={onNext}
+          disabled={!hasTokens}
+        >
+          Redeem <Icon name="arrow" />
+        </button>
+      </div>
+      <Caption>
+        Position value uses the published simulated NAV. Coupons are separate.
+        These tokens have no claim on real bonds.
+      </Caption>
     </>
   );
 }
-function Redeem({ data }: { data: Snapshot }) {
+function Redeem({ data, onNext }: { data: Snapshot; onNext: () => void }) {
   const [input, setInput] = useState("");
+  const [completed, setCompleted] = useState<TransactionReceipt>();
   const value = amount(input, 18);
   const out = value ? (value * data.nav) / 10n ** 18n : 0n;
   const reason = data.paused
     ? "Redemptions are paused by the issuer."
     : !value
-      ? "Enter a positive token amount with up to 18 decimals."
+      ? "Enter a token amount."
       : value > (data.tokens ?? 0n)
         ? "This exceeds your hbTRS balance."
         : out === 0n
-          ? "The amount is too small to receive one micro-USDC."
+          ? "This amount is too small."
           : out > data.liquidity
-            ? "The vault cannot cover this redemption. Reduce the amount or wait for admin funding."
+            ? "The vault cannot cover this amount. Reduce it or wait for funding."
             : undefined;
+  if (completed)
+    return (
+      <Completion
+        title="Redemption complete."
+        description="Your USDC has been returned to your wallet."
+        receipt={completed}
+        onNext={onNext}
+      />
+    );
   return (
     <>
-      <h2>Back to USDC.</h2>
-      <p className="muted">
-        Return your hbTRS tokens to the contract. They are burned and the vault
-        pays USDC at the current NAV.
-      </p>
-      <label>
-        Tokens to redeem
+      <h2>Redeem your tokens.</h2>
+      <p className="step-description">Exchange hbTRS back to USDC.</p>
+      <label className="amount-label">
+        <span>
+          Amount
+          <span className="input-balance">
+            Available: {units(data.tokens, 18, 4)} hbTRS
+          </span>
+        </span>
         <div className="amount-input">
           <input
             inputMode="decimal"
             aria-label="hbTRS amount"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            placeholder="0"
+            autoComplete="off"
           />
           <span>hbTRS</span>
+          <button
+            type="button"
+            className="max-button"
+            aria-label="Use full token balance"
+            onClick={() => setInput(formatUnits(data.tokens ?? 0n, 18))}
+          >
+            Max
+          </button>
         </div>
       </label>
-      <button
-        className="text-button"
-        onClick={() => setInput(formatUnits(data.tokens ?? 0n, 18))}
-      >
-        Use full token balance
-      </button>
       <dl className="data-list preview">
         <div>
           <dt>You receive</dt>
-          <dd>{units(out, 6, 6)} USDC</dd>
-        </div>
-        <div>
-          <dt>Available vault liquidity</dt>
-          <dd>{units(data.liquidity, 6, 6)} USDC</dd>
+          <dd>
+            {units(out, 6, 6)} <span>USDC</span>
+          </dd>
         </div>
       </dl>
-      <Alert>{copy.vaultNotice}</Alert>
-      <p className="caption muted">
-        Estimate only. Execution uses NAV at inclusion. Accrued coupons remain
-        claimable after redemption.
-      </p>
+      <details className="transaction-details">
+        <summary>
+          Price & liquidity <Icon name="chevron" />
+        </summary>
+        <dl className="data-list">
+          <div>
+            <dt>NAV / token</dt>
+            <dd>{units(data.nav, 6, 6)} USDC</dd>
+          </div>
+          <div>
+            <dt>Available liquidity</dt>
+            <dd>{units(data.liquidity, 6, 6)} USDC</dd>
+          </div>
+        </dl>
+        <p className="caption muted">
+          Final amounts use NAV at confirmation. Accrued coupons remain
+          claimable after redemption.
+        </p>
+      </details>
       <Action
+        compact
         title="Redeem tokens"
         contract="HBToken"
         fn="redeem"
         address={deployment!.addresses.HBToken}
         abi={hBTokenAbi}
         args={[value ?? 0n]}
-        description={`Burn ${value ? formatUnits(value, 18) : "0"} hbTRS and receive the resulting USDC from the vault.`}
+        description="Confirm to return your tokens and receive USDC."
         disabled={reason}
+        onSuccess={setCompleted}
       />
+      <p className="redemption-note">{copy.vaultNotice}</p>
     </>
   );
 }

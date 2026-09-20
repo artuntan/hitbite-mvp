@@ -186,14 +186,14 @@ try {
     },
   );
   await step(
-    "Overview renders the same NAV as the chain and JSON",
-    "Overview",
+    "App entry renders the same NAV as the chain and JSON",
+    "App entry",
     async () => {
       const ui = JSON.parse(readFileSync(".context/ui-evidence.json", "utf8"));
       assert(
         ui.results.some(
           (r: { step: string; passed: boolean }) =>
-            r.step === "Overview and Transparency NAV agreement" && r.passed,
+            r.step === "App and Transparency NAV agreement" && r.passed,
         ),
       );
     },
@@ -614,7 +614,7 @@ try {
     "Admin",
     "NAV engine",
     "Connect",
-    "Overview",
+    "App entry",
     "Transparency",
     "Founder walkthrough",
     "CI",

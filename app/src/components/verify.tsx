@@ -6,7 +6,7 @@ import countryData from "@hitbite/config/countries";
 import { copy } from "@hitbite/config/copy";
 import { client, short } from "@/lib/chain";
 import { type Hex, type TransactionReceipt } from "viem";
-import { Caption, Status } from "./ui";
+import { Caption, Icon } from "./ui";
 import { Receipt } from "./action";
 export function Verify({
   verified,
@@ -86,140 +86,120 @@ export function Verify({
     }
   }
   return (
-    <div>
-      <div className="section-heading">
-        <h2>Verify your eligibility.</h2>
-        <Status tone={verified ? "good" : pending ? "pending" : "neutral"}>
-          {verified ? "Verified" : pending ? "Pending" : "Not verified"}
-        </Status>
-      </div>
-      <p className="muted">
-        A short, simulated review links eligibility to your wallet. This is not
-        real identity verification.
-      </p>
-      <Caption>
-        Only verified wallets can subscribe or receive hbTRS. Your name stays
-        off-chain.
-      </Caption>
+    <div className="verify-step">
       {verified ? (
-        <>
-          <div className="success-panel">
-            <span className="check-mark">✓</span>
-            <div>
-              <h3>Your wallet is verified.</h3>
-              <p className="muted">
-                {short(address!)} can subscribe and receive tokens.
-              </p>
-            </div>
-          </div>
+        <div className="completion">
+          <span className="completion-icon">
+            <Icon name="check" />
+          </span>
+          <h2>Your wallet is verified.</h2>
+          <p className="step-description">
+            You’re ready to subscribe to hbTRS.
+          </p>
+          <p className="caption muted mono">{short(address!)}</p>
           {receipt && <Receipt receipt={receipt} />}
-          <button onClick={onNext}>Continue to subscribe →</button>
-        </>
-      ) : country !== 0 ? (
-        <div className="notice">
-          This wallet has a revoked or blocked registry record. A registrar must
-          review it. You can still redeem existing tokens or claim accrued
-          coupons while the token is unpaused.
+          <button className="primary-action" onClick={onNext}>
+            Continue to subscribe <Icon name="arrow" />
+          </button>
         </div>
+      ) : country !== 0 ? (
+        <>
+          <h2>Verification needs review.</h2>
+          <p className="step-description">
+            A registrar must review this wallet’s revoked or blocked record.
+          </p>
+          <p className="notice">
+            You can still redeem existing tokens and claim accrued coupons while
+            the token is unpaused.
+          </p>
+        </>
       ) : (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void submit();
-          }}
-        >
-          <fieldset disabled={pending}>
-            <label>
-              Full name
-              <input
-                name="name"
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                minLength={2}
-                maxLength={100}
-                required
-                placeholder="Your full name"
-              />
-            </label>
-            <label>
-              Country of residence
-              <select
-                value={selected}
-                onChange={(e) => setCountry(e.target.value)}
-                required
-              >
-                <option value="">Select your country</option>
-                {countryData.countries.map((c) => (
-                  <option key={c.numeric} value={c.numeric}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={professional}
-                onChange={(e) => setProfessional(e.target.checked)}
-                required
-              />
-              <span>
-                I confirm that I am a professional investor for this simulated
-                testnet review.
-              </span>
-            </label>
-          </fieldset>
-          {blocked && (
-            <p className="error" role="alert">
-              {copy.blockedCountry}
-            </p>
-          )}
-          <section className="action-card">
-            <div className="action-heading">
-              <h3>Request verification</h3>
-              <span className="mono caption">
-                IdentityRegistry.addVerified()
-              </span>
-            </div>
-            <span className="eyebrow small">What will happen</span>
-            <p>
-              You sign an eligibility statement. After the simulated review, the
-              registrar pays the gas to verify your wallet on-chain.
-            </p>
-            <div className="sign-row">
-              <span className="eyebrow small">Sign</span>
-              <button
-                type="submit"
-                disabled={
-                  !professional ||
-                  !name.trim() ||
-                  !selected ||
-                  blocked ||
-                  pending
-                }
-              >
-                {pending ? "Review in progress…" : "Sign & start review"}
-              </button>
-            </div>
-            <p className="caption muted" aria-live="polite">
-              {stage ||
-                "The signature moves no funds. Review takes at least 10 seconds."}
+        <>
+          <h2>Verify your eligibility.</h2>
+          <p className="step-description">
+            A 10-second simulated review. No documents needed.
+          </p>
+          <Caption>
+            Your name stays off-chain. This is not real identity verification.
+          </Caption>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submit();
+            }}
+          >
+            <fieldset disabled={pending}>
+              <label>
+                Full name
+                <input
+                  name="name"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  minLength={2}
+                  maxLength={100}
+                  required
+                  placeholder="Your full name"
+                />
+              </label>
+              <label>
+                Country of residence
+                <select
+                  value={selected}
+                  onChange={(e) => setCountry(e.target.value)}
+                  required
+                >
+                  <option value="">Select your country</option>
+                  {countryData.countries.map((c) => (
+                    <option key={c.numeric} value={c.numeric}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={professional}
+                  onChange={(e) => setProfessional(e.target.checked)}
+                  required
+                />
+                <span>
+                  I confirm I’m a professional investor for this testnet
+                  simulation.
+                </span>
+              </label>
+            </fieldset>
+            {blocked && (
+              <p className="error" role="alert">
+                {copy.blockedCountry}
+              </p>
+            )}
+            <button
+              className="primary-action"
+              type="submit"
+              disabled={
+                !professional ||
+                name.trim().length < 2 ||
+                !selected ||
+                blocked ||
+                pending
+              }
+            >
+              {pending ? "Review in progress…" : "Sign & start review"}
+              {!pending && <Icon name="arrow" />}
+            </button>
+            <p className="action-note" aria-live="polite">
+              {stage || "This signature moves no funds."}
             </p>
             {error && (
               <p role="alert" className="error">
                 {error}
               </p>
             )}
-            {receipt ? (
-              <Receipt receipt={receipt} />
-            ) : (
-              <p className="caption muted receipt-empty">
-                Receipt · Appears after the registrar confirms verification
-              </p>
-            )}
-          </section>
-        </form>
+            {receipt && <Receipt receipt={receipt} />}
+          </form>
+        </>
       )}
     </div>
   );

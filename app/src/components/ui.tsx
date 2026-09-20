@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useQuery } from "@tanstack/react-query";
-import { config, snapshot, short, type NavData } from "@/lib/chain";
+import { config, snapshot, short, units, type NavData } from "@/lib/chain";
 
 const subscribe = (callback: () => void) => {
   window.addEventListener("storage", callback);
@@ -24,7 +24,7 @@ export function useWalkthrough() {
 }
 export function Caption({ children }: { children: React.ReactNode }) {
   const visible = useWalkthrough();
-  return visible ? <p className="caption walkthrough">↳ {children}</p> : null;
+  return visible ? <p className="caption walkthrough">{children}</p> : null;
 }
 export function WalletButton() {
   const { isConnected, address, chainId } = useAccount();
@@ -81,47 +81,170 @@ export function WalletButton() {
     </div>
   );
 }
-export function Header() {
-  const path = usePathname();
+export function WalkthroughToggle() {
   const walkthrough = useWalkthrough();
   return (
+    <label className="toggle help-toggle">
+      <input
+        type="checkbox"
+        aria-label="Walkthrough"
+        checked={walkthrough}
+        onChange={(e) => {
+          localStorage.setItem("hitbite.walkthrough", String(e.target.checked));
+          window.dispatchEvent(new Event("walkthrough"));
+        }}
+      />
+      <span>Show explanations</span>
+    </label>
+  );
+}
+export function Icon({
+  name,
+  className = "",
+}: {
+  name: "wallet" | "check" | "chevron" | "arrow";
+  className?: string;
+}) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {name === "wallet" ? (
+        <>
+          <path d="M20 8V6a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v10H6a3 3 0 0 1-3-3V7" />
+          <path d="M20 12h-5v5h5" />
+          <path d="M16.5 14.5h.01" />
+        </>
+      ) : name === "check" ? (
+        <path d="m5 12 4 4L19 6" />
+      ) : name === "chevron" ? (
+        <path d="m8 10 4 4 4-4" />
+      ) : (
+        <>
+          <path d="M5 12h14" />
+          <path d="m14 7 5 5-5 5" />
+        </>
+      )}
+    </svg>
+  );
+}
+export function Header() {
+  const path = usePathname();
+  const { address, chainId } = useAccount();
+  const { data, error } = useSnapshot();
+  const connected = !!address && chainId === config.chain.id;
+  const value =
+    connected && data?.tokens !== undefined
+      ? (data.tokens * data.nav) / 10n ** 18n
+      : undefined;
+  return (
     <header className="shell-header">
-      <Link className="wordmark" href="/" aria-label="HitBite overview">
+      <Link className="wordmark" href="/" aria-label="HitBite app">
         <span className="brand-mark" aria-hidden="true">
           h
         </span>
-        HitBite<span className="testnet-tag">TESTNET</span>
+        <span>HitBite</span>
       </Link>
       <nav aria-label="Main navigation">
-        {[
-          ["/", "Overview"],
-          ["/app", "The app"],
-          ["/transparency", "Transparency"],
-          ["/admin", "Admin"],
-        ].map(([href, label]) => (
-          <Link
-            key={href}
-            href={href!}
-            aria-current={path === href ? "page" : undefined}
-          >
-            {label}
-          </Link>
-        ))}
+        <Link
+          href="/transparency"
+          aria-current={path === "/transparency" ? "page" : undefined}
+        >
+          Transparency
+        </Link>
+        <button
+          className="position-trigger"
+          popoverTarget="position-summary"
+          aria-label="Your position"
+        >
+          <span className="position-avatar">
+            <Icon name="wallet" />
+          </span>
+          <span className="position-trigger-copy">
+            <span>Your position</span>
+            <strong>
+              {!address
+                ? "Not connected"
+                : !connected
+                  ? "Switch network"
+                  : error
+                    ? "Unavailable"
+                    : `${units(value)} USDC`}
+            </strong>
+          </span>
+          <Icon name="chevron" />
+        </button>
       </nav>
-      <label className="toggle">
-        <input
-          type="checkbox"
-          checked={walkthrough}
-          onChange={(e) => {
-            localStorage.setItem(
-              "hitbite.walkthrough",
-              String(e.target.checked),
-            );
-            window.dispatchEvent(new Event("walkthrough"));
-          }}
-        />
-        <span>Walkthrough</span>
-      </label>
+      <div id="position-summary" className="position-popover" popover="auto">
+        <div className="section-heading">
+          <h2>Your position</h2>
+          <span className="testnet-tag">TESTNET</span>
+        </div>
+        {connected ? (
+          <>
+            <p className="position-wallet mono">{short(address)}</p>
+            <strong className="position-value">
+              {units(value)} <small>USDC</small>
+            </strong>
+            <p className="caption muted">{units(data?.tokens, 18, 6)} hbTRS</p>
+            {error ? (
+              <p role="status" className="error">
+                Balances are temporarily unavailable.
+              </p>
+            ) : (
+              <dl className="data-list">
+                <div>
+                  <dt>Wallet balance</dt>
+                  <dd>{units(data?.usdc)} USDC</dd>
+                </div>
+                <div>
+                  <dt>Claimable coupons</dt>
+                  <dd>{units(data?.coupon, 6, 6)} USDC</dd>
+                </div>
+                <div>
+                  <dt>NAV / token</dt>
+                  <dd>{units(data?.nav, 6, 6)} USDC</dd>
+                </div>
+                <div>
+                  <dt>Verification</dt>
+                  <dd>
+                    <Status tone={data?.verified ? "good" : "neutral"}>
+                      {data?.verified ? "Verified" : "Not verified"}
+                    </Status>
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </>
+        ) : (
+          <p className="muted">
+            {address
+              ? `Switch to ${config.chain.name} to see your position.`
+              : "Connect your wallet to see your balance and coupons."}
+          </p>
+        )}
+        <WalletButton />
+        {(data?.issuer || data?.oracle || data?.registrar) && (
+          <Link
+            className="operator-link"
+            href="/admin"
+            onClick={() =>
+              document.getElementById("position-summary")?.hidePopover()
+            }
+          >
+            Open admin →
+          </Link>
+        )}
+      </div>
     </header>
   );
 }

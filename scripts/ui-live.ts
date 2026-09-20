@@ -19,21 +19,29 @@ try {
   const investor = await walletPage(browser, "UI_WALLET_PRIVATE_KEY", baseUrl);
   const page = investor.page;
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(baseUrl + "/app");
+  page.on("console", (message) => {
+    if (message.type() === "error" && /hydrat/i.test(message.text()))
+      errors.push(message.text());
+  });
+  await page.goto(baseUrl + "/");
+  await expect(
+    page.getByRole("heading", { name: "Connect your wallet." }),
+  ).toBeVisible();
+  await page.screenshot({
+    caret: "initial",
+    path: ".context/step-1-connect.png",
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Connect wallet", exact: true })
     .first()
     .click();
   await page.getByRole("button", { name: /02 Verify/ }).click();
   await expect(
-    page.getByRole("heading", { name: "Verify your eligibility." }),
+    page.getByRole("heading", {
+      name: /Verify your eligibility\.|Your wallet is verified\./,
+    }),
   ).toBeVisible({ timeout: 120000 });
-  await page.getByRole("button", { name: /01 Connect/ }).click();
-  await page.screenshot({
-    path: ".context/step-1-connect.png",
-    fullPage: true,
-  });
-  await page.getByRole("button", { name: "Continue to verify →" }).click();
   const already = await page
     .getByRole("heading", { name: "Your wallet is verified." })
     .isVisible();
@@ -50,6 +58,7 @@ try {
       page.getByText("Pending · 10-second simulated review"),
     ).toBeVisible({ timeout: 10000 });
     await page.screenshot({
+      caret: "initial",
       path: ".context/step-2-review.png",
       fullPage: true,
     });
@@ -64,20 +73,22 @@ try {
     passed: true,
   });
   await page.screenshot({
+    caret: "initial",
     path: ".context/step-2-verified.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Continue to subscribe →" }).click();
+  await page.getByRole("button", { name: /Continue to subscribe/ }).click();
   await page.getByLabel("USDC amount").fill("0.2");
   const approve = page.getByRole("button", {
     name: "Approve USDC",
     exact: true,
   });
-  if (await approve.isEnabled()) {
+  if (await approve.isVisible()) {
     await approve.click();
-    await expect(page.getByTestId("receipt")).toHaveCount(1, {
-      timeout: 120000,
-    });
+    await expect(page.locator(".approval-progress .done")).toContainText(
+      "Approve USDC",
+      { timeout: 120000 },
+    );
   }
   await expect(
     page.getByRole("button", { name: "Subscribe", exact: true }),
@@ -97,11 +108,12 @@ try {
   if (subscribed[0]?.args.usdcIn !== 200_000n)
     throw new Error("The signed subscription differs from the entered amount.");
   await page.screenshot({
+    caret: "initial",
     path: ".context/step-3-subscribe.png",
     fullPage: true,
   });
   results.push({ step: "Approve and subscribe via UI", passed: true });
-  await page.getByRole("button", { name: "View your position →" }).click();
+  await page.getByRole("button", { name: /View your position/ }).click();
   const issuer = await walletPage(browser, "ISSUER_PRIVATE_KEY", baseUrl);
   await issuer.page.goto(baseUrl + "/admin");
   await issuer.page
@@ -136,12 +148,16 @@ try {
   ).toBeVisible({
     timeout: 120000,
   });
-  await page.screenshot({ path: ".context/step-4-hold.png", fullPage: true });
+  await page.screenshot({
+    caret: "initial",
+    path: ".context/step-4-hold.png",
+    fullPage: true,
+  });
   results.push({
     step: "Admin coupon distribution and investor claim via UI",
     passed: true,
   });
-  await page.getByRole("button", { name: "Continue to redeem →" }).click();
+  await page.getByRole("button", { name: "Redeem", exact: true }).click();
   await page.getByRole("button", { name: "Use full token balance" }).click();
   await page
     .getByRole("button", { name: "Redeem tokens", exact: true })
@@ -151,7 +167,17 @@ try {
   ).toBeVisible({
     timeout: 120000,
   });
-  await page.screenshot({ path: ".context/step-5-redeem.png", fullPage: true });
+  await expect(
+    page.getByRole("heading", { name: "Redemption complete." }),
+  ).toBeVisible({ timeout: 120000 });
+  await expect(
+    page.getByRole("button", { name: "Your position", exact: true }),
+  ).toContainText("0.00 USDC");
+  await page.screenshot({
+    caret: "initial",
+    path: ".context/step-5-redeem.png",
+    fullPage: true,
+  });
   results.push({ step: "Full redemption via UI", passed: true });
   await issuer.page.getByLabel("Vault funding amount").fill("0.1");
   await issuer.page
@@ -171,6 +197,7 @@ try {
     timeout: 120000,
   });
   await issuer.page.screenshot({
+    caret: "initial",
     path: ".context/admin-issuer.png",
     fullPage: true,
   });
@@ -180,10 +207,9 @@ try {
     functionName: "navPerToken",
   });
   await page.goto(baseUrl + "/");
-  await expect(page.locator(".overview-panel .metric-value")).toContainText(
-    units(nav, 6, 6),
-    { timeout: 120000 },
-  );
+  await expect(page.getByTestId("app-nav")).toContainText(units(nav, 6, 6), {
+    timeout: 120000,
+  });
   await page.goto(baseUrl + "/transparency");
   await expect(page.locator(".metrics-grid .metric").first()).toContainText(
     units(nav, 6, 6),
@@ -195,7 +221,7 @@ try {
   if (snapshot.nav_units !== nav.toString())
     throw new Error("Published and displayed NAV differ.");
   results.push({
-    step: "Overview and Transparency NAV agreement",
+    step: "App and Transparency NAV agreement",
     passed: true,
   });
 
@@ -206,6 +232,7 @@ try {
     timeout: 15000,
   });
   await page.screenshot({
+    caret: "initial",
     path: ".context/transparency-verified.png",
     fullPage: true,
   });
@@ -222,6 +249,7 @@ try {
     page.getByRole("heading", { name: "Your wallet is verified." }),
   ).toBeVisible({ timeout: 120000 });
   await page.screenshot({
+    caret: "initial",
     path: ".context/flow-mobile-verified.png",
     fullPage: true,
   });
@@ -255,7 +283,11 @@ try {
 } catch (e) {
   for (const c of browser.contexts())
     for (const p of c.pages()) {
-      await p.screenshot({ path: ".context/ui-failure.png", fullPage: true });
+      await p.screenshot({
+        caret: "initial",
+        path: ".context/ui-failure.png",
+        fullPage: true,
+      });
       console.log((await p.locator("body").innerText()).slice(0, 6500));
     }
   console.error(safeError(e));
