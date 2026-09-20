@@ -120,14 +120,53 @@
   min-height: 44px;
 }
 .liveSlot {
-  min-height: 26px;
+  min-height: 48px;
   margin-top: 26px;
-  color: #526178;
-  font-family: var(--font-landing-mono), ui-monospace, monospace;
-  font-size: 14px;
-  line-height: 1.65;
   letter-spacing: 0;
   animation: arrive 260ms 240ms both;
+}
+.quote {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin: 0;
+  text-align: left;
+}
+.quote dt,
+.quote dd {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  margin: 0;
+  min-height: 48px;
+}
+.quote dd {
+  padding-left: 22px;
+  border-left: 1px solid #e1e6ed;
+}
+.quoteAsset {
+  font-size: 15px;
+  line-height: 26px;
+}
+.quoteCaption {
+  color: #62718a;
+  font-size: 11px;
+  line-height: 18px;
+}
+.quoteAmount {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-landing-mono), ui-monospace, monospace;
+  font-size: 24px;
+  line-height: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.quoteUnit {
+  color: #526178;
+  font-family: var(--font-landing), Inter, system-ui, sans-serif;
+  font-size: 11px;
 }
 .footer {
   padding: 0;
@@ -172,9 +211,6 @@
   .header {
     gap: 16px;
   }
-  .header nav .github {
-    display: none;
-  }
   .header nav .headerAction {
     padding: 0 12px;
     font-size: 12px;
@@ -197,7 +233,6 @@
   }
   .liveSlot {
     margin-top: 20px;
-    font-size: 12px;
   }
   .footer {
     max-width: 360px;

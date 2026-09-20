@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { copy, repositoryUrl } from "@hitbite/config/copy";
 import { Providers } from "@/components/providers";
-import { Header, WalkthroughToggle } from "@/components/ui";
+import { Header } from "@/components/ui";
 import "../globals.css";
 export const metadata: Metadata = {
   title: "HitBite — Testnet",
@@ -24,7 +24,6 @@ export default function PlatformLayout({
         <footer>
           <p>{copy.testnetBanner}</p>
           <div>
-            <WalkthroughToggle />
             <a href={repositoryUrl} target="_blank" rel="noreferrer">
               Source ↗
             </a>

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 /* Native links avoid loading the platform until the visitor opens it. */
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { landingFont, landingMono } from "@/lib/landing-font";
-import { repositoryUrl } from "@hitbite/config/copy";
 import { LandingNav } from "@/components/landing-nav";
 import { accessEmail, accessUrl, appLive, landingCopy } from "@/lib/site";
 import styles from "./landing.module.css";
@@ -51,9 +50,6 @@ export default function LandingPage() {
           />
         </a>
         <nav aria-label="Main navigation">
-          <a className={styles.github} href={repositoryUrl}>
-            GitHub
-          </a>
           {appLive && (
             <a href="/app" className={styles.headerAction}>
               Open the testnet
@@ -75,8 +71,6 @@ export default function LandingPage() {
             </a>
           )}
           <div className={styles.quietLinks}>
-            <a href={repositoryUrl}>Read the code</a>
-            <span aria-hidden="true">·</span>
             <a href={accessUrl}>Request access</a>
           </div>
         </div>

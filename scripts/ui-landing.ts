@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium, expect } from "@playwright/test";
 import { landingCopy } from "../app/src/lib/site.ts";
 const baseUrl = process.env.UI_BASE_URL || "http://localhost:3000";
@@ -30,6 +30,21 @@ try {
     "HitBite — Türkiye's sovereign bonds, on-chain",
   );
   assert.equal(await page.locator("h1").count(), 1);
+  await expect(page.locator('a[href*="github.com"]')).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Read the code" })).toHaveCount(
+    0,
+  );
+  await expect(page.locator('link[rel="icon"]')).toHaveCount(1);
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
+    "href",
+    /\/favicon\.ico/,
+  );
+  const favicon = await page.request.get(baseUrl + "/favicon.ico");
+  assert(favicon.ok());
+  assert.deepEqual(
+    await favicon.body(),
+    readFileSync("app/src/app/favicon.ico"),
+  );
   assert.doesNotMatch(
     await page.locator("body").innerText(),
     /\b(invest|investing|returns|APY|yield|guaranteed|coming soon|waitlist|airdrop|points)\b/i,
@@ -55,12 +70,20 @@ try {
     const data = await (
       await page.request.get(baseUrl + "/data/nav.json")
     ).json();
-    await expect(page.getByTestId("landing-nav")).toContainText(
-      "NAV " +
-        Number(data.nav_per_token).toLocaleString("en-US", {
-          minimumFractionDigits: 4,
-          maximumFractionDigits: 6,
-        }),
+    await expect(page.getByTestId("landing-nav-value")).toHaveText(
+      Number(data.nav_per_token).toLocaleString("en-US", {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 6,
+      }),
+    );
+    await expect(page.getByTestId("landing-nav").locator("dt")).toHaveText(
+      "hbTRSNet asset value",
+    );
+    await expect(
+      page.getByTestId("landing-nav").locator("time"),
+    ).toHaveAttribute("datetime", data.timestamp);
+    await expect(page.getByTestId("landing-nav")).not.toContainText(
+      "Arc Testnet",
     );
     await expect(
       page
@@ -107,10 +130,6 @@ try {
       headline.height <= headline.lineHeight * 2 + 1,
       "Headline exceeds two lines",
     );
-    if (width! < 640)
-      await expect(
-        page.getByRole("link", { name: "GitHub", exact: true }),
-      ).not.toBeVisible();
     layouts.push(bounds);
     await page.screenshot({
       path: `.context/landing-${live ? "live" : "access"}-${width}.png`,
@@ -129,7 +148,7 @@ try {
     page.getByRole("link", { name: "hello@hitbite.com", exact: true }),
   ).toBeInViewport();
   results.push(
-    "Exact copy, one headline, responsive single-screen layout; short screens can scroll without clipping",
+    "Exact copy, supplied favicon, no GitHub links, responsive single-screen layout; short screens can scroll without clipping",
   );
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();

@@ -20,7 +20,7 @@ import {
   txUrl,
   type Snapshot,
 } from "@/lib/chain";
-import { Caption, Icon } from "./ui";
+import { Icon } from "./ui";
 
 export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
   const names = receipt.logs.flatMap((log) => {
@@ -59,7 +59,6 @@ export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
 export function Action({
   title,
   description,
-  contract,
   fn,
   address,
   abi,
@@ -74,7 +73,6 @@ export function Action({
 }: {
   title: string;
   description: string;
-  contract: string;
   fn: string;
   address: Address;
   abi: Abi;
@@ -194,10 +192,6 @@ export function Action({
               : ""}
         </span>
       )}
-      <Caption>
-        Calls {contract}.{fn}() at {short(address)}. You approve it in your
-        wallet.
-      </Caption>
       <button
         className={secondary ? "secondary" : undefined}
         aria-label={inline && !busy ? title : undefined}

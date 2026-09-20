@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { landingNav } from "@/lib/landing-nav";
+import styles from "@/app/landing.module.css";
 export function LandingNav() {
   const [nav, setNav] = useState<ReturnType<typeof landingNav>>(null);
   useEffect(() => {
@@ -31,9 +32,20 @@ export function LandingNav() {
   }, []);
   if (!nav) return null;
   return (
-    <span data-testid="landing-nav">
-      NAV {nav.value} USDC · Arc Testnet · updated{" "}
-      <time dateTime={nav.timestamp}>{nav.relative}</time>
-    </span>
+    <dl className={styles.quote} data-testid="landing-nav">
+      <dt>
+        <span className={styles.quoteAsset}>hbTRS</span>
+        <span className={styles.quoteCaption}>Net asset value</span>
+      </dt>
+      <dd>
+        <span className={styles.quoteAmount}>
+          <span data-testid="landing-nav-value">{nav.value}</span>
+          <span className={styles.quoteUnit}>USDC</span>
+        </span>
+        <time className={styles.quoteCaption} dateTime={nav.timestamp}>
+          Updated {nav.relative}
+        </time>
+      </dd>
+    </dl>
   );
 }

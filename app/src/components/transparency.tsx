@@ -16,7 +16,7 @@ import {
   verifyAttestation,
   type Attestation,
 } from "@/lib/attestation";
-import { useNav, useSnapshot, Caption, Icon } from "./ui";
+import { useNav, useSnapshot, Icon } from "./ui";
 import { NavHistory } from "./nav-history";
 
 function money(value: string | undefined, places = 2) {
@@ -291,10 +291,6 @@ export function Transparency() {
                 : "The loaded record changed or could not refresh. Verify its signature again once data is available."}
             </p>
           )}
-          <Caption>
-            Your browser checks the signed payload, public key, configured
-            attestor and snapshot NAV. No wallet signature is needed.
-          </Caption>
           <div className="record-actions">
             <Download href="/data/attestation.json">Signed JSON</Download>
             <Download href="/data/nav.json">NAV data</Download>

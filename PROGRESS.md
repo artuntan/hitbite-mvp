@@ -535,3 +535,10 @@ Desktop, final public release:
 Mobile, final public release:
 
 ![HitBite landing at 390 × 844](deployments/evidence/landing-mobile.png)
+
+## 2026-09-20 — Landing polish and simpler app
+
+- Removed both landing GitHub destinations (header GitHub and Read the code), keeping the testnet/access actions. Replaced the diagnostic NAV sentence with a compact two-column hbTRS quote: net asset value label, USDC amount and publication age. Snapshot validation and stale-data hiding are unchanged; the simulation disclosure remains in the footer.
+- Removed Show explanations and the optional walkthrough captions/preferences throughout the platform. An old enabled browser preference no longer restores hidden explanatory text. Normal action descriptions, consent, transaction controls and testnet disclosures remain available.
+- Installed the founder-supplied multi-resolution favicon.ico byte-for-byte and removed the competing browser PNG icon. The Apple touch icon and page wordmarks remain the approved artwork.
+- Local optimized-build verification passed: lint, types, all 14 configuration/security tests, production build and gitleaks; six landing groups, six shell groups and seven Transparency groups. Desktop/tablet/mobile layouts fit, the actual favicon bytes are served, the legacy preference case passes and no browser errors or wallet transactions occurred. New NAV text is covered by the existing font subsets. Evidence is `.context/polish-local-evidence.json`; public verification follows. Historical STATUS is unchanged.

@@ -2,16 +2,8 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useAccount } from "wagmi";
 import type { TransactionReceipt } from "viem";
-import { copy } from "@hitbite/config/copy";
 import { config, deployment, units, type Snapshot } from "@/lib/chain";
-import {
-  Caption,
-  WalletButton,
-  Icon,
-  ProductSymbol,
-  useSnapshot,
-  Alert,
-} from "./ui";
+import { WalletButton, Icon, ProductSymbol, useSnapshot, Alert } from "./ui";
 import { Verify } from "./verify";
 import { Subscribe } from "./investment-forms";
 import { Portfolio } from "./portfolio";
@@ -183,10 +175,6 @@ function ConnectStep() {
       <p className="step-description">
         Subscribe to hbTRS with test USDC on Arc.
       </p>
-      <Caption>
-        Connecting shares your public address. It does not move funds. Use a
-        browser wallet or your mobile wallet’s browser.
-      </Caption>
       <WalletButton />
       <p className="connect-faucet">
         Need test USDC?{" "}
@@ -194,7 +182,6 @@ function ConnectStep() {
           Get funds ↗
         </a>
       </p>
-      <Caption>{copy.gasNotice} Choose Arc Testnet in the faucet.</Caption>
     </div>
   );
 }

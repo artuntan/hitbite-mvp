@@ -240,7 +240,6 @@ function TokenControls({ data }: { data: Snapshot }) {
         )}
         <Action
           title={force ? "Force NAV update" : "Publish NAV"}
-          contract="HBToken"
           fn="setNAV"
           address={d.addresses.HBToken}
           abi={hBTokenAbi}
@@ -288,7 +287,6 @@ function TokenControls({ data }: { data: Snapshot }) {
             </p>
             <Action
               title="Approve coupon funding"
-              contract="USDC"
               fn="approve"
               address={d.addresses.USDC}
               abi={erc20Abi}
@@ -304,7 +302,6 @@ function TokenControls({ data }: { data: Snapshot }) {
             />
             <Action
               title="Distribute coupon"
-              contract="HBToken"
               fn="distributeCoupon"
               address={d.addresses.HBToken}
               abi={hBTokenAbi}
@@ -338,7 +335,6 @@ function TokenControls({ data }: { data: Snapshot }) {
             </label>
             <Action
               title="Transfer USDC to vault"
-              contract="USDC"
               fn="transfer"
               address={d.addresses.USDC}
               abi={erc20Abi}
@@ -360,7 +356,6 @@ function TokenControls({ data }: { data: Snapshot }) {
             </p>
             <Action
               title={data.paused ? "Unpause token" : "Pause token"}
-              contract="HBToken"
               fn={data.paused ? "unpause" : "pause"}
               address={d.addresses.HBToken}
               abi={hBTokenAbi}
@@ -425,7 +420,6 @@ function RegistryControls() {
         <label>Country of residence{select(country, setCountry)}</label>
         <Action
           title="Verify wallet"
-          contract="IdentityRegistry"
           fn="addVerified"
           address={d.addresses.IdentityRegistry}
           abi={identityRegistryAbi}
@@ -441,7 +435,6 @@ function RegistryControls() {
         />
         <Action
           title="Revoke wallet"
-          contract="IdentityRegistry"
           fn="removeVerified"
           address={d.addresses.IdentityRegistry}
           abi={identityRegistryAbi}
@@ -477,7 +470,6 @@ function RegistryControls() {
         </label>
         <Action
           title="Update country rule"
-          contract="IdentityRegistry"
           fn="setCountryBlocked"
           address={d.addresses.IdentityRegistry}
           abi={identityRegistryAbi}
