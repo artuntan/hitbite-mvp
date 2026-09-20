@@ -28,7 +28,7 @@ const walletConfig = config.walletConnectProjectId
       ssr: true,
     });
 const theme = lightTheme({
-  accentColor: "#080808",
+  accentColor: "#1465d4",
   accentColorForeground: "#ffffff",
   borderRadius: "small",
   fontStack: "system",

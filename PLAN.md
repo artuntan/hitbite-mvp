@@ -449,3 +449,7 @@ Rebuild Transparency in the approved investment-workspace visual language. Prior
 ## 2026-09-20 amendment — Founder-supplied HitBite logo
 
 Use the founder's transparent AVIF wordmark in the shared fixed header, replacing the placeholder mark and text. Preserve its native aspect ratio and the approved transparent-to-glass scroll behavior. Size the complete wordmark for desktop and mobile, retaining a usable home link and room for Transparency and the position summary. Verify the production build and existing read-only shell checks before publishing.
+
+## 2026-09-20 amendment — Blue brand palette and inline coupon withdrawal
+
+The founder identifies Facebook blue as HitBite's primary brand color. Replace the olive interface with shared blue accents and cool neutral surfaces/text across setup, Portfolio, Transparency and wallet controls; preserve the supplied logo and glass header. Integrate coupon withdrawal, pending/error/confirmation feedback and receipts directly into the top-right Claimable coupons balance card, removing the separate payout panel. Replace the fragile approval number/icon styling with fixed, accessible ordered-step indicators. Preserve transaction amounts, permissions and guards; verify the changed UI with the existing browser flow, including claim decline/retry and responsive step states, before publishing.

@@ -92,14 +92,29 @@ export function Subscribe({
           {copy.gasNotice}
         </p>
       </details>
-      <div className="approval-progress" aria-label="Subscription transactions">
-        <span className={approved ? "done" : "current"}>
-          {approved ? <Icon name="check" /> : <span>1</span>} Approve USDC
-        </span>
-        <span className={approved ? "current" : ""}>
-          <span>2</span> Subscribe
-        </span>
-      </div>
+      <ol className="approval-progress" aria-label="Subscription transactions">
+        <li
+          className={approved ? "done" : "current"}
+          aria-current={!approved ? "step" : undefined}
+        >
+          <span className="step-indicator" aria-hidden="true">
+            {approved ? <Icon name="check" /> : "1"}
+          </span>
+          <span>
+            Approve USDC
+            {approved && <span className="sr-only">, complete</span>}
+          </span>
+        </li>
+        <li
+          className={approved ? "current" : ""}
+          aria-current={approved ? "step" : undefined}
+        >
+          <span className="step-indicator" aria-hidden="true">
+            2
+          </span>
+          <span>Subscribe</span>
+        </li>
+      </ol>
       <Action
         key={approved ? "subscribe" : "approve"}
         compact
