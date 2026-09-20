@@ -12,7 +12,14 @@ import {
 } from "viem";
 import { hBTokenAbi, identityRegistryAbi } from "@hitbite/config/abi";
 import { ARC_MIN_MAX_FEE_PER_GAS } from "@hitbite/config/chains";
-import { client, config, short, txUrl } from "@/lib/chain";
+import {
+  client,
+  config,
+  recordConfirmedBlock,
+  short,
+  txUrl,
+  type Snapshot,
+} from "@/lib/chain";
 import { Caption, Icon } from "./ui";
 
 export function Receipt({ receipt }: { receipt: TransactionReceipt }) {
@@ -88,8 +95,12 @@ export function Action({
   const [receipt, setReceipt] = useState<TransactionReceipt>();
   const [error, setError] = useState("");
   const [pendingHash, setPendingHash] = useState<string>();
+  const balancesPending =
+    receipt?.status === "success" &&
+    (query.getQueryData<Snapshot>(["chain", account])?.blockNumber ?? 0n) <
+      receipt.blockNumber;
   const reason =
-    disabled ||
+    (balancesPending ? "Updating balances…" : disabled) ||
     (!account
       ? "Connect a wallet to continue."
       : chainId !== config.chain.id
@@ -141,6 +152,7 @@ export function Action({
       setReceipt(confirmed);
       if (confirmed.status !== "success")
         throw new Error("Transaction reverted. No action was completed.");
+      recordConfirmedBlock(confirmed.blockNumber);
       await query.invalidateQueries({ queryKey: ["chain"] });
       await query.invalidateQueries({ queryKey: ["activity"] });
       onSuccess?.(confirmed);
@@ -172,9 +184,11 @@ export function Action({
       {inline && (
         <span className="sr-only" role="status">
           {busy
-            ? pendingHash
-              ? "Confirming your coupon claim."
-              : "Confirm the coupon claim in your wallet."
+            ? receipt?.status === "success"
+              ? "Updating your coupon balance."
+              : pendingHash
+                ? "Confirming your coupon claim."
+                : "Confirm the coupon claim in your wallet."
             : receipt?.status === "success"
               ? "Coupons claimed successfully."
               : ""}
@@ -193,7 +207,9 @@ export function Action({
       >
         {busy
           ? receipt?.status === "success"
-            ? "Confirmed"
+            ? balancesPending
+              ? "Updating balances…"
+              : "Confirmed"
             : pendingHash
               ? "Confirming…"
               : "Check your wallet…"

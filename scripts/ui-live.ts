@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { parseEventLogs } from "viem";
-import { chromium, expect } from "@playwright/test";
+import { chromium, expect, type Route } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { walletPage } from "../tests/browser/wallet.ts";
 import { hBTokenAbi } from "../packages/config/abi.ts";
@@ -262,6 +262,37 @@ try {
     });
   }
   await page.setViewportSize({ width: 1440, height: 1050 });
+  // Keep the browser's reported head behind the next receipt to reproduce RPC lag.
+  // Contract reads, signatures and transactions still use the actual testnet.
+  const laggingHead = await investor.ctx.client.getBlockNumber({
+    cacheTime: 0,
+  });
+  let delayedHeadReads = 0;
+  const delayHead = async (route: Route) => {
+    let requests: { method?: string; id?: number }[];
+    try {
+      const body = route.request().postDataJSON();
+      requests = Array.isArray(body) ? body : [body];
+    } catch {
+      return route.continue();
+    }
+    const ids = requests
+      .filter((r) => r?.method === "eth_blockNumber")
+      .map((r) => r.id);
+    if (!ids.length) return route.continue();
+    delayedHeadReads += ids.length;
+    const response = await route.fetch();
+    const body = await response.json();
+    const change = (r: { id?: number; result?: string }) =>
+      ids.includes(r.id) && r.result
+        ? { ...r, result: `0x${laggingHead.toString(16)}` }
+        : r;
+    await route.fulfill({
+      response,
+      json: Array.isArray(body) ? body.map(change) : change(body),
+    });
+  };
+  await page.route("**/*", delayHead);
   // Decline one wallet request in the browser only, then retry the actual claim.
   await page.evaluate(() => {
     const bridge = window as unknown as {
@@ -304,7 +335,24 @@ try {
   });
   await expect(coupons.getByTestId("portfolio-coupons")).toContainText(
     "0.000000",
+    { timeout: 120000 },
   );
+  await expect(coupons.locator(".action-inline")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
+  const claimedReceipt = await investor.ctx.client.getTransactionReceipt({
+    hash: investor.transactions.at(-1)!,
+  });
+  const displayedBlock = BigInt(
+    (await page.locator(".workspace-status .mono").innerText()).slice(1),
+  );
+  assert(
+    displayedBlock >= claimedReceipt.blockNumber &&
+      claimedReceipt.blockNumber > laggingHead,
+  );
+  assert(delayedHeadReads > 0, "The delayed RPC-head fixture was exercised.");
+  await page.unroute("**/*", delayHead);
   await expect(claim).toBeDisabled();
   await expect(coupons.getByRole("alert")).toHaveCount(0);
   await page.setViewportSize({ width: 320, height: 844 });
@@ -319,7 +367,7 @@ try {
     fullPage: true,
   });
   results.push({
-    step: "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim, confirmed receipt and zero-balance state",
+    step: "Coupon metric handles funded balance, wallet decline/retry, pending lock, real claim and zero balance despite a lagging RPC head",
     passed: true,
   });
   await page.getByRole("tab", { name: "Redeem", exact: true }).click();
