@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
+import { erc20Abi } from "viem";
 import { generatePrivateKey } from "viem/accounts";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { walletPage } from "../tests/browser/wallet.ts";
-import { json, safeError } from "./runtime.ts";
+import { json, safeError, transact } from "./runtime.ts";
 
 const baseUrl =
   process.env.UI_BASE_URL ||
@@ -12,6 +13,8 @@ const baseUrl =
 const browser = await chromium.launch();
 const errors: string[] = [];
 const results: string[] = [];
+let verificationHash: string | undefined;
+let verificationFundingHash: string | undefined;
 mkdirSync(".context", { recursive: true });
 try {
   const page = await browser.newPage({
@@ -40,9 +43,13 @@ try {
     await header.evaluate((e) => getComputedStyle(e).position),
     "fixed",
   );
-  assert.match(
-    await header.evaluate((e) => getComputedStyle(e).backdropFilter),
-    /blur/,
+  assert.equal(
+    await header.evaluate((e) => getComputedStyle(e, "::before").opacity),
+    "0",
+  );
+  assert.equal(
+    await header.evaluate((e) => getComputedStyle(e).backgroundColor),
+    "rgba(0, 0, 0, 0)",
   );
   await page.evaluate(() => document.fonts.ready);
   for (const width of [1440, 768, 390, 320]) {
@@ -85,7 +92,30 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(baseUrl + "/transparency");
   const before = await header.boundingBox();
+  await expect
+    .poll(() => header.evaluate((e) => getComputedStyle(e, "::before").opacity))
+    .toBe("0");
+  await page.evaluate(() => window.scrollTo(0, 44));
+  await expect
+    .poll(() =>
+      header.evaluate((e) => Number(getComputedStyle(e, "::before").opacity)),
+    )
+    .toBeGreaterThan(0.4);
+  assert(
+    Number(
+      await header.evaluate((e) => getComputedStyle(e, "::before").opacity),
+    ) < 0.6,
+  );
   await page.evaluate(() => window.scrollTo(0, 900));
+  await expect
+    .poll(() => header.evaluate((e) => getComputedStyle(e, "::before").opacity))
+    .toBe("1");
+  assert.match(
+    await header.evaluate(
+      (e) => getComputedStyle(e, "::before").backdropFilter,
+    ),
+    /blur/,
+  );
   const after = await header.boundingBox();
   assert(before && after && Math.abs(after.y - before.y) < 1);
   await page.screenshot({
@@ -105,9 +135,21 @@ try {
     "Signature verified",
   );
   results.push(
-    "Header stays fixed while scrolling; glass blur is active; outside click dismisses position",
+    "Header is transparent at top, gradually reveals glass on scroll and stays fixed; outside click dismisses position",
   );
   results.push("Transparency attestation still verifies client-side");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect
+    .poll(() => header.evaluate((e) => getComputedStyle(e, "::before").opacity))
+    .toBe("0");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  assert.equal(
+    (await header.evaluate((e) =>
+      parseFloat(getComputedStyle(e, "::before").transitionDuration),
+    )) < 0.01,
+    true,
+  );
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(baseUrl + "/app");
   await expect(
     page.getByRole("heading", { name: "Connect your wallet." }),
@@ -124,12 +166,24 @@ try {
   );
   investor.page.on("pageerror", (e) => errors.push(e.message));
   await investor.page.goto(baseUrl);
+  await investor.page.evaluate((contract) => {
+    localStorage.setItem(
+      `hitbite.workspace.5042002.${contract.toLowerCase()}.0x0000000000000000000000000000000000000001`,
+      "true",
+    );
+  }, investor.deployment.addresses.HBToken);
   await investor.page
     .getByRole("button", { name: "Connect wallet", exact: true })
     .click();
   await expect(
     investor.page.getByRole("heading", { name: "Verify your eligibility." }),
   ).toBeVisible({ timeout: 90000 });
+  await expect(
+    investor.page.getByRole("heading", { name: "Connect your wallet." }),
+  ).toHaveCount(0);
+  await expect(
+    investor.page.getByRole("navigation", { name: "Investment steps" }),
+  ).toHaveCount(0);
   await investor.page.getByLabel("Full name").fill("Layout test");
   await investor.page.getByLabel("Country of residence").selectOption("840");
   await expect(
@@ -165,6 +219,47 @@ try {
     fullPage: true,
   });
   assert.equal(investor.transactions.length, 0);
+  if (process.env.UI_VERIFY_FRESH === "1") {
+    const funding = await transact(
+      investor.ctx,
+      "ISSUER_PRIVATE_KEY",
+      investor.deployment.addresses.USDC,
+      erc20Abi,
+      "transfer",
+      [investor.account.address, 60_000n],
+    );
+    verificationFundingHash = funding.transactionHash;
+    const response = investor.page
+      .waitForResponse(
+        (r) =>
+          r.url().endsWith("/api/verify") &&
+          r.request().postDataJSON()?.action === "complete",
+        { timeout: 120000 },
+      )
+      .catch(() => undefined);
+    await investor.page
+      .getByRole("button", { name: "Sign & start review" })
+      .click();
+    await expect(
+      investor.page.getByText("Pending · 10-second simulated review"),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      investor.page.getByRole("heading", { name: "Subscribe to hbTRS." }),
+    ).toBeVisible({ timeout: 120000 });
+    const completed = await response;
+    assert(completed);
+    verificationHash = (await completed.json()).transactionHash;
+    assert(verificationHash);
+    await expect(
+      investor.page.getByRole("heading", { name: "Verify your eligibility." }),
+    ).toHaveCount(0);
+    await expect(investor.page.locator(".setup-progress")).toContainText(
+      "03 / 03",
+    );
+    results.push(
+      "Fresh wallet signed review confirms on-chain and automatically closes verification; another wallet's workspace preference does not skip setup",
+    );
+  }
   results.push(
     "Fresh-wallet verification form, required consent and US-country restriction remain usable on desktop/mobile",
   );
@@ -176,7 +271,9 @@ try {
       baseUrl,
       results,
       pageErrors: errors,
-      transactions: 0,
+      walletTransactions: 0,
+      verificationHash,
+      verificationFundingHash,
     }),
   );
   console.log(json(results));

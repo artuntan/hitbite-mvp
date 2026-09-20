@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { parseEventLogs } from "viem";
 import { chromium, expect } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -36,14 +37,14 @@ try {
     .getByRole("button", { name: "Connect wallet", exact: true })
     .first()
     .click();
-  await page.getByRole("button", { name: /02 Verify/ }).click();
+
   await expect(
     page.getByRole("heading", {
-      name: /Verify your eligibility\.|Your wallet is verified\./,
+      name: /Verify your eligibility\.|Subscribe to hbTRS\./,
     }),
   ).toBeVisible({ timeout: 120000 });
   const already = await page
-    .getByRole("heading", { name: "Your wallet is verified." })
+    .getByRole("heading", { name: "Subscribe to hbTRS." })
     .isVisible();
   if (!already) {
     await page.getByLabel("Full name").fill("Test UI Applicant");
@@ -63,7 +64,7 @@ try {
       fullPage: true,
     });
     await expect(
-      page.getByRole("heading", { name: "Your wallet is verified." }),
+      page.getByRole("heading", { name: "Subscribe to hbTRS." }),
     ).toBeVisible({ timeout: 60000 });
   }
   results.push({
@@ -77,7 +78,15 @@ try {
     path: ".context/step-2-verified.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: /Continue to subscribe/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Connect your wallet." }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Verify your eligibility." }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation", { name: "Investment steps" }),
+  ).toHaveCount(0);
   await page.getByLabel("USDC amount").fill("0.2");
   const approve = page.getByRole("button", {
     name: "Approve USDC",
@@ -85,6 +94,7 @@ try {
   });
   if (await approve.isVisible()) {
     await approve.click();
+    await expect(page.getByLabel("USDC amount")).toBeDisabled();
     await expect(page.locator(".approval-progress .done")).toContainText(
       "Approve USDC",
       { timeout: 120000 },
@@ -113,7 +123,42 @@ try {
     fullPage: true,
   });
   results.push({ step: "Approve and subscribe via UI", passed: true });
-  await page.getByRole("button", { name: /View your position/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Portfolio", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".setup-progress")).toHaveCount(0);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Portfolio", exact: true }),
+  ).toBeVisible({ timeout: 120000 });
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: width > 800 ? 1050 : 844 });
+    assert.equal(
+      await page
+        .locator("body")
+        .evaluate((e) => e.scrollWidth > window.innerWidth),
+      false,
+      `Portfolio overflow at ${width}`,
+    );
+    await page.screenshot({
+      caret: "initial",
+      path: `.context/portfolio-${width}.png`,
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 1050 });
+  await page.getByRole("tab", { name: "Subscribe", exact: true }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    page.getByRole("tab", { name: "Redeem", exact: true }),
+  ).toBeFocused();
+  await expect(page.getByLabel("hbTRS amount")).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByLabel("USDC amount")).toBeVisible();
+  results.push({
+    step: "Automatic workspace entry, remembered after reload, four viewport sizes and keyboard order tabs",
+    passed: true,
+  });
   const issuer = await walletPage(browser, "ISSUER_PRIVATE_KEY", baseUrl);
   await issuer.page.goto(baseUrl + "/admin");
   await issuer.page
@@ -157,18 +202,22 @@ try {
     step: "Admin coupon distribution and investor claim via UI",
     passed: true,
   });
-  await page.getByRole("button", { name: "Redeem", exact: true }).click();
+  await page.getByRole("tab", { name: "Redeem", exact: true }).click();
   await page.getByRole("button", { name: "Use full token balance" }).click();
   await page
     .getByRole("button", { name: "Redeem tokens", exact: true })
     .click();
+  await expect(page.getByLabel("hbTRS amount")).toBeDisabled();
+  await expect(
+    page.getByRole("tab", { name: "Subscribe", exact: true }),
+  ).toBeDisabled();
   await expect(
     page.getByTestId("receipt").filter({ hasText: "Redeemed" }),
   ).toBeVisible({
     timeout: 120000,
   });
   await expect(
-    page.getByRole("heading", { name: "Redemption complete." }),
+    page.getByRole("heading", { name: "Portfolio", exact: true }),
   ).toBeVisible({ timeout: 120000 });
   await expect(
     page.getByRole("button", { name: "Your position", exact: true }),
@@ -178,7 +227,16 @@ try {
     path: ".context/step-5-redeem.png",
     fullPage: true,
   });
-  results.push({ step: "Full redemption via UI", passed: true });
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Portfolio", exact: true }),
+  ).toBeVisible({ timeout: 120000 });
+  await expect(page.getByTestId("portfolio-value")).toContainText("0.000000");
+  await expect(page.locator(".setup-progress")).toHaveCount(0);
+  results.push({
+    step: "Full redemption via UI; empty account remains in workspace after reload",
+    passed: true,
+  });
   await issuer.page.getByLabel("Vault funding amount").fill("0.1");
   await issuer.page
     .getByRole("button", { name: "Transfer USDC to vault", exact: true })
@@ -244,13 +302,13 @@ try {
   ).toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(baseUrl + "/app");
-  await page.getByRole("button", { name: /02 Verify/ }).click();
+
   await expect(
-    page.getByRole("heading", { name: "Your wallet is verified." }),
+    page.getByRole("heading", { name: "Portfolio", exact: true }),
   ).toBeVisible({ timeout: 120000 });
   await page.screenshot({
     caret: "initial",
-    path: ".context/flow-mobile-verified.png",
+    path: ".context/portfolio-mobile-empty.png",
     fullPage: true,
   });
   if (
