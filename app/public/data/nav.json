@@ -5,11 +5,11 @@
   "model": "Reference basket scaled by actual token supply; real vault cash excluded from simulated NAV.",
   "day_count": "Actual/Actual, semiannual coupons; fees Actual/365",
   "reference_units": "100000",
-  "supply": "0.5",
+  "supply": "1.5",
   "bootstrap": false,
   "nav_per_token": "1",
   "nav_units": "1000000",
-  "portfolio_value": "0.5000000000",
+  "portfolio_value": "1.5000000000",
   "cash": "0.000000",
   "fees": {
     "management_rate": "0.0075",
@@ -17,7 +17,7 @@
     "management_accrued": "0.0000000000",
     "expenses_accrued": "0.0000000000"
   },
-  "net_assets": "0.5000000000",
+  "net_assets": "1.5000000000",
   "holdings": [
     {
       "id": "SIM-2029",
@@ -32,8 +32,8 @@
       "accrued_per_100": "0.00",
       "simulated_ytm": "0.06000000000000000000000000000157377750591591855180",
       "reference_value": "40000.00",
-      "scaled_face": "0.200000",
-      "value": "0.20000000",
+      "scaled_face": "0.600000",
+      "value": "0.60000000",
       "price_date": "2026-09-20",
       "price_source": "Manual simulated input; held constant until explicitly revised"
     },
@@ -50,8 +50,8 @@
       "accrued_per_100": "0.0000",
       "simulated_ytm": "0.06650000000000000000000000000027689017773257514370",
       "reference_value": "40000.0000",
-      "scaled_face": "0.200000",
-      "value": "0.2000000000",
+      "scaled_face": "0.600000",
+      "value": "0.6000000000",
       "price_date": "2026-09-20",
       "price_source": "Manual simulated input; held constant until explicitly revised"
     },
@@ -68,8 +68,8 @@
       "accrued_per_100": "0.0000",
       "simulated_ytm": "0.07039999999999999999999999999949875778082256909884",
       "reference_value": "20000.0000",
-      "scaled_face": "0.100000",
-      "value": "0.1000000000",
+      "scaled_face": "0.300000",
+      "value": "0.3000000000",
       "price_date": "2026-09-20",
       "price_source": "Manual simulated input; held constant until explicitly revised"
     }
@@ -80,24 +80,24 @@
   "backing_label": "Simulated assets / token NAV liability; not evidence of custody or redeemable cash.",
   "chain_id": 5042002,
   "token": "0x6D5163D237203Af9bce4292562B94e585327927E",
-  "timestamp": "2026-09-20T09:08:44Z",
-  "block_number": 63062802,
+  "timestamp": "2026-09-20T10:09:02Z",
+  "block_number": 63070021,
   "onchain_nav_units": "1000000",
-  "vault_cash": "10.5",
-  "available_liquidity": "10.5",
-  "coupon_reserve": "0.0",
-  "vault_coverage_ratio": "21",
-  "simulated_distribution_yield_30d": "0",
+  "vault_cash": "11.909732",
+  "available_liquidity": "11.7",
+  "coupon_reserve": "0.209732",
+  "vault_coverage_ratio": "7.8",
+  "simulated_distribution_yield_30d": "0.177915376676986584107324",
   "distribution_yield_method": "Trailing 30-day funded coupon per token / current NAV; not annualized.",
   "publication": {
-    "transaction_hash": "0xf7df957f0f2141faea1f30fd2796619a04484471007c4daa1e3332e88461f1cf",
-    "block_number": 63062802
+    "transaction_hash": "0xb4806482f04e8b24940f70551472a654be421b86523b57120e848a99b1a4a94d",
+    "block_number": 63070021
   },
   "history": [
     {
       "date": "2026-09-20",
       "nav": "1",
-      "block": 63062802
+      "block": 63070021
     }
   ]
 }
