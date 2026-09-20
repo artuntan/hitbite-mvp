@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-09-20T09:38:38.235Z",
+  "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+  "chainId": 5042002,
+  "wallet": "0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868",
+  "kind": "Automated injected-wallet browser test; not founder acceptance",
+  "results": [
+    {
+      "step": "Connect and simulated review via UI",
+      "passed": true
+    },
+    {
+      "step": "Approve and subscribe via UI",
+      "passed": true
+    },
+    {
+      "step": "Admin coupon distribution and investor claim via UI",
+      "passed": true
+    },
+    {
+      "step": "Full redemption via UI",
+      "passed": true
+    },
+    {
+      "step": "Client-side signature verification",
+      "passed": true
+    },
+    {
+      "step": "Mobile layout and persisted walkthrough",
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

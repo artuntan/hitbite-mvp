@@ -1,0 +1,41 @@
+name: Daily simulated NAV
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: arc-nav-publisher
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_CHAIN: arc-testnet
+      ORACLE_PRIVATE_KEY: ${{ secrets.ORACLE_PRIVATE_KEY }}
+      ATTESTOR_PRIVATE_KEY: ${{ secrets.ATTESTOR_PRIVATE_KEY }}
+      NEXT_PUBLIC_ATTESTOR_ADDRESS: ${{ vars.NEXT_PUBLIC_ATTESTOR_ADDRESS }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.7.21'
+      - run: uv run --python 3.11 nav_engine/hb.py nav
+      - run: uv run --python 3.11 nav_engine/hb.py push
+      - run: uv run --python 3.11 nav_engine/hb.py attest
+      - name: Commit confirmed snapshots
+        run: |
+          git config user.name 'hitbite-nav[bot]'
+          git config user.email 'hitbite-nav[bot]@users.noreply.github.com'
+          git add app/public/data/nav.json app/public/data/attestation.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: publish confirmed simulated NAV and attestation'
+            git push
+          fi
+      - name: Deploy and verify the confirmed snapshot
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+        run: python3 scripts/refresh-site.py

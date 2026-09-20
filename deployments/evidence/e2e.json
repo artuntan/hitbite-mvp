@@ -1,0 +1,235 @@
+{
+  "started": "2026-09-20T10:04:16.732Z",
+  "finished": "2026-09-20T10:05:42.633Z",
+  "baseUrl": "https://hitbite-testnet-v2.vercel.app",
+  "chainId": 5042002,
+  "sourceCommit": "570eabd2891c01920860cfc5874a766276feaabb",
+  "ciUrl": "https://github.com/artuntan/hitbite-mvp/actions/runs/35503845488",
+  "walletA": "0xdf11828012f4aFd88FaAde610Ad267a53A565Fb0",
+  "walletB": "0x6aE14F0ad1333a7Ec497d69904611CBeEB03f7CD",
+  "automatedCorePassed": true,
+  "founderAcceptance": "confirmed by founder",
+  "evidence": [
+    {
+      "name": "NAV, trust anchor and four live routes",
+      "feature": "NAV engine",
+      "status": "pass",
+      "detail": "RPC chain allowlist; deployed contract code; 6-decimal settlement asset; fresh matching NAV; attestation trust anchor; US/TR blocklist; all four product routes; NAV 1000000 micro-USDC."
+    },
+    {
+      "name": "Browser flow and client-side verification evidence",
+      "feature": "Connect",
+      "status": "pass",
+      "detail": "Automated browser test at 2026-09-20T10:00:41.995Z; wallet 0x17C09Bc328A2F9C5ECa00f5a6E4e3721BFe1a868. This is not founder acceptance."
+    },
+    {
+      "name": "Overview renders the same NAV as the chain and JSON",
+      "feature": "Overview",
+      "status": "pass",
+      "detail": "Confirmed"
+    },
+    {
+      "name": "Transparency verifies its signature client-side",
+      "feature": "Transparency",
+      "status": "pass",
+      "detail": "Confirmed"
+    },
+    {
+      "name": "Founder confirms the complete fresh-wallet flow",
+      "feature": "Founder walkthrough",
+      "status": "pass",
+      "detail": "Founder explicitly confirmed verification, subscription, coupon claim and redemption at 2026-09-20T10:00:23.315834+00:00."
+    },
+    {
+      "name": "CI checks for the source commit",
+      "feature": "CI",
+      "status": "pass",
+      "detail": "https://github.com/artuntan/hitbite-mvp/actions/runs/35503845488"
+    },
+    {
+      "name": "Fresh independent wallets and funded testnet",
+      "feature": "Contracts",
+      "status": "pass",
+      "detail": "Fresh wallets 0xdf11828012f4aFd88FaAde610Ad267a53A565Fb0 and 0x6aE14F0ad1333a7Ec497d69904611CBeEB03f7CD; chain 5042002."
+    },
+    {
+      "name": "US and Türkiye are blocked in API and contract",
+      "feature": "Verify",
+      "status": "pass",
+      "detail": "Confirmed"
+    },
+    {
+      "name": "Wallet A: signed simulated verification",
+      "feature": "Verify",
+      "status": "pass",
+      "detail": "Wallet signature checked; early completion rejected; ten-second review enforced; registrar receipt confirmed.",
+      "hash": "0x95798fa455b0814fc62bb17fc0f1f57511cbaf021065574d03f80f2b65b1f8f5",
+      "block": "63069487",
+      "events": [
+        "Verified"
+      ]
+    },
+    {
+      "name": "Wallet A: approve exact USDC subscription",
+      "feature": "Subscribe",
+      "status": "pass",
+      "detail": "Confirmed",
+      "hash": "0x9ae029a00a900634322a98488258cbb8a57c6d6d74d1bb5ab6faf8428f614141",
+      "block": "63069498",
+      "events": [
+        "Approval"
+      ]
+    },
+    {
+      "name": "Wallet A: subscribe with 6-decimal USDC",
+      "feature": "Subscribe",
+      "status": "pass",
+      "detail": "Minted 1000000000000000000 token base units; exact decimals verified.",
+      "hash": "0xb90956fe6272f5968cc9cd7faf259803489c5fc18536771419997b38294e6c0d",
+      "block": "63069509",
+      "events": [
+        "Transfer",
+        "Subscribed"
+      ]
+    },
+    {
+      "name": "Wallet B: signed simulated verification",
+      "feature": "Verify",
+      "status": "pass",
+      "detail": "Wallet signature checked; early completion rejected; ten-second review enforced; registrar receipt confirmed.",
+      "hash": "0x7b5a3dcfbd3e5fba5496b21b1cf1b1b7677799aa6cecce2d5d5c4fd130479115",
+      "block": "63069541",
+      "events": [
+        "Verified"
+      ]
+    },
+    {
+      "name": "Wallet B: approve exact USDC subscription",
+      "feature": "Subscribe",
+      "status": "pass",
+      "detail": "Confirmed",
+      "hash": "0x4c61539301427a954866ef5b3d2d0c2da6e3b06b5b46794db74c9062e995ba44",
+      "block": "63069553",
+      "events": [
+        "Approval"
+      ]
+    },
+    {
+      "name": "Wallet B: subscribe with 6-decimal USDC",
+      "feature": "Subscribe",
+      "status": "pass",
+      "detail": "Minted 1000000000000000000 token base units; exact decimals verified.",
+      "hash": "0x81e0affd4904b05d1632e1c842c2de95f1f1c0fa2992f4086d70d9f265dda794",
+      "block": "63069564",
+      "events": [
+        "Transfer",
+        "Subscribed"
+      ]
+    },
+    {
+      "name": "Unverified wallet cannot receive hbTRS",
+      "feature": "Contracts",
+      "status": "pass",
+      "detail": "Confirmed"
+    },
+    {
+      "name": "Issuer approves coupon funding",
+      "feature": "Admin",
+      "status": "pass",
+      "detail": "Confirmed",
+      "hash": "0xbe449d66a9ec44207e1d0104996baea9401746d3d16a713abc23f5008f448c89",
+      "block": "63069574",
+      "events": [
+        "Approval"
+      ]
+    },
+    {
+      "name": "Issuer distributes a funded coupon",
+      "feature": "Hold / coupons",
+      "status": "pass",
+      "detail": "Confirmed",
+      "hash": "0x98ca3ed4dafe26d5a9d22274eb361498fcc9286c1ec7404bc8fe39ff552d520b",
+      "block": "63069577",
+      "events": [
+        "Transfer",
+        "CouponDistributed"
+      ]
+    },
+    {
+      "name": "Wallet A: claim accrued coupon",
+      "feature": "Hold / coupons",
+      "status": "pass",
+      "detail": "Claimed 57142 micro-USDC.",
+      "hash": "0xdeab20f5c46b762014a989dc3001b2c744e944377e4fb8783b45c90746ccceaf",
+      "block": "63069587",
+      "events": [
+        "Transfer",
+        "CouponClaimed"
+      ]
+    },
+    {
+      "name": "Wallet A: redeem full token balance",
+      "feature": "Redeem",
+      "status": "pass",
+      "detail": "Burned all tokens; redemption output 1000000 micro-USDC.",
+      "hash": "0x2a9a3ae8fd3444de8e3e5a31411c981f6e4af7679b2247ab0732420b9b88e119",
+      "block": "63069590",
+      "events": [
+        "Transfer",
+        "Redeemed"
+      ]
+    },
+    {
+      "name": "Wallet B: claim accrued coupon",
+      "feature": "Hold / coupons",
+      "status": "pass",
+      "detail": "Claimed 57142 micro-USDC.",
+      "hash": "0xa1ad92e9ca1174792cffb4cb76bb28773ab55c2f8b7b1aadb720b4289df9d677",
+      "block": "63069593",
+      "events": [
+        "Transfer",
+        "CouponClaimed"
+      ]
+    },
+    {
+      "name": "Wallet B: redeem full token balance",
+      "feature": "Redeem",
+      "status": "pass",
+      "detail": "Burned all tokens; redemption output 1000000 micro-USDC.",
+      "hash": "0x3cab8ebbe008184192a56a2900683219547f0451dfee93f14fad65f9cf6ece48",
+      "block": "63069604",
+      "events": [
+        "Transfer",
+        "Redeemed"
+      ]
+    },
+    {
+      "name": "Issuer pauses token",
+      "feature": "Admin",
+      "status": "pass",
+      "detail": "Confirmed",
+      "hash": "0x55d05aa196b3f2c5d8ccb624b9a6504ac1fb120ec766b47ad3c06203cedd8a7f",
+      "block": "63069607",
+      "events": [
+        "Paused"
+      ]
+    },
+    {
+      "name": "Pause blocks subscription",
+      "feature": "Contracts",
+      "status": "pass",
+      "detail": "Confirmed"
+    },
+    {
+      "name": "Issuer restores unpaused token",
+      "feature": "Admin",
+      "status": "pass",
+      "detail": "Confirmed",
+      "hash": "0x432a2380deb076db1edc7a48b1e98292c1586d1e82fae19f198a2e3801eb739e",
+      "block": "63069617",
+      "events": [
+        "Unpaused"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+.context
+.env*
+.git
+node_modules
+**/node_modules
+**/.next
+contracts
+nav_engine
+tests
+scripts
+broadcast
+cache

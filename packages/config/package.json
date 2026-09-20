@@ -1,0 +1,18 @@
+{
+  "name": "@hitbite/config",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./chains": "./chains.ts",
+    "./env": "./env.ts",
+    "./copy": "./copy.ts",
+    "./abi": "./abi.ts",
+    "./contracts": "./contracts.ts",
+    "./countries": "./countries.json",
+    "./transport": "./transport.ts"
+  },
+  "dependencies": {
+    "viem": "2.56.8"
+  }
+}

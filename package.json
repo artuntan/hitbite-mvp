@@ -1,0 +1,48 @@
+{
+  "name": "hitbite-testnet",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "dotenv -e .env -- pnpm --filter @hitbite/app dev",
+    "build": "dotenv -e .env -- pnpm --filter @hitbite/app build",
+    "start": "dotenv -e .env -- pnpm --filter @hitbite/app start",
+    "lint": "eslint app packages scripts tests --max-warnings 0 && python3 scripts/check-secrets.py",
+    "typecheck": "tsc --noEmit && dotenv -e .env -- pnpm --filter @hitbite/app typecheck",
+    "test:config": "tsx --test tests/config/*.test.ts",
+    "check:secrets": "python3 scripts/check-secrets.py --gitleaks",
+    "check": "pnpm lint && pnpm typecheck && pnpm test:config && pnpm build",
+    "deploy": "tsx scripts/deploy.ts",
+    "sync:contracts": "tsx scripts/sync-contracts.ts",
+    "fund:vault": "tsx scripts/fund-vault.ts",
+    "verify:contracts": "tsx scripts/verify-contracts.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "e2e": "tsx scripts/e2e.ts",
+    "test:ui": "tsx scripts/ui-live.ts",
+    "nav": "uv run --python 3.11 nav_engine/hb.py"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "dotenv": "17.2.3",
+    "dotenv-cli": "11.0.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.5",
+    "prettier": "3.9.8",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "viem": "2.56.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "ws@>=8 <8.21.3": "8.21.3",
+      "uuid@<11.1.1": "11.1.1",
+      "decode-uri-component@<=0.4.2": "0.5.0",
+      "valtio>use-sync-external-store": "1.7.0"
+    }
+  }
+}
