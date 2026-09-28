@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
-    "@types/node": "22.20.4",
+    "@types/node": "26.6.2",
     "dotenv": "17.2.3",
     "dotenv-cli": "11.0.0",
     "eslint": "9.39.5",
